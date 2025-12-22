@@ -9,8 +9,7 @@ import SwiftUI
 internal import Combine
 
 enum Route: Hashable {
-    case home
-    case profile(id: Int)
+    case textView
     case settings
 }
 
@@ -18,17 +17,23 @@ enum Route: Hashable {
 class Router: ObservableObject {
     @Published var path = NavigationPath()
 
-    func push(_ route: Route) {
+    // Go to a new route
+    func navigate(to route: Route) {
         path.append(route)
     }
-
-    func pop() {
-        if !path.isEmpty {
-            path.removeLast()
-        }
+    
+    // Return to previous page
+    func navigateBack() {
+        path.removeLast()
     }
-
-    func popToRoot() {
-        path = NavigationPath()
+    
+    // Return to home page
+    func navigateToRoot() {
+        path.removeLast(path.count)
+    }
+    
+    // Go back to a specific view
+    func popToView(count: Int) {
+        path.removeLast(count)
     }
 }

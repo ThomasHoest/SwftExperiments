@@ -9,28 +9,27 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @EnvironmentObject var router : Router
+    @StateObject private var router = Router()
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Item]
     @State private var path = NavigationPath()
 
     var body: some View {
-        NavigationStack(path: router.path) {
+        NavigationStack(path: $router.path) {
             VStack {
                 Button("Go to Detail") {
-                    path.append("detail")
+                    router.navigate(to: .textView)
                 }
             }
-            .navigationDestination(for: String.self) { value in
-                if value == "detail" {
-                    TextView()
-                }
-            }
+            .navigationDestination(for: Route.self) { route in
+                                switch route {
+                                case .textView:
+                                    TextView()
+                                case .settings:
+                                    TextView()
+                                }
+                            }
         }
     }
 }
 
-#Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
-}

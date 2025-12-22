@@ -13,6 +13,3 @@ struct TextView: View {
     }
 }
 
-#Preview {
-    TextView()
-}
