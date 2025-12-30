@@ -18,15 +18,15 @@ struct ContentView: View {
         NavigationStack(path: $router.path) {
             VStack {
                 Button("Go to Detail") {
-                    router.navigate(to: .textView)
+                    router.navigate(to: .transcriptionView)
                 }
             }
             .navigationDestination(for: Route.self) { route in
                                 switch route {
-                                case .textView:
-                                    TextView()
+                                case .transcriptionView:
+                                    TranscriptionView()
                                 case .settings:
-                                    TextView()
+                                    TranscriptionView()
                                 }
                             }
         }

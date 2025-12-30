@@ -9,7 +9,7 @@ import SwiftUI
 internal import Combine
 
 enum Route: Hashable {
-    case textView
+    case transcriptionView
     case settings
 }
 
