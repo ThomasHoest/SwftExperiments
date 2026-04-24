@@ -188,14 +188,13 @@ const discovery = new Discovery(house);
 
 function startDiscovery() {
     const hint = document.getElementById('discovery-hint');
+    if (hint) { hint.textContent = 'Discovering…'; hint.hidden = false; }
 
+    // StartDiscovery runs forever — speakers are added as they appear on the
+    // network and removed when they go offline. Check the browser console for
+    // detailed Bonjour event logs.
     discovery.StartDiscovery({
         onFound: (speaker) => addSpeakerCard(speaker),
-    }).then((speakers) => {
-        if (hint && speakers.length === 0) hint.textContent = 'No speakers found';
-        else if (hint) hint.hidden = true;
-    }).catch(() => {
-        if (hint) hint.textContent = 'Discovery server not running — start it with: npm run discover';
     });
 }
 

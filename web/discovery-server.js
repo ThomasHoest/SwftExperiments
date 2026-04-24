@@ -75,7 +75,15 @@ browser.on('up', (service) => {
     };
 
     activeSpeakers.set(host, speaker);
-    console.log(`[discovery] Found: ${speaker.name} at ${speaker.host}:${speaker.port}`);
+
+    console.log([
+        `[Bonjour] ↑ Found:    "${service.name}"`,
+        `          host:       ${host}`,
+        `          port:       ${speaker.port}`,
+        `          addresses:  ${(service.addresses ?? []).join(', ') || '(none)'}`,
+        `          txt:        ${JSON.stringify(service.txt ?? {})}`,
+        `          active:     ${activeSpeakers.size} speaker(s)`,
+    ].join('\n'));
 
     broadcast({ type: 'found', speaker });
 });
@@ -85,7 +93,11 @@ browser.on('down', (service) => {
     const host = ipv4 ?? service.host.replace(/\.$/, '');
 
     if (activeSpeakers.delete(host)) {
-        console.log(`[discovery] Lost: ${service.name} at ${host}`);
+        console.log([
+            `[Bonjour] ↓ Lost:     "${service.name}"`,
+            `          host:       ${host}`,
+            `          active:     ${activeSpeakers.size} speaker(s)`,
+        ].join('\n'));
         broadcast({ type: 'lost', host });
     }
 });
@@ -101,9 +113,13 @@ const httpServer = createServer((req, res) => {
 const wss = new WebSocketServer({ server: httpServer });
 
 wss.on('connection', (ws) => {
+    const clientCount = wss.clients.size;
+    console.log(`[Bonjour] Client connected (${clientCount} active) — replaying ${activeSpeakers.size} cached speaker(s)`);
+
     // Immediately replay the current snapshot to the new client so it does not
     // have to wait for the next mDNS advertisement cycle.
     for (const speaker of activeSpeakers.values()) {
+        console.log(`[Bonjour]   → replaying "${speaker.name}" (${speaker.host})`);
         send(ws, { type: 'found', speaker });
     }
 
@@ -111,10 +127,14 @@ wss.on('connection', (ws) => {
         try {
             const { command } = JSON.parse(raw);
             if (command === 'refresh') {
-                // Re-query the network; bonjour-service will re-emit 'up' events.
+                console.log('[Bonjour] Refresh requested — re-querying mDNS');
                 browser.update();
             }
         } catch { /* ignore malformed messages */ }
+    });
+
+    ws.on('close', () => {
+        console.log(`[Bonjour] Client disconnected (${wss.clients.size} active)`);
     });
 });
 
