@@ -140,24 +140,62 @@ function renderCard(card, speaker) {
     }
 }
 
+// ─── LAN permission ───────────────────────────────────────────────────────────
+
+/**
+ * Waits for the user to explicitly allow local network access, then fires a
+ * probe fetch to a common private gateway address.
+ *
+ * The probe serves two purposes:
+ *   1. It triggers Chrome's Private Network Access permission dialog (if the
+ *      browser enforces it), giving the user a native grant/deny prompt before
+ *      any real speaker connections are attempted.
+ *   2. It surfaces a network-level error early if the LAN is unreachable,
+ *      rather than failing silently during discovery.
+ *
+ * The fetch is expected to time out or return an error — the gateway will not
+ * serve a useful response. That is fine; only the permission prompt matters.
+ */
+function requestLanPermission() {
+    return new Promise((resolve) => {
+        const prompt = document.getElementById('lan-prompt');
+        const btn    = document.getElementById('btn-lan');
+        const hint   = document.getElementById('discovery-hint');
+
+        btn.addEventListener('click', async () => {
+            prompt.remove();
+            hint.textContent = 'Discovering…';
+            hint.hidden = false;
+
+            // Probe a typical home gateway to surface the browser's Private
+            // Network Access dialog before any speaker API calls are made.
+            // Abort after 2 s — a timeout is the expected outcome.
+            try {
+                const ctrl = new AbortController();
+                setTimeout(() => ctrl.abort(), 2000);
+                await fetch('http://192.168.1.1', { mode: 'no-cors', signal: ctrl.signal });
+            } catch { /* expected: timeout, network error, or CORS block */ }
+
+            resolve();
+        }, { once: true });
+    });
+}
+
 // ─── Discovery ────────────────────────────────────────────────────────────────
 
 const house     = new House('My Home');
 const discovery = new Discovery(house);
 
 function startDiscovery() {
+    const hint = document.getElementById('discovery-hint');
+
     discovery.StartDiscovery({
         onFound: (speaker) => addSpeakerCard(speaker),
     }).then((speakers) => {
-        if (discoveryHint) {
-            discoveryHint.textContent = speakers.length === 0
-                ? 'No speakers found'
-                : '';
-        }
+        if (hint && speakers.length === 0) hint.textContent = 'No speakers found';
+        else if (hint) hint.hidden = true;
     }).catch(() => {
-        if (discoveryHint) {
-            discoveryHint.textContent = 'Discovery server unavailable';
-        }
+        if (hint) hint.textContent = 'Discovery server unavailable';
     });
 }
 
@@ -174,6 +212,9 @@ function startDiscovery() {
     } catch {
         micStatusEl.textContent = 'Microphone access denied — allow it in browser settings';
     }
+
+    // Explicitly ask for LAN access before making any local network connections.
+    await requestLanPermission();
 
     startDiscovery();
 })();
