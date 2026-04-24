@@ -1,33 +1,17 @@
 /**
  * discovery.js
  *
- * Discovers Bang & Olufsen Mozart speakers on the local area network and
- * registers them in the House.
+ * Discovers Bang & Olufsen Mozart speakers on the local network via Bonjour
+ * (mDNS) and registers them in the House.
  *
- * ── How discovery works ────────────────────────────────────────────────────────
+ * ── Architecture ──────────────────────────────────────────────────────────────
  *
- * The Mozart API is a per-device REST API — there is no broadcast or
- * multicast discovery protocol accessible from a browser. Instead this
- * service uses two steps:
+ * Browsers cannot send or receive multicast DNS packets, so this class acts as
+ * a WebSocket client to a local Node.js discovery server (discovery-server.js)
+ * that does the mDNS work. The server must be running before StartDiscovery()
+ * is called:
  *
- *   1. Subnet detection — A silent WebRTC peer connection is created to
- *      extract the browser's local IPv4 address from an ICE candidate.
- *      The /24 subnet is derived from that address (e.g. "192.168.1").
- *      If WebRTC detection fails the caller can supply the subnet manually.
- *
- *   2. Parallel host probing — All 254 addresses on the subnet are probed
- *      concurrently in batches. Each probe sends GET /api/v1/beolink/self
- *      with a short timeout. A valid JSON response confirms a Mozart device;
- *      the probe creates a Speaker, initialises it, and adds it to the House.
- *
- * ── CORS / Private Network Access ─────────────────────────────────────────────
- *
- * Chrome 104+ requires the target device to respond with the header
- *   Access-Control-Allow-Private-Network: true
- * on CORS preflight requests from a localhost or public origin.
- * If the device firmware does not send this header, probes will be silently
- * blocked by the browser. Running the web app from a local network IP
- * (not localhost) or using a local CORS proxy resolves the issue.
+ *   node discovery-server.js          # default port 3001
  *
  * ── Usage ──────────────────────────────────────────────────────────────────────
  *
@@ -38,100 +22,146 @@
  *       onFound: (speaker) => console.log('Found:', speaker.name, speaker.host),
  *   });
  *
- *   console.log(`Scan complete — ${speakers.length} speaker(s) found`);
+ *   console.log(`Found ${speakers.length} speaker(s)`);
+ *
+ *   // Stay connected to receive speakers that come online later:
+ *   // omit the await and handle onFound instead.
+ *
+ * ── Message protocol (from discovery-server.js) ───────────────────────────────
+ *
+ *   { type: "found", speaker: { name, host, port } }
+ *   { type: "lost",  host: "<ip>" }
  */
 
 import { Speaker } from './speaker.js';
 
-// Milliseconds to wait for a response before treating a host as absent.
-// LAN round-trips are typically < 5 ms; 1 500 ms covers slow/loaded devices.
-const PROBE_TIMEOUT_MS = 1_500;
-
-// Number of hosts probed simultaneously.
-// Higher = faster scan. Too high may hit browser connection-per-host limits.
-const CONCURRENCY = 25;
+// How long StartDiscovery() waits for the initial mDNS burst before resolving.
+// Devices already cached by the server are delivered immediately; this window
+// allows time for fresh advertisements to arrive on the network.
+const DEFAULT_SCAN_WINDOW_MS = 10_000;
 
 export class Discovery {
     /**
      * @param {import('./house.js').House} house
      *   The House instance that discovered speakers will be added to.
+     * @param {{ serverUrl?: string }} [opts]
+     *   serverUrl – WebSocket URL of the discovery server.
+     *               Defaults to ws://localhost:3001.
      */
-    constructor(house) {
-        this._house          = house;
-        this._running        = false;
-        this._abortController = null;
+    constructor(house, { serverUrl = 'ws://localhost:3001' } = {}) {
+        this._house     = house;
+        this._serverUrl = serverUrl;
+        this._ws        = null;
+        this._running   = false;
     }
 
     // ── Public interface ───────────────────────────────────────────────────────
 
     /**
-     * Starts a LAN scan and adds every discovered B&O speaker to the House.
+     * Connects to the local Bonjour discovery server and collects all Mozart
+     * speakers found within the scan window.
      *
-     * The method resolves once the full subnet has been scanned. Speakers are
-     * added to the House — and onFound is called — as they are discovered,
-     * so callers can react in real time without waiting for the scan to finish.
+     * Speakers announced by the server are wrapped in a Speaker instance,
+     * initialised (fetches live state + starts WebSocket event stream), and
+     * added to the House. The onFound callback fires immediately per speaker
+     * so the caller can react without waiting for the window to close.
+     *
+     * The method resolves with all speakers found during the window. The
+     * underlying WebSocket stays open after the method resolves so speakers
+     * that come online later are still added automatically — call
+     * stopDiscovery() to tear it down.
      *
      * @param {{
-     *   onFound?: (speaker: import('./speaker.js').Speaker) => void,
-     *   subnet?:  string
+     *   onFound?:       (speaker: import('./speaker.js').Speaker) => void,
+     *   scanWindowMs?:  number
      * }} [opts]
      *
-     *   onFound  – Called immediately each time a speaker is found during
-     *              the scan. Receives the fully initialised Speaker instance.
-     *
-     *   subnet   – Override auto-detected subnet, e.g. "192.168.1".
-     *              Useful when WebRTC is blocked or returns a VPN/tunnel IP.
+     *   onFound      – Called each time a speaker is discovered.
+     *   scanWindowMs – Duration (ms) to wait before resolving. Default: 10 000.
      *
      * @returns {Promise<import('./speaker.js').Speaker[]>}
-     *   Array of all speakers discovered during this scan run.
+     *   Speakers found during the scan window.
      *
-     * @throws {Error} If a scan is already in progress.
-     * @throws {Error} If subnet detection fails and no subnet override is given.
+     * @throws {Error} If a scan is already running.
+     * @throws {Error} If the discovery server cannot be reached.
      */
-    async StartDiscovery({ onFound, subnet } = {}) {
+    async StartDiscovery({ onFound, scanWindowMs = DEFAULT_SCAN_WINDOW_MS } = {}) {
         if (this._running) {
-            throw new Error('Discovery is already in progress. Call stopDiscovery() first.');
+            throw new Error('Discovery is already running. Call stopDiscovery() first.');
         }
+        this._running = true;
 
-        this._running         = true;
-        this._abortController = new AbortController();
-        const discovered      = [];
+        return new Promise((resolve, reject) => {
+            const discovered = [];
+            let windowTimer  = null;
 
-        try {
-            const resolvedSubnet = subnet ?? await this._detectSubnet();
+            const ws = new WebSocket(this._serverUrl);
+            this._ws = ws;
 
-            if (!resolvedSubnet) {
-                throw new Error(
-                    'Could not determine local subnet automatically. ' +
-                    'Pass a subnet option to StartDiscovery(), e.g. { subnet: "192.168.1" }.'
-                );
-            }
-
-            await this._scanSubnet(resolvedSubnet, {
-                signal: this._abortController.signal,
-                onFound: (speaker) => {
-                    discovered.push(speaker);
-                    onFound?.(speaker);
-                },
+            ws.addEventListener('open', () => {
+                // Resolve after the scan window regardless of how many devices
+                // have been found. The WebSocket stays open after resolve.
+                windowTimer = setTimeout(() => resolve(discovered), scanWindowMs);
             });
-        } finally {
-            this._running         = false;
-            this._abortController = null;
-        }
 
-        return discovered;
+            ws.addEventListener('message', async ({ data }) => {
+                let msg;
+                try { msg = JSON.parse(data); } catch { return; }
+
+                if (msg.type === 'found') {
+                    await this._handleFound(msg.speaker, { discovered, onFound });
+                } else if (msg.type === 'lost') {
+                    this._handleLost(msg.host);
+                }
+            });
+
+            ws.addEventListener('error', () => {
+                clearTimeout(windowTimer);
+                this._running = false;
+                this._ws = null;
+                reject(new Error(
+                    `Could not connect to discovery server at ${this._serverUrl}. ` +
+                    'Make sure discovery-server.js is running: node discovery-server.js'
+                ));
+            });
+
+            ws.addEventListener('close', () => {
+                // If the server closes while we are still in the window, resolve
+                // with whatever was found rather than hanging.
+                clearTimeout(windowTimer);
+                if (this._running) {
+                    this._running = false;
+                    this._ws = null;
+                    resolve(discovered);
+                }
+            });
+        });
     }
 
     /**
-     * Aborts an in-progress scan.
+     * Closes the WebSocket connection to the discovery server and stops
+     * receiving new speaker announcements.
      * Already-discovered speakers remain in the House.
-     * Safe to call even when no scan is running.
      */
     stopDiscovery() {
-        this._abortController?.abort();
+        this._running = false;
+        if (this._ws) {
+            this._ws.close();
+            this._ws = null;
+        }
     }
 
-    /** @returns {boolean} True while a scan is running. */
+    /**
+     * Asks the discovery server to re-query the network.
+     * Useful if a speaker was powered on after StartDiscovery() was called.
+     */
+    refresh() {
+        if (this._ws?.readyState === WebSocket.OPEN) {
+            this._ws.send(JSON.stringify({ command: 'refresh' }));
+        }
+    }
+
+    /** @returns {boolean} True while connected to the discovery server. */
     get isRunning() {
         return this._running;
     }
@@ -139,126 +169,38 @@ export class Discovery {
     // ── Internal ───────────────────────────────────────────────────────────────
 
     /**
-     * Detects the local /24 subnet by inspecting a WebRTC ICE candidate.
+     * Handles a "found" message from the discovery server.
+     * Skips the host if it is already registered in the House.
      *
-     * The RTCPeerConnection is created with no ICE servers so no STUN/TURN
-     * traffic is sent. It is used only to surface the host's local IP from
-     * the browser's network stack.
-     *
-     * Returns null if the local IP cannot be determined within 3 seconds or
-     * if the browser blocks the RTCPeerConnection API.
-     *
-     * @returns {Promise<string|null>}  e.g. "192.168.1", or null on failure.
+     * @param {{ name: string, host: string, port: number }} descriptor
+     * @param {{ discovered: Speaker[], onFound?: Function }} ctx
      */
-    _detectSubnet() {
-        return new Promise((resolve) => {
-            let settled = false;
-            const finish = (val) => { if (!settled) { settled = true; resolve(val); } };
+    async _handleFound(descriptor, { discovered, onFound }) {
+        const { host } = descriptor;
 
-            try {
-                const pc = new RTCPeerConnection({ iceServers: [] });
-                pc.createDataChannel('');
-                pc.createOffer()
-                    .then(o => pc.setLocalDescription(o))
-                    .catch(() => finish(null));
-
-                pc.onicecandidate = ({ candidate }) => {
-                    if (!candidate) { pc.close(); finish(null); return; }
-
-                    // ICE candidate SDP contains the local IP, e.g.:
-                    //   "candidate:... 192.168.1.42 ..."
-                    // Capture only private ranges (10.x, 172.16-31.x, 192.168.x).
-                    const match = /\b((10|192\.168|172\.(1[6-9]|2\d|3[01]))\.\d{1,3})\.\d{1,3}\b/
-                        .exec(candidate.candidate);
-
-                    if (match) { pc.close(); finish(match[1]); }
-                };
-
-                // Fallback: if no private IP candidate surfaces within 3 s, give up.
-                setTimeout(() => { pc.close(); finish(null); }, 3_000);
-            } catch {
-                finish(null);
-            }
-        });
-    }
-
-    /**
-     * Probes all 254 host addresses on a /24 subnet in parallel batches.
-     *
-     * @param {string} subnet  e.g. "192.168.1"
-     * @param {{ signal: AbortSignal, onFound: Function }} opts
-     */
-    async _scanSubnet(subnet, { signal, onFound }) {
-        // Build the full list of candidates: <subnet>.1 … <subnet>.254
-        const hosts = Array.from({ length: 254 }, (_, i) => `${subnet}.${i + 1}`);
-
-        for (let i = 0; i < hosts.length; i += CONCURRENCY) {
-            if (signal.aborted) break;
-
-            const batch = hosts.slice(i, i + CONCURRENCY);
-            // All hosts in the batch run concurrently; the batch itself is awaited
-            // before starting the next one to keep concurrency bounded.
-            await Promise.all(
-                batch.map(ip => this._probeHost(ip, { signal, onFound }))
-            );
-        }
-    }
-
-    /**
-     * Attempts to identify a Mozart speaker at the given IP address.
-     *
-     * Uses GET /api/v1/beolink/self as the detection fingerprint — it is a
-     * lightweight endpoint that all Mozart devices expose and returns JSON
-     * that no generic HTTP server would produce.
-     *
-     * On a confirmed match the method creates a Speaker, fully initialises it
-     * (which connects the WebSocket and fetches initial state), registers it
-     * in the House, and calls onFound.
-     *
-     * All network errors and timeouts are silently swallowed — a failed probe
-     * simply means "not a B&O device at this address".
-     *
-     * @param {string} ip
-     * @param {{ signal: AbortSignal, onFound: Function }} opts
-     */
-    async _probeHost(ip, { signal, onFound }) {
-        if (signal.aborted) return;
-
-        // Skip addresses already registered to avoid redundant initialisation.
-        if (this._house.getSpeaker(ip)) return;
+        // Guard: skip if already in house from a previous discovery run.
+        if (this._house.getSpeaker(host)) return;
 
         try {
-            // Each probe uses its own AbortController so we can time it out
-            // independently of the outer scan abort signal.
-            const probeAbort = new AbortController();
-            const timer = setTimeout(() => probeAbort.abort(), PROBE_TIMEOUT_MS);
-
-            const res = await fetch(`http://${ip}/api/v1/beolink/self`, {
-                signal: probeAbort.signal,
-                mode: 'cors',
-            });
-            clearTimeout(timer);
-
-            // Any non-2xx response means the path exists but returned an error —
-            // not a device we want to interact with.
-            if (!res.ok) return;
-
-            const data = await res.json().catch(() => null);
-            // Require at minimum a valid JSON body; friendlyName is optional.
-            if (!data) return;
-
-            // Abort check after the async work above.
-            if (signal.aborted) return;
-
-            const speaker = new Speaker(ip);
+            const speaker = new Speaker(host);
             await speaker.initialize();
 
             this._house.addSpeaker(speaker);
-            onFound(speaker);
+            discovered.push(speaker);
+            onFound?.(speaker);
         } catch {
-            // Covers: network error, timeout (AbortError), JSON parse failure,
-            // CORS block, Private Network Access rejection. All are expected for
-            // the ~253 hosts that are not B&O speakers.
+            // The device was advertised via mDNS but its REST API is unreachable.
+            // This can happen briefly after a speaker powers on — ignore silently.
         }
+    }
+
+    /**
+     * Handles a "lost" message from the discovery server.
+     * Removes the speaker from the House and disposes its event stream.
+     *
+     * @param {string} host
+     */
+    _handleLost(host) {
+        this._house.removeSpeaker(host);
     }
 }
