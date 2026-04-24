@@ -4,85 +4,102 @@
  * Node.js companion server that discovers Bang & Olufsen Mozart speakers
  * via Bonjour/mDNS and streams results to the browser over WebSocket.
  *
- * Browsers cannot send or receive multicast DNS packets directly, so this
- * server acts as a bridge: it listens for mDNS advertisements from Mozart
- * devices on the local network and pushes structured speaker descriptors
- * to any connected browser client.
+ * ── Starting ──────────────────────────────────────────────────────────────────
  *
- * ── Starting the server ────────────────────────────────────────────────────────
- *
- *   node discovery-server.js
- *   # or:
+ *   node discovery-server.js            # default port 3001
  *   node discovery-server.js --port 3001
  *
  * ── mDNS service type ─────────────────────────────────────────────────────────
  *
- * Mozart platform speakers (Beolab 28, Beosound A5/A9/A1, Balance, Level,
- * Emerge, Theatre, Premiere, Beoconnect Core) advertise the service type
- * "_bangolufsen._tcp" on port 80. If your device does not appear, inspect
- * the raw mDNS traffic with `dns-sd -B _services._dns-sd._udp` (macOS) or
- * `avahi-browse -a` (Linux) to confirm the advertised type.
+ * Mozart platform speakers advertise "_bangolufsen._tcp" on port 80.
+ * If no speakers appear, check the raw mDNS log printed below — every
+ * PTR record on the network is logged so you can see the actual service
+ * types your devices are using.
  *
- * ── WebSocket message protocol ────────────────────────────────────────────────
+ * ── WebSocket protocol ────────────────────────────────────────────────────────
  *
- * Server → client:
- *   { type: "found", speaker: { name, host, port } }
- *   { type: "lost",  host: "<ip>" }
- *
- * Client → server:
- *   { command: "refresh" }   — triggers an mDNS re-query
+ *   Server → client:  { type: "found", speaker: { name, host, port } }
+ *                     { type: "lost",  host: "<ip>" }
+ *   Client → server:  { command: "refresh" }
  */
 
-import { createServer }  from 'http';
+import { createServer }             from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
-import { Bonjour }       from 'bonjour-service';
+import { Bonjour }                  from 'bonjour-service';
+import MDNS                         from 'multicast-dns';
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
-// Parse --port <n> from argv, fall back to 3001.
 const PORT = (() => {
     const idx = process.argv.indexOf('--port');
     return idx !== -1 ? parseInt(process.argv[idx + 1], 10) : 3001;
 })();
 
-// mDNS service type advertised by Mozart platform speakers.
 const BONJOUR_TYPE = 'bangolufsen';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
-/**
- * Registry of all currently active speakers keyed by resolved IPv4 address.
- * Populated as mDNS "up" events arrive; entries are removed on "down".
- * @type {Map<string, { name: string, host: string, port: number }>}
- */
+/** Active speakers keyed by resolved IPv4. @type {Map<string, {name,host,port}>} */
 const activeSpeakers = new Map();
 
-// ── mDNS browser ──────────────────────────────────────────────────────────────
+// ── Raw mDNS listener — logs EVERYTHING on the network ───────────────────────
+//
+// This runs alongside the structured Bonjour browser and prints every PTR
+// record seen via multicast DNS. Use this to confirm what service types your
+// speakers actually advertise if they do not appear in the Bonjour results.
+
+const mdns = MDNS();
+
+mdns.on('response', (response) => {
+    const ptrs = response.answers.filter(r => r.type === 'PTR');
+    const srvs = response.answers.filter(r => r.type === 'SRV');
+    const as   = response.answers.filter(r => r.type === 'A');
+
+    for (const ptr of ptrs) {
+        console.log(`[mDNS] PTR  ${ptr.name.padEnd(45)} → ${ptr.data}`);
+    }
+    for (const srv of srvs) {
+        console.log(`[mDNS] SRV  ${srv.name.padEnd(45)} → ${srv.data?.target}:${srv.data?.port}`);
+    }
+    for (const a of as) {
+        console.log(`[mDNS] A    ${a.name.padEnd(45)} → ${a.data}`);
+    }
+});
+
+mdns.on('query', (query) => {
+    for (const q of query.questions) {
+        // Only log queries that look B&O / audio related to reduce noise.
+        const n = q.name.toLowerCase();
+        if (n.includes('bang') || n.includes('beo') || n.includes('olufsen') ||
+            n.includes('mozart') || n.includes('audio') || n.includes('music')) {
+            console.log(`[mDNS] Query  ${q.type} ${q.name}`);
+        }
+    }
+});
+
+// ── Bonjour browser — structured _bangolufsen._tcp ────────────────────────────
 
 const bonjour = new Bonjour();
+
+console.log(`[Bonjour] Starting browser for _${BONJOUR_TYPE}._tcp`);
 const browser = bonjour.find({ type: BONJOUR_TYPE });
 
 browser.on('up', (service) => {
-    // Prefer the first IPv4 address in the addresses array.
-    // Fall back to the .local hostname if no numeric IP is present.
     const ipv4 = service.addresses?.find(a => /^\d+\.\d+\.\d+\.\d+$/.test(a));
-    const host = ipv4 ?? service.host.replace(/\.$/, ''); // strip trailing dot
+    const host = ipv4 ?? service.host.replace(/\.$/, '');
 
-    const speaker = {
-        name: service.name,
-        host,
-        port: service.port ?? 80,
-    };
-
+    const speaker = { name: service.name, host, port: service.port ?? 80 };
     activeSpeakers.set(host, speaker);
 
     console.log([
-        `[Bonjour] ↑ Found:    "${service.name}"`,
-        `          host:       ${host}`,
-        `          port:       ${speaker.port}`,
-        `          addresses:  ${(service.addresses ?? []).join(', ') || '(none)'}`,
-        `          txt:        ${JSON.stringify(service.txt ?? {})}`,
-        `          active:     ${activeSpeakers.size} speaker(s)`,
+        `[Bonjour] ↑ Found:      "${service.name}"`,
+        `            type:       _${service.type}._${service.protocol}`,
+        `            host:       ${host}`,
+        `            port:       ${speaker.port}`,
+        `            addresses:  ${(service.addresses ?? []).join(', ') || '(none)'}`,
+        `            subtypes:   ${(service.subtypes ?? []).join(', ') || '(none)'}`,
+        `            txt:        ${JSON.stringify(service.txt ?? {})}`,
+        `            active:     ${activeSpeakers.size} speaker(s)`,
     ].join('\n'));
 
     broadcast({ type: 'found', speaker });
@@ -94,17 +111,27 @@ browser.on('down', (service) => {
 
     if (activeSpeakers.delete(host)) {
         console.log([
-            `[Bonjour] ↓ Lost:     "${service.name}"`,
-            `          host:       ${host}`,
-            `          active:     ${activeSpeakers.size} speaker(s)`,
+            `[Bonjour] ↓ Lost:       "${service.name}"`,
+            `            host:       ${host}`,
+            `            active:     ${activeSpeakers.size} speaker(s)`,
         ].join('\n'));
         broadcast({ type: 'lost', host });
     }
 });
 
+// Log a summary every 30 s so you can confirm the browser is still running.
+setInterval(() => {
+    console.log(`[Bonjour] Heartbeat — ${activeSpeakers.size} speaker(s) active: ${
+        activeSpeakers.size
+            ? [...activeSpeakers.values()].map(s => `"${s.name}" (${s.host})`).join(', ')
+            : '(none)'
+    }`);
+    // Re-query to pick up any speakers that missed the initial advertisement.
+    browser.update();
+}, 30_000);
+
 // ── WebSocket server ──────────────────────────────────────────────────────────
 
-// A plain HTTP server is needed so we can add CORS headers for the browser.
 const httpServer = createServer((req, res) => {
     res.writeHead(204, { 'Access-Control-Allow-Origin': '*' });
     res.end();
@@ -113,11 +140,8 @@ const httpServer = createServer((req, res) => {
 const wss = new WebSocketServer({ server: httpServer });
 
 wss.on('connection', (ws) => {
-    const clientCount = wss.clients.size;
-    console.log(`[Bonjour] Client connected (${clientCount} active) — replaying ${activeSpeakers.size} cached speaker(s)`);
+    console.log(`[Bonjour] Client connected (${wss.clients.size} active) — replaying ${activeSpeakers.size} cached speaker(s)`);
 
-    // Immediately replay the current snapshot to the new client so it does not
-    // have to wait for the next mDNS advertisement cycle.
     for (const speaker of activeSpeakers.values()) {
         console.log(`[Bonjour]   → replaying "${speaker.name}" (${speaker.host})`);
         send(ws, { type: 'found', speaker });
@@ -134,21 +158,20 @@ wss.on('connection', (ws) => {
     });
 
     ws.on('close', () => {
-        console.log(`[Bonjour] Client disconnected (${wss.clients.size} active)`);
+        console.log(`[Bonjour] Client disconnected (${wss.clients.size} remaining)`);
     });
 });
 
 httpServer.listen(PORT, () => {
-    console.log(`[discovery] Server listening on ws://localhost:${PORT}`);
-    console.log(`[discovery] Browsing for mDNS type: _${BONJOUR_TYPE}._tcp`);
+    console.log(`[Bonjour] WebSocket server on ws://localhost:${PORT}`);
+    console.log(`[Bonjour] Raw mDNS listener active — all PTR/SRV/A records will be logged`);
+    console.log(`[Bonjour] Heartbeat every 30 s, browser.update() re-queries on each tick`);
 });
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function send(ws, payload) {
-    if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(payload));
-    }
+    if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
 }
 
 function broadcast(payload) {
@@ -158,7 +181,8 @@ function broadcast(payload) {
 // ── Shutdown ──────────────────────────────────────────────────────────────────
 
 process.on('SIGINT', () => {
-    console.log('\n[discovery] Shutting down…');
+    console.log('\n[Bonjour] Shutting down…');
+    mdns.destroy();
     bonjour.destroy();
     httpServer.close();
     process.exit(0);

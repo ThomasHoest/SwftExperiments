@@ -279,34 +279,3 @@ body.speak {
     letter-spacing: 0.05em;
 }
 
-/* ── LAN permission prompt ─────────────────────────────────────────────────── */
-.lan-prompt {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-}
-
-.lan-prompt p {
-    font-size: 0.82rem;
-    line-height: 1.85;
-    color: var(--muted);
-}
-
-.btn-lan {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.72rem;
-    font-weight: 400;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--text);
-    background: transparent;
-    border: 1px solid rgba(232, 227, 218, 0.2);
-    padding: 12px 32px;
-    cursor: pointer;
-    transition: border-color 0.35s, color 0.35s;
-}
-.btn-lan:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-}
