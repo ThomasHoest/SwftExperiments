@@ -3,66 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice to Music</title>
+    <title>Bang &amp; Olufsen · Voice</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@300;400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Voice to Music</h1>
-        <p class="subtitle">Control your speakers with your voice</p>
 
-        <!-- Permissions -->
-        <div class="permissions">
-            <div class="permission-card" id="mic-card">
-                <div class="permission-icon">🎤</div>
-                <div class="permission-info">
-                    <h3>Microphone</h3>
-                    <p>Listen to your voice commands</p>
-                </div>
-                <button class="permission-btn" id="mic-btn">Allow</button>
+    <!-- ── Landing ─────────────────────────────────────────────── -->
+    <section id="view-landing" class="view active">
+        <div class="landing">
+            <p class="brand">Bang &amp; Olufsen</p>
+            <h1>Speak.<br>Be heard.</h1>
+            <p class="intro">
+                A new way to experience your speakers.<br>
+                Your voice, perfectly understood.
+            </p>
+            <button class="btn-primary" id="btn-try">Try it</button>
+        </div>
+    </section>
+
+    <!-- ── Experience ──────────────────────────────────────────── -->
+    <section id="view-experience" class="view">
+        <div class="experience">
+
+            <div class="orb-stage" id="orb-stage">
+                <div class="ring" style="--i:0"></div>
+                <div class="ring" style="--i:1"></div>
+                <div class="ring" style="--i:2"></div>
+                <div class="orb" id="orb"></div>
             </div>
 
-            <div class="permission-card" id="network-card">
-                <div class="permission-icon">📡</div>
-                <div class="permission-info">
-                    <h3>Local Network</h3>
-                    <p>Connect to speakers on your network</p>
-                </div>
-                <button class="permission-btn" id="network-btn">Configure</button>
-            </div>
-        </div>
+            <p class="transcript" id="transcript"></p>
+            <p class="mic-status" id="mic-status"></p>
 
-        <!-- Speaker config (hidden until Configure is clicked) -->
-        <div class="panel hidden" id="network-panel">
-            <h3>Speaker Setup</h3>
-            <div class="input-group">
-                <label for="speaker-ip">IP Address</label>
-                <input type="text" id="speaker-ip" placeholder="192.168.1.100" autocomplete="off" />
-            </div>
-            <div class="input-group">
-                <label for="speaker-port">Port</label>
-                <input type="number" id="speaker-port" value="1400" />
-            </div>
-            <button class="connect-btn" id="connect-btn">Connect to Speaker</button>
+            <button class="btn-back" id="btn-back">Back</button>
         </div>
-
-        <!-- Transcription -->
-        <div class="transcription-box" id="transcription-box">
-            <p id="transcription-text">Press the button below and start speaking…</p>
-        </div>
-
-        <div class="status-row">
-            <span class="status-text" id="status-text">Ready</span>
-        </div>
-
-        <button class="record-btn" id="record-btn">Start Listening</button>
-
-        <!-- Connection indicator -->
-        <div class="connection-status">
-            <span class="dot" id="conn-dot"></span>
-            <span id="conn-label">Speaker not configured</span>
-        </div>
-    </div>
+    </section>
 
     <script src="app.js"></script>
 </body>

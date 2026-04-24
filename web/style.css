@@ -1,235 +1,209 @@
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #0d0d0d;
-    color: #e5e5e5;
-    min-height: 100vh;
+/* ── Tokens ────────────────────────────────────────────────────────────────── */
+:root {
+    --bg:        #080808;
+    --text:      #e8e3da;
+    --muted:     #444;
+    --accent:    #c4a07a;
+    --orb-size:  160px;
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────────── */
+html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── Views ─────────────────────────────────────────────────────────────────── */
+.view {
+    position: fixed;
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
+    padding: 40px 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+}
+.view.active {
+    opacity: 1;
+    pointer-events: auto;
 }
 
-.container {
-    width: 100%;
-    max-width: 560px;
+/* ── Landing ───────────────────────────────────────────────────────────────── */
+.landing {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    align-items: flex-start;
+    max-width: 520px;
+    width: 100%;
+    gap: 0;
+}
+
+.brand {
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 2.5rem;
 }
 
 h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    text-align: center;
-    background: linear-gradient(135deg, #a78bfa 0%, #60a5fa 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(3.8rem, 10vw, 6.5rem);
+    line-height: 1.02;
+    color: var(--text);
+    margin-bottom: 1.75rem;
 }
 
-.subtitle {
-    text-align: center;
-    font-size: 0.875rem;
-    color: #666;
-    margin-top: -8px;
-    margin-bottom: 8px;
+.intro {
+    font-size: 0.82rem;
+    line-height: 1.85;
+    color: var(--muted);
+    margin-bottom: 3.5rem;
 }
 
-/* --- Permissions --- */
-.permissions {
+.btn-primary {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid rgba(232, 227, 218, 0.2);
+    padding: 15px 48px;
+    cursor: pointer;
+    transition: border-color 0.35s, color 0.35s;
+}
+.btn-primary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* ── Experience ────────────────────────────────────────────────────────────── */
+.experience {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-}
-
-.permission-card {
-    display: flex;
     align-items: center;
-    gap: 14px;
-    background: #1a1a1a;
-    border: 1px solid #2a2a2a;
-    border-radius: 12px;
-    padding: 14px 18px;
-    transition: border-color 0.25s;
-}
-
-.permission-card.granted { border-color: #16a34a; }
-.permission-card.denied  { border-color: #dc2626; }
-
-.permission-icon { font-size: 1.6rem; flex-shrink: 0; }
-
-.permission-info { flex: 1; }
-.permission-info h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 2px; }
-.permission-info p  { font-size: 0.75rem; color: #777; }
-
-.permission-btn {
-    background: #7c3aed;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 7px 16px;
-    font-size: 0.82rem;
-    font-weight: 500;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background 0.2s;
-}
-.permission-btn:hover { background: #6d28d9; }
-.permission-btn.granted { background: #15803d; cursor: default; }
-.permission-btn.denied  { background: #b91c1c; cursor: default; }
-
-/* --- Speaker config panel --- */
-.panel {
-    background: #1a1a1a;
-    border: 1px solid #2a2a2a;
-    border-radius: 12px;
-    padding: 20px;
-}
-
-.panel h3 {
-    font-size: 0.9rem;
-    color: #aaa;
-    margin-bottom: 14px;
-}
-
-.input-group { margin-bottom: 12px; }
-.input-group label {
-    display: block;
-    font-size: 0.75rem;
-    color: #777;
-    margin-bottom: 5px;
-}
-.input-group input {
+    gap: 52px;
     width: 100%;
-    background: #0d0d0d;
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 9px 12px;
-    color: #e5e5e5;
-    font-size: 0.875rem;
-    outline: none;
-    transition: border-color 0.2s;
 }
-.input-group input:focus { border-color: #7c3aed; }
 
-.connect-btn {
-    width: 100%;
-    background: #7c3aed;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 10px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s;
-    margin-top: 2px;
-}
-.connect-btn:hover { background: #6d28d9; }
-.connect-btn:disabled { background: #333; color: #555; cursor: not-allowed; }
-
-/* --- Transcription --- */
-.transcription-box {
-    min-height: 140px;
-    background: #1a1a1a;
-    border: 1px solid #2a2a2a;
-    border-radius: 12px;
-    padding: 20px;
+/* ── Orb ───────────────────────────────────────────────────────────────────── */
+.orb-stage {
+    position: relative;
+    width: var(--orb-size);
+    height: var(--orb-size);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-#transcription-text {
-    text-align: center;
-    color: #555;
-    line-height: 1.65;
-    font-size: 1rem;
-    transition: color 0.2s;
+.orb {
+    --energy: 0;
+    position: relative;
+    z-index: 2;
+    width: var(--orb-size);
+    height: var(--orb-size);
+    border-radius: 50%;
+    background: radial-gradient(
+        circle at 38% 33%,
+        #f4ede0 0%,
+        #c8a07e 42%,
+        #7a5534 100%
+    );
+    transform: scale(calc(1 + var(--energy) * 0.28));
+    box-shadow:
+        0 0 calc(24px + var(--energy) * 90px)
+        calc(var(--energy) * 18px)
+        rgba(196, 160, 122, calc(0.12 + var(--energy) * 0.5));
+    transition: transform 0.07s ease-out, box-shadow 0.07s ease-out;
 }
-#transcription-text.has-text { color: #e5e5e5; }
-#transcription-text.interim  { color: #a78bfa; }
 
-.status-row {
-    display: flex;
-    justify-content: center;
+/* idle breathe when not speaking */
+@keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.045); }
 }
-.status-text {
-    font-size: 0.78rem;
-    color: #555;
+.orb:not(.live) {
+    animation: breathe 4s ease-in-out infinite;
 }
-
-/* --- Record button --- */
-.record-btn {
-    align-self: center;
-    background: #7c3aed;
-    color: #fff;
-    border: none;
-    border-radius: 50px;
-    padding: 16px 44px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    letter-spacing: 0.01em;
-    transition: background 0.2s, transform 0.15s;
-}
-.record-btn:hover:not(:disabled) { background: #6d28d9; transform: scale(1.02); }
-.record-btn.recording {
-    background: #dc2626;
-    animation: pulse-ring 1.6s ease-out infinite;
-}
-.record-btn:disabled {
-    background: #2a2a2a;
-    color: #555;
-    cursor: not-allowed;
-    transform: none;
+.orb.live {
     animation: none;
 }
 
-@keyframes pulse-ring {
-    0%   { box-shadow: 0 0 0 0   rgba(220,38,38,0.45); }
-    70%  { box-shadow: 0 0 0 14px rgba(220,38,38,0);   }
-    100% { box-shadow: 0 0 0 0   rgba(220,38,38,0);    }
-}
-
-/* --- Connection indicator --- */
-.connection-status {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 0.75rem;
-    color: #555;
-    padding-top: 4px;
-}
-
-.dot {
-    width: 7px;
-    height: 7px;
+/* ── Rings ─────────────────────────────────────────────────────────────────── */
+.ring {
+    position: absolute;
+    inset: 0;
     border-radius: 50%;
-    background: #333;
-    flex-shrink: 0;
-}
-.dot.connected  { background: #22c55e; }
-.dot.connecting { background: #f59e0b; animation: blink 0.9s ease-in-out infinite; }
-.dot.error      { background: #ef4444; }
-
-@keyframes blink {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.25; }
+    border: 1px solid rgba(196, 160, 122, 0.45);
+    opacity: 0;
 }
 
-.hidden { display: none !important; }
+@keyframes ring-expand {
+    0%   { transform: scale(1);   opacity: 0.55; }
+    100% { transform: scale(2.6); opacity: 0;    }
+}
 
-/* --- Unsupported browser banner --- */
-.browser-warning {
-    background: #3b1a0a;
-    border: 1px solid #92400e;
-    border-radius: 10px;
-    padding: 14px 18px;
-    font-size: 0.83rem;
-    color: #fcd34d;
+.orb-stage.speaking .ring {
+    animation: ring-expand 1.8s ease-out calc(var(--i) * 0.6s) infinite;
+}
+
+/* ── Transcript ────────────────────────────────────────────────────────────── */
+.transcript {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 1.35rem;
+    color: var(--text);
     text-align: center;
+    max-width: 480px;
+    line-height: 1.55;
+    min-height: 2rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
+.transcript.show         { opacity: 1; }
+.transcript.show.interim { color: var(--muted); opacity: 0.7; }
+
+/* ── Mic status ────────────────────────────────────────────────────────────── */
+.mic-status {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    min-height: 1rem;
+    text-align: center;
+    transition: opacity 0.3s;
+}
+
+/* ── Back button ───────────────────────────────────────────────────────────── */
+.btn-back {
+    position: fixed;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color 0.25s;
+    padding: 8px 16px;
+}
+.btn-back:hover { color: var(--text); }
