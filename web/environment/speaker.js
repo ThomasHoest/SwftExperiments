@@ -54,6 +54,9 @@ export class Speaker {
         // Internal Mozart API handles — not intended for direct use by callers.
         this._client = new BeoClient(host);
         this._events = new BeoEvents(host, { autoReconnect: true });
+
+        // Registered via onStateChange() — called after any live state update.
+        this._changeListeners = new Set();
     }
 
     // ── Derived state ──────────────────────────────────────────────────────────
@@ -61,6 +64,19 @@ export class Speaker {
     /** True while the speaker is actively playing audio. */
     get isPlaying() {
         return this.state === 'playing';
+    }
+
+    /**
+     * Registers a callback that fires whenever the speaker's live state changes.
+     * The speaker instance itself is passed as the sole argument so the caller
+     * can read the latest values directly.
+     *
+     * @param {(speaker: Speaker) => void} fn
+     * @returns {this} For chaining.
+     */
+    onStateChange(fn) {
+        this._changeListeners.add(fn);
+        return this;
     }
 
     // ── Lifecycle ──────────────────────────────────────────────────────────────
@@ -126,7 +142,7 @@ export class Speaker {
     _applyPlaybackState(data) {
         // The REST response uses "state"; the WebSocket event uses "value".
         const raw = data?.value ?? data?.state;
-        if (raw) this.state = raw;
+        if (raw) { this.state = raw; this._notify(); }
     }
 
     /**
@@ -136,7 +152,7 @@ export class Speaker {
      * @param {object|null} data
      */
     _applyMetadata(data) {
-        if (!data) { this.metadata = null; return; }
+        if (!data) { this.metadata = null; this._notify(); return; }
         this.metadata = {
             title:      data.title              ?? null,
             artist:     data.artist             ?? null,
@@ -145,6 +161,7 @@ export class Speaker {
             artworkUrl: data.trackImage?.[0]?.url ?? null,
             durationMs: data.duration           ?? null,
         };
+        this._notify();
     }
 
     /**
@@ -157,6 +174,14 @@ export class Speaker {
         const v = data?.volume ?? data;
         if (v?.level !== undefined) {
             this.volume = { level: v.level, muted: v.muted ?? false };
+            this._notify();
+        }
+    }
+
+    /** Calls all registered state-change listeners with this speaker instance. */
+    _notify() {
+        for (const fn of this._changeListeners) {
+            try { fn(this); } catch (e) { console.error('[Speaker] onStateChange handler error', e); }
         }
     }
 }

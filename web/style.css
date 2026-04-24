@@ -20,24 +20,15 @@ html, body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* ── Views ─────────────────────────────────────────────────────────────────── */
-.view {
-    position: fixed;
-    inset: 0;
+/* ── Landing page ──────────────────────────────────────────────────────────── */
+body:not(.speak) {
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 40px 24px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.6s ease;
-}
-.view.active {
-    opacity: 1;
-    pointer-events: auto;
+    min-height: 100vh;
 }
 
-/* ── Landing ───────────────────────────────────────────────────────────────── */
 .landing {
     display: flex;
     flex-direction: column;
@@ -91,13 +82,31 @@ h1 {
     color: var(--accent);
 }
 
-/* ── Experience ────────────────────────────────────────────────────────────── */
-.experience {
+/* ── Speak page layout ─────────────────────────────────────────────────────── */
+body.speak {
+    display: block;
+    min-height: 100vh;
+}
+
+.speak-layout {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.main-area {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 52px;
-    width: 100%;
+    justify-content: center;
+    gap: 48px;
+    padding: 60px 40px;
+}
+
+@media (max-width: 640px) {
+    .speak-layout { grid-template-columns: 1fr; }
+    .speaker-pane { border-left: none; border-top: 1px solid #181818; }
 }
 
 /* ── Orb ───────────────────────────────────────────────────────────────────── */
@@ -131,17 +140,12 @@ h1 {
     transition: transform 0.07s ease-out, box-shadow 0.07s ease-out;
 }
 
-/* idle breathe when not speaking */
 @keyframes breathe {
     0%, 100% { transform: scale(1); }
     50%       { transform: scale(1.045); }
 }
-.orb:not(.live) {
-    animation: breathe 4s ease-in-out infinite;
-}
-.orb.live {
-    animation: none;
-}
+.orb:not(.live) { animation: breathe 4s ease-in-out infinite; }
+.orb.live       { animation: none; }
 
 /* ── Rings ─────────────────────────────────────────────────────────────────── */
 .ring {
@@ -169,7 +173,7 @@ h1 {
     font-size: 1.35rem;
     color: var(--text);
     text-align: center;
-    max-width: 480px;
+    max-width: 420px;
     line-height: 1.55;
     min-height: 2rem;
     opacity: 0;
@@ -186,13 +190,12 @@ h1 {
     color: var(--muted);
     min-height: 1rem;
     text-align: center;
-    transition: opacity 0.3s;
 }
 
 /* ── Back button ───────────────────────────────────────────────────────────── */
 .btn-back {
     position: fixed;
-    bottom: 36px;
+    bottom: 32px;
     left: 50%;
     transform: translateX(-50%);
     font-family: 'Inter', sans-serif;
@@ -208,3 +211,73 @@ h1 {
     padding: 8px 16px;
 }
 .btn-back:hover { color: var(--text); }
+
+/* ── Speaker pane ──────────────────────────────────────────────────────────── */
+.speaker-pane {
+    border-left: 1px solid #181818;
+    padding: 40px 24px 100px;   /* bottom pad clears the Back button */
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.pane-title {
+    font-size: 0.65rem;
+    font-weight: 400;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: #3a3a3a;
+    margin-bottom: 20px;
+}
+
+/* ── Speaker card ──────────────────────────────────────────────────────────── */
+.speaker-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid #111;
+}
+.speaker-card:first-child { border-top: 1px solid #111; }
+
+.speaker-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #2a2a2a;
+    flex-shrink: 0;
+    margin-top: 5px;
+    transition: background 0.4s, box-shadow 0.4s;
+}
+.speaker-dot.playing {
+    background: #22c55e;
+    box-shadow: 0 0 7px rgba(34, 197, 94, 0.55);
+}
+
+.speaker-info { flex: 1; min-width: 0; }
+
+.speaker-name {
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.speaker-track {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 1em;
+    transition: opacity 0.3s;
+}
+
+.discovery-hint {
+    font-size: 0.72rem;
+    color: #333;
+    letter-spacing: 0.05em;
+}

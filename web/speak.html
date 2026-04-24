@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bang &amp; Olufsen · Voice</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="speak">
+
+    <div class="speak-layout">
+
+        <!-- ── Main area: orb + transcript ─────────────────────────── -->
+        <div class="main-area">
+            <div class="orb-stage" id="orb-stage">
+                <div class="ring" style="--i:0"></div>
+                <div class="ring" style="--i:1"></div>
+                <div class="ring" style="--i:2"></div>
+                <div class="orb" id="orb"></div>
+            </div>
+
+            <p class="transcript" id="transcript"></p>
+            <p class="mic-status" id="mic-status"></p>
+        </div>
+
+        <!-- ── Speaker pane ─────────────────────────────────────────── -->
+        <aside class="speaker-pane">
+            <p class="pane-title">Speakers</p>
+            <div class="speaker-list" id="speaker-list">
+                <p class="discovery-hint" id="discovery-hint">Starting discovery…</p>
+            </div>
+        </aside>
+
+    </div>
+
+    <button class="btn-back" onclick="location.href='landing.html'">Back</button>
+
+    <script type="module" src="speak.js"></script>
+</body>
+</html>
