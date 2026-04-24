@@ -84,29 +84,28 @@ h1 {
 
 /* ── Speak page layout ─────────────────────────────────────────────────────── */
 body.speak {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     min-height: 100vh;
 }
 
 .speak-layout {
-    display: grid;
-    grid-template-columns: 1fr 260px;
-    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     width: 100%;
+    max-width: 560px;
+    min-height: 100vh;
 }
 
 .main-area {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 48px;
-    padding: 60px 40px;
-}
-
-@media (max-width: 640px) {
-    .speak-layout { grid-template-columns: 1fr; }
-    .speaker-pane { border-left: none; border-top: 1px solid #181818; }
+    padding: 60px 24px 40px;
 }
 
 /* ── Orb ───────────────────────────────────────────────────────────────────── */
@@ -214,19 +213,18 @@ body.speak {
 
 /* ── Speaker pane ──────────────────────────────────────────────────────────── */
 .speaker-pane {
-    border-left: 1px solid #181818;
-    padding: 40px 24px 100px;   /* bottom pad clears the Back button */
+    border-top: 1px solid #1e1e1e;
+    padding: 32px 24px 88px;    /* bottom pad clears the Back button */
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
 }
 
 .pane-title {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     font-weight: 400;
-    letter-spacing: 0.25em;
+    letter-spacing: 0.3em;
     text-transform: uppercase;
-    color: #3a3a3a;
+    color: var(--accent);
     margin-bottom: 20px;
 }
 
@@ -234,17 +232,17 @@ body.speak {
 .speaker-card {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
+    gap: 14px;
     padding: 14px 0;
-    border-bottom: 1px solid #111;
+    border-bottom: 1px solid #1e1e1e;
 }
-.speaker-card:first-child { border-top: 1px solid #111; }
+.speaker-card:first-child { border-top: 1px solid #1e1e1e; }
 
 .speaker-dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #2a2a2a;
+    background: #444;
     flex-shrink: 0;
     margin-top: 5px;
     transition: background 0.4s, box-shadow 0.4s;
@@ -266,18 +264,17 @@ body.speak {
 }
 
 .speaker-track {
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     color: var(--muted);
     margin-top: 3px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     min-height: 1em;
-    transition: opacity 0.3s;
 }
 
 .discovery-hint {
-    font-size: 0.72rem;
-    color: #333;
+    font-size: 0.75rem;
+    color: var(--muted);
     letter-spacing: 0.05em;
 }
