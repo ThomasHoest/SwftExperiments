@@ -195,7 +195,7 @@ function startDiscovery() {
         if (hint && speakers.length === 0) hint.textContent = 'No speakers found';
         else if (hint) hint.hidden = true;
     }).catch(() => {
-        if (hint) hint.textContent = 'Discovery server unavailable';
+        if (hint) hint.textContent = 'Discovery server not running — start it with: npm run discover';
     });
 }
 
