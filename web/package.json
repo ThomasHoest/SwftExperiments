@@ -5,9 +5,9 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "discover": "node discovery-server.js",
+    "discover": "node environment/discovery-server.js",
     "serve": "npx serve . --listen 3000",
-    "start": "concurrently \"npx serve . --listen 3000\" \"node discovery-server.js\""
+    "start": "concurrently \"npx serve . --listen 3000\" \"node environment/discovery-server.js\""
   },
   "keywords": [],
   "author": "",
