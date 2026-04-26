@@ -1,20 +1,21 @@
 /**
  * server.js
  *
- * Unified HTTP server: serves static files and streams speaker discovery
- * events to the browser via Server-Sent Events (SSE).
+ * Static file server + transparent HTTP proxy for speaker API calls.
  *
- * Discovery starts on the first browser connection to /api/events.
+ * B&O speakers don't send CORS headers, so the browser can't call their
+ * REST API directly. Requests to /proxy/<host>/... are forwarded server-side
+ * where CORS doesn't apply, and the response is returned to the browser.
  *
  *   node server.js            # port 3000
  *   node server.js --port 8080
  */
 
-import { createServer }  from 'http';
-import { readFile }      from 'fs/promises';
-import { join, extname } from 'path';
-import { fileURLToPath } from 'url';
-import { Discovery }     from './environment/discovery.js';
+import { createServer }        from 'http';
+import { readFile }            from 'fs/promises';
+import { join, extname }       from 'path';
+import { fileURLToPath }       from 'url';
+import { networkInterfaces }   from 'os';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -36,50 +37,51 @@ const MIME = {
     '.woff':  'font/woff',
 };
 
-// ── Discovery ─────────────────────────────────────────────────────────────────
-
-const discovery = new Discovery();
-
-// ── HTTP server ───────────────────────────────────────────────────────────────
+const CORS_HEADERS = {
+    'Access-Control-Allow-Origin':  '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+};
 
 const httpServer = createServer(async (req, res) => {
     const url = req.url.split('?')[0];
 
-    // ── SSE endpoint ──────────────────────────────────────────────────────────
-    if (url === '/api/events') {
-        res.writeHead(200, {
-            'Content-Type':  'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection':    'keep-alive',
-        });
-
-        // Start discovery the first time any browser connects.
-        discovery.StartDiscovery();
-
-        // Replay already-known speakers to this new client.
-        for (const speaker of discovery.getActiveSpeakers()) {
-            res.write(`data: ${JSON.stringify({ type: 'found', speaker })}\n\n`);
-        }
-
-        // Forward future events to this client.
-        const unsub = discovery.onEvent((event) => {
-            res.write(`data: ${JSON.stringify(event)}\n\n`);
-        });
-
-        req.on('close', () => {
-            unsub();
-            console.log('[SSE] Client disconnected');
-        });
-
-        console.log('[SSE] Client connected');
+    // ── CORS preflight ────────────────────────────────────────────────────────
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204, CORS_HEADERS);
+        res.end();
         return;
     }
 
-    // ── Refresh endpoint ──────────────────────────────────────────────────────
-    if (url === '/api/refresh' && req.method === 'POST') {
-        discovery.refresh();
-        res.writeHead(204);
-        res.end();
+    // ── Speaker API proxy: /proxy/<host>/api/v1/... ───────────────────────────
+    if (url.startsWith('/proxy/')) {
+        const target = 'http://' + url.slice('/proxy/'.length);
+
+        try {
+            // Read request body for PUT/POST.
+            let body;
+            if (req.method !== 'GET' && req.method !== 'HEAD') {
+                const chunks = [];
+                for await (const chunk of req) chunks.push(chunk);
+                body = Buffer.concat(chunks);
+            }
+
+            const upstream = await fetch(target, {
+                method:  req.method,
+                headers: { 'Content-Type': 'application/json' },
+                body,
+            });
+
+            const data = await upstream.arrayBuffer();
+            res.writeHead(upstream.status, {
+                'Content-Type': upstream.headers.get('content-type') ?? 'application/json',
+                ...CORS_HEADERS,
+            });
+            res.end(Buffer.from(data));
+        } catch (err) {
+            res.writeHead(502, { 'Content-Type': 'text/plain', ...CORS_HEADERS });
+            res.end(`Proxy error: ${err.message}`);
+        }
         return;
     }
 
@@ -92,7 +94,10 @@ const httpServer = createServer(async (req, res) => {
 
     try {
         const data = await readFile(filePath);
-        res.writeHead(200, { 'Content-Type': mimeType });
+        res.writeHead(200, {
+            'Content-Type':  mimeType,
+            'Cache-Control': 'no-store',
+        });
         res.end(data);
     } catch {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -100,16 +105,15 @@ const httpServer = createServer(async (req, res) => {
     }
 });
 
-// ── Start ─────────────────────────────────────────────────────────────────────
-
 httpServer.listen(PORT, () => {
     console.log(`[Server] http://localhost:${PORT}`);
-    console.log(`[Server] Discovery starts when the first browser connects`);
-});
 
-process.on('SIGINT', () => {
-    console.log('\n[Server] Shutting down…');
-    discovery.destroy();
-    httpServer.close();
-    process.exit(0);
+    const lanIp = Object.values(networkInterfaces())
+        .flat()
+        .find(i => i.family === 'IPv4' && !i.internal)
+        ?.address;
+
+    if (lanIp) {
+        console.log(`[Server] http://${lanIp}:${PORT}  ← open this for LAN access (no CORS)`);
+    }
 });

@@ -24,6 +24,8 @@
  * local proxy (e.g. `npx local-cors-proxy`) that adds the required header.
  */
 
+import { logger } from '../logger.js';
+
 // Base path shared by all REST endpoints.
 const API_ROOT = '/api/v1';
 
@@ -32,7 +34,7 @@ export class BeoClient {
      * @param {string} host  IP address or hostname of the speaker, e.g. "192.168.1.50"
      */
     constructor(host) {
-        this.baseUrl = `http://${host}${API_ROOT}`;
+        this.baseUrl = `/proxy/${host}${API_ROOT}`;
     }
 
     // ── Internal helpers ───────────────────────────────────────────────────────
@@ -44,6 +46,9 @@ export class BeoClient {
      * @returns {Promise<any>} Parsed JSON body, or null for 204 No Content.
      */
     async _request(path, opts = {}) {
+        const method = opts.method ?? 'GET';
+        logger.info(`[BeoClient] ${method} ${this.baseUrl}${path}`);
+
         const res = await fetch(`${this.baseUrl}${path}`, {
             headers: { 'Content-Type': 'application/json', ...opts.headers },
             ...opts,
@@ -51,15 +56,21 @@ export class BeoClient {
 
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
+            logger.error(`[BeoClient] ${method} ${path} → ${res.status} ${res.statusText}`, err);
             throw Object.assign(
                 new Error(err.description ?? `HTTP ${res.status} ${res.statusText}`),
                 { status: res.status, code: err.errorCode }
             );
         }
 
-        // 204 No Content — return null instead of trying to parse an empty body.
-        if (res.status === 204) return null;
-        return res.json();
+        if (res.status === 204) {
+            logger.info(`[BeoClient] ${method} ${path} → 204 No Content`);
+            return null;
+        }
+
+        const data = await res.json();
+        logger.info(`[BeoClient] ${method} ${path} → ${res.status}`, data);
+        return data;
     }
 
     _get(path)         { return this._request(path); }
@@ -210,6 +221,13 @@ export class BeoClient {
      */
     getSources() {
         return this._get('/playback/sources');
+    }
+
+    /**
+     * Returns the currently active source.
+     */
+    getActiveSource() {
+        return this._get('/playback/sources/active');
     }
 
     /**

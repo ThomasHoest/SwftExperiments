@@ -1,7 +1,8 @@
 'use strict';
 
 import { House }     from './environment/house.js';
-import { Discovery } from './environment/discovery-client.js';
+import { Speaker }   from './environment/speaker.js';
+import { Discovery } from './environment/discovery.js';
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 
@@ -14,18 +15,16 @@ const discoveryHint  = document.getElementById('discovery-hint');
 
 // ─── Microphone + audio analysis (drives orb) ────────────────────────────────
 
-let audioCtx  = null;
-let analyser  = null;
-let micStream = null;
-let rafId     = null;
+let audioCtx = null;
+let analyser = null;
 
 async function setupAudio() {
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
-    analyser  = audioCtx.createAnalyser();
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    audioCtx     = new (window.AudioContext || window.webkitAudioContext)();
+    analyser     = audioCtx.createAnalyser();
     analyser.fftSize = 512;
     analyser.smoothingTimeConstant = 0.78;
-    audioCtx.createMediaStreamSource(micStream).connect(analyser);
+    audioCtx.createMediaStreamSource(stream).connect(analyser);
 }
 
 function startOrbLoop() {
@@ -41,7 +40,7 @@ function startOrbLoop() {
         orb.classList.toggle('live', energy > 0.1);
         orbStage.classList.toggle('speaking', energy > 0.1);
 
-        rafId = requestAnimationFrame(tick);
+        requestAnimationFrame(tick);
     }
     tick();
 }
@@ -89,48 +88,56 @@ function setTranscript(text, isInterim) {
 
 // ─── Speaker pane ─────────────────────────────────────────────────────────────
 
-/**
- * Creates a DOM card for a speaker and inserts it into the speaker list.
- * Registers onStateChange so the card updates live whenever the speaker's
- * state or metadata changes.
- *
- * @param {import('./environment/speaker.js').Speaker} speaker
- */
 function addSpeakerCard(speaker) {
-    // Remove the "Starting discovery…" hint once the first speaker appears.
     if (discoveryHint) discoveryHint.remove();
 
     const card = document.createElement('div');
-    card.className = 'speaker-card';
+    card.className    = 'speaker-card';
     card.dataset.host = speaker.host;
 
     card.innerHTML = `
-        <span class="speaker-dot"></span>
+        <div class="speaker-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+            </svg>
+        </div>
         <div class="speaker-info">
             <p class="speaker-name"></p>
+            <p class="speaker-state"></p>
+            <p class="speaker-source" hidden></p>
             <p class="speaker-track"></p>
+            <p class="speaker-battery" hidden></p>
         </div>
     `;
 
     speakerList.appendChild(card);
     renderCard(card, speaker);
-
-    // Live updates: re-render the card whenever state or metadata changes.
     speaker.onStateChange((s) => renderCard(card, s));
 }
 
-/**
- * Writes the latest speaker state into an existing card element.
- * @param {HTMLElement} card
- * @param {import('./environment/speaker.js').Speaker} speaker
- */
 function renderCard(card, speaker) {
-    const dot   = card.querySelector('.speaker-dot');
-    const name  = card.querySelector('.speaker-name');
-    const track = card.querySelector('.speaker-track');
+    const icon    = card.querySelector('.speaker-icon');
+    const name    = card.querySelector('.speaker-name');
+    const state   = card.querySelector('.speaker-state');
+    const source  = card.querySelector('.speaker-source');
+    const track   = card.querySelector('.speaker-track');
+    const battery = card.querySelector('.speaker-battery');
 
-    dot.className  = 'speaker-dot' + (speaker.isPlaying ? ' playing' : '');
-    name.textContent = speaker.name;
+    icon.className  = 'speaker-icon' + (speaker.isPlaying ? ' playing' : '');
+    name.textContent  = speaker.name;
+    state.textContent = speaker.state === 'playing'   ? 'Playing'
+                      : speaker.state === 'paused'    ? 'Paused'
+                      : speaker.state === 'buffering' ? 'Buffering'
+                      : 'Idle';
+
+    if (speaker.isPlaying && speaker.source) {
+        source.textContent = speaker.source;
+        source.hidden = false;
+    } else {
+        source.hidden = true;
+    }
 
     if (speaker.isPlaying && speaker.metadata) {
         const { artist, title } = speaker.metadata;
@@ -138,16 +145,18 @@ function renderCard(card, speaker) {
     } else {
         track.textContent = '';
     }
+
+    if (speaker.battery) {
+        const { level, isCharging } = speaker.battery;
+        battery.textContent = isCharging ? `${level}% ⚡` : `${level}%`;
+        battery.hidden = false;
+    } else {
+        battery.hidden = true;
+    }
 }
 
 // ─── LAN permission ───────────────────────────────────────────────────────────
 
-/**
- * Fires a silent probe to a common private gateway address in the background.
- * This surfaces Chrome's Private Network Access dialog (if enforced) before
- * any speaker API calls are made, without blocking the page or requiring a
- * button click. The fetch is expected to time out — only the PNA prompt matters.
- */
 function probeLan() {
     const ctrl = new AbortController();
     setTimeout(() => ctrl.abort(), 2000);
@@ -159,16 +168,23 @@ function probeLan() {
 const house     = new House('My Home');
 const discovery = new Discovery(house);
 
-function startDiscovery() {
-    const hint = document.getElementById('discovery-hint');
-    if (hint) { hint.textContent = 'Discovering…'; hint.hidden = false; }
+const DEV_SPEAKERS = ['192.168.0.71', '192.168.0.66', '192.168.0.42'];
 
-    // StartDiscovery runs forever — speakers are added as they appear on the
-    // network and removed when they go offline. Check the browser console for
-    // detailed Bonjour event logs.
-    discovery.StartDiscovery({
-        onFound: (speaker) => addSpeakerCard(speaker),
-    });
+async function startDiscovery() {
+    if (discoveryHint) { discoveryHint.textContent = 'Discovering…'; discoveryHint.hidden = false; }
+
+    for (const host of DEV_SPEAKERS) {
+        try {
+            const speaker = new Speaker(host);
+            await speaker.initialize();
+            house.addSpeaker(speaker);
+            addSpeakerCard(speaker);
+        } catch (err) {
+            console.warn(`[Dev] ${host} unreachable:`, err.message);
+        }
+    }
+
+    // discovery.StartDiscovery({ onFound: addSpeakerCard });
 }
 
 // ─── Page init ────────────────────────────────────────────────────────────────
@@ -185,6 +201,6 @@ function startDiscovery() {
         micStatusEl.textContent = 'Microphone access denied — allow it in browser settings';
     }
 
-    probeLan();       // background probe — surfaces Chrome's PNA dialog if enforced
+    probeLan();
     startDiscovery();
 })();

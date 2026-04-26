@@ -16,6 +16,7 @@
 
 import { BeoClient }              from '../api/beo-client.js';
 import { BeoEvents, BeoEventType } from '../api/beo-events.js';
+import { logger }                  from '../logger.js';
 
 export class Speaker {
     /**
@@ -50,6 +51,19 @@ export class Speaker {
          * @type {{ level: number, muted: boolean }|null}
          */
         this.volume = null;
+
+        /**
+         * Battery state for portable devices. Null on mains-powered speakers.
+         * @type {{ level: number, isCharging: boolean }|null}
+         */
+        this.battery = null;
+
+        /**
+         * Friendly name of the active source (e.g. "Spotify", "Bluetooth").
+         * Null until the device reports one.
+         * @type {string|null}
+         */
+        this.source = null;
 
         // Internal Mozart API handles — not intended for direct use by callers.
         this._client = new BeoClient(host);
@@ -94,23 +108,27 @@ export class Speaker {
     async initialize() {
         // Fetch name, playback state, metadata, and volume concurrently.
         // Promise.allSettled ensures one failure does not abort the others.
-        const [identity, playbackState, metadata, volume] = await Promise.allSettled([
+        const [identity, playbackState, volume, battery, source] = await Promise.allSettled([
             this._client.getBeolinkSelf(),       // { jid, friendlyName }
             this._client.getPlaybackState(),      // { value: 'playing'|… }
-            this._client.getPlaybackMetadata(),   // { title, artist, album, … }
             this._client.getVolume(),             // { volume: { level, muted } }
+            this._client.getBattery(),            // { batteryLevel, isCharging, … } — null on mains speakers
+            this._client.getActiveSource(),       // { id, friendlyName, … }
         ]);
 
         if (identity.status      === 'fulfilled') this._applyIdentity(identity.value);
         if (playbackState.status === 'fulfilled') this._applyPlaybackState(playbackState.value);
-        if (metadata.status      === 'fulfilled') this._applyMetadata(metadata.value);
         if (volume.status        === 'fulfilled') this._applyVolume(volume.value);
+        if (battery.status       === 'fulfilled') this._applyBattery(battery.value);
+        if (source.status        === 'fulfilled') this._applySource(source.value);
 
         // Wire up live updates — each event type maps to its local updater.
         this._events
             .on(BeoEventType.PLAYBACK_STATE,    data => this._applyPlaybackState(data))
             .on(BeoEventType.PLAYBACK_METADATA, data => this._applyMetadata(data))
-            .on(BeoEventType.VOLUME,            data => this._applyVolume(data));
+            .on(BeoEventType.VOLUME,            data => this._applyVolume(data))
+            .on(BeoEventType.BATTERY,           data => this._applyBattery(data))
+            .on(BeoEventType.PLAYBACK_SOURCE,   data => this._applySource(data));
 
         this._events.connect();
     }
@@ -142,7 +160,9 @@ export class Speaker {
     _applyPlaybackState(data) {
         // The REST response uses "state"; the WebSocket event uses "value".
         const raw = data?.value ?? data?.state;
-        if (raw) { this.state = raw; this._notify(); }
+        if (!raw) return;
+        this.state = raw === 'started' ? 'playing' : raw;
+        this._notify();
     }
 
     /**
@@ -178,10 +198,36 @@ export class Speaker {
         }
     }
 
+    /**
+     * Applies battery state from either:
+     *   REST  GET /api/v1/battery         → { batteryLevel, isCharging }
+     *   Event WebSocketEventBattery       → { batteryLevel, isCharging }
+     * @param {object|null} data
+     */
+    /**
+     * Applies source info from either:
+     *   REST  GET /api/v1/playback/sources/active → { id, friendlyName, … }
+     *   Event WebSocketEventPlaybackSource        → { id, friendlyName, … }
+     * @param {object|null} data
+     */
+    _applySource(data) {
+        const name = data?.friendlyName ?? data?.id ?? null;
+        if (name === this.source) return;
+        this.source = name;
+        this._notify();
+    }
+
+    _applyBattery(data) {
+        if (!data || data.batteryLevel === undefined) return;
+        if (data.batteryLevel === 0 && !data.isCharging) return;
+        this.battery = { level: data.batteryLevel, isCharging: data.isCharging ?? false };
+        this._notify();
+    }
+
     /** Calls all registered state-change listeners with this speaker instance. */
     _notify() {
         for (const fn of this._changeListeners) {
-            try { fn(this); } catch (e) { console.error('[Speaker] onStateChange handler error', e); }
+            try { fn(this); } catch (e) { logger.error('[Speaker] onStateChange handler error', e); }
         }
     }
 }

@@ -38,6 +38,8 @@
  * All event types emitted by the Mozart WebSocket endpoint.
  * Use these as keys with BeoEvents.on() / BeoEvents.off().
  */
+import { logger } from '../logger.js';
+
 export const BeoEventType = Object.freeze({
     // Power & hardware
     POWER_STATE:          'WebSocketEventPowerState',
@@ -180,6 +182,7 @@ export class BeoEvents {
 
         this._ws.onopen = () => {
             this._retryCount = 0;    // reset backoff on successful connection
+            logger.verbose(`[BeoEvents] connected → ${this._url}`);
             this._emit('_connected', {});
         };
 
@@ -190,6 +193,7 @@ export class BeoEvents {
             const { eventType, eventData } = msg;
             if (!eventType) return;
 
+            logger.verbose(`[BeoEvents] ${eventType}`, eventData ?? {});
             this._emit(eventType, eventData ?? {});
         };
 
@@ -199,6 +203,7 @@ export class BeoEvents {
 
         this._ws.onclose = ({ wasClean }) => {
             this._ws = null;
+            logger.verbose(`[BeoEvents] disconnected (${wasClean ? 'clean' : 'unclean'}) → ${this._url}`);
             this._emit('_disconnected', { wasClean });
 
             if (!this._stopped && this._autoReconnect) {
@@ -209,7 +214,7 @@ export class BeoEvents {
 
     _emit(eventType, data) {
         this._handlers.get(eventType)?.forEach(fn => {
-            try { fn(data); } catch (e) { console.error('[BeoEvents] handler error', e); }
+            try { fn(data); } catch (e) { logger.error('[BeoEvents] handler error', e); }
         });
     }
 
