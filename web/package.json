@@ -5,9 +5,7 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "discover": "node environment/discovery-server.js",
-    "serve": "npx serve . --listen 3000",
-    "start": "concurrently \"npx serve . --listen 3000\" \"node environment/discovery-server.js\""
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +16,5 @@
     "multicast-dns": "^7.2.5",
     "ws": "^8.20.0"
   },
-  "devDependencies": {
-    "concurrently": "^9.2.1"
-  }
+  "devDependencies": {}
 }

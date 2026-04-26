@@ -1,7 +1,7 @@
 'use strict';
 
 import { House }     from './environment/house.js';
-import { Discovery } from './environment/discovery.js';
+import { Discovery } from './environment/discovery-client.js';
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 
