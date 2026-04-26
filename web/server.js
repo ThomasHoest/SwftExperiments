@@ -11,13 +11,19 @@
  *   node server.js --port 8080
  */
 
-import { createServer }        from 'http';
-import { readFile }            from 'fs/promises';
-import { join, extname }       from 'path';
-import { fileURLToPath }       from 'url';
-import { networkInterfaces }   from 'os';
+import { createServer }                from 'https';
+import { readFile }                    from 'fs/promises';
+import { join, extname }               from 'path';
+import { fileURLToPath }               from 'url';
+import { networkInterfaces }           from 'os';
+import { WebSocketServer, WebSocket }  from 'ws';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
+
+const TLS = {
+    key:  await readFile(join(__dirname, 'certs/key.pem')),
+    cert: await readFile(join(__dirname, 'certs/cert.pem')),
+};
 
 const PORT = (() => {
     const idx = process.argv.indexOf('--port');
@@ -43,7 +49,7 @@ const CORS_HEADERS = {
     'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-const httpServer = createServer(async (req, res) => {
+const httpServer = createServer(TLS, async (req, res) => {
     const url = req.url.split('?')[0];
 
     // ── CORS preflight ────────────────────────────────────────────────────────
@@ -105,8 +111,55 @@ const httpServer = createServer(async (req, res) => {
     }
 });
 
+// ── WebSocket proxy: wss://server/ws-proxy/<host><path> → ws://host:9339<path> ─
+const wss = new WebSocketServer({ noServer: true });
+
+httpServer.on('upgrade', (req, socket, head) => {
+    if (!req.url.startsWith('/ws-proxy/')) { socket.destroy(); return; }
+
+    wss.handleUpgrade(req, socket, head, (browserWs) => {
+        const rest     = req.url.slice('/ws-proxy/'.length);
+        const slash    = rest.indexOf('/');
+        const host     = slash === -1 ? rest : rest.slice(0, slash);
+        const path     = slash === -1 ? '/' : rest.slice(slash);
+        const target   = `ws://${host}:9339${path}`;
+
+        const speakerWs = new WebSocket(target);
+
+        speakerWs.on('open', () => {
+            logger(`WS proxy open: ${target}`);
+        });
+
+        speakerWs.on('message', (data, isBinary) => {
+            if (browserWs.readyState === WebSocket.OPEN)
+                browserWs.send(data, { binary: isBinary });
+        });
+
+        speakerWs.on('close', (code, reason) => {
+            logger(`WS proxy closed: ${target} [${code}] ${reason}`);
+            if (browserWs.readyState === WebSocket.OPEN) browserWs.close(code);
+        });
+
+        speakerWs.on('error', (err) => {
+            logger(`WS proxy error: ${target} — ${err.message}`);
+        });
+
+        browserWs.on('message', (data, isBinary) => {
+            if (speakerWs.readyState === WebSocket.OPEN)
+                speakerWs.send(data, { binary: isBinary });
+        });
+
+        browserWs.on('close', (code, reason) => {
+            logger(`WS browser closed: ${target} [${code}] ${reason}`);
+            if (speakerWs.readyState === WebSocket.OPEN) speakerWs.close();
+        });
+    });
+});
+
+function logger(msg) { console.log(`[Server] ${msg}`); }
+
 httpServer.listen(PORT, () => {
-    console.log(`[Server] http://localhost:${PORT}`);
+    console.log(`[Server] https://localhost:${PORT}`);
 
     const lanIp = Object.values(networkInterfaces())
         .flat()
@@ -114,6 +167,6 @@ httpServer.listen(PORT, () => {
         ?.address;
 
     if (lanIp) {
-        console.log(`[Server] http://${lanIp}:${PORT}  ← open this for LAN access (no CORS)`);
+        console.log(`[Server] https://${lanIp}:${PORT}  ← open this for LAN access`);
     }
 });

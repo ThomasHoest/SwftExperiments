@@ -94,8 +94,10 @@ export class BeoEvents {
      *   autoReconnect – Automatically reconnect on unexpected close (default: true).
      */
     constructor(host, { remote = false, autoReconnect = true } = {}) {
-        // WebSocket port is fixed at 9339 — separate from the REST API port (80).
-        this._url           = `ws://${host}:9339${remote ? WS_PATH_REMOTE : WS_PATH_DEFAULT}`;
+        // Route through the server proxy so wss: pages can reach plain ws: speakers.
+        const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
+        const path   = remote ? WS_PATH_REMOTE : WS_PATH_DEFAULT;
+        this._url    = `${scheme}://${location.host}/ws-proxy/${host}${path}`;
         this._autoReconnect = autoReconnect;
         this._handlers      = new Map();   // eventType → Set<Function>
         this._ws            = null;

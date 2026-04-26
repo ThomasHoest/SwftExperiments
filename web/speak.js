@@ -106,7 +106,6 @@ function addSpeakerCard(speaker) {
         <div class="speaker-info">
             <p class="speaker-name"></p>
             <p class="speaker-state"></p>
-            <p class="speaker-source" hidden></p>
             <p class="speaker-track"></p>
             <p class="speaker-battery" hidden></p>
         </div>
@@ -121,7 +120,6 @@ function renderCard(card, speaker) {
     const icon    = card.querySelector('.speaker-icon');
     const name    = card.querySelector('.speaker-name');
     const state   = card.querySelector('.speaker-state');
-    const source  = card.querySelector('.speaker-source');
     const track   = card.querySelector('.speaker-track');
     const battery = card.querySelector('.speaker-battery');
 
@@ -132,16 +130,8 @@ function renderCard(card, speaker) {
                       : speaker.state === 'buffering' ? 'Buffering'
                       : 'Idle';
 
-    if (speaker.isPlaying && speaker.source) {
-        source.textContent = speaker.source;
-        source.hidden = false;
-    } else {
-        source.hidden = true;
-    }
-
-    if (speaker.isPlaying && speaker.metadata) {
-        const { artist, title } = speaker.metadata;
-        track.textContent = [artist, title].filter(Boolean).join(' – ');
+    if (speaker.isPlaying && speaker.metadata?.genre) {
+        track.textContent = speaker.metadata.genre;
     } else {
         track.textContent = '';
     }
@@ -189,18 +179,31 @@ async function startDiscovery() {
 
 // ─── Page init ────────────────────────────────────────────────────────────────
 
-(async () => {
-    micStatusEl.textContent = 'Requesting microphone…';
+async function initMic() {
+    if (!navigator.mediaDevices) {
+        micStatusEl.innerHTML =
+            `Microphone requires a secure context — open ` +
+            `<a class="btn-mic-retry" href="https://localhost:${location.port}${location.pathname}">localhost</a> instead.`;
+        return;
+    }
 
+    micStatusEl.textContent = 'Requesting microphone…';
     try {
         await setupAudio();
         micStatusEl.textContent = '';
         startOrbLoop();
         startRecognition();
     } catch {
-        micStatusEl.textContent = 'Microphone access denied — allow it in browser settings';
+        micStatusEl.innerHTML =
+            'Microphone access denied. ' +
+            '<button class="btn-mic-retry">Grant access</button>';
+        micStatusEl.querySelector('.btn-mic-retry')
+            .addEventListener('click', () => initMic(), { once: true });
     }
+}
 
+(async () => {
+    await initMic();
     probeLan();
     startDiscovery();
 })();

@@ -191,6 +191,22 @@ body.speak {
     text-align: center;
 }
 
+/* ── Mic retry button ──────────────────────────────────────────────────────── */
+.btn-mic-retry {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+a.btn-mic-retry { display: inline; }
+
 /* ── Back button ───────────────────────────────────────────────────────────── */
 .btn-back {
     position: fixed;
@@ -292,13 +308,6 @@ body.speak {
     overflow: hidden;
     text-overflow: ellipsis;
     min-height: 1em;
-}
-
-.speaker-source {
-    font-size: 0.72rem;
-    color: var(--accent);
-    margin-top: 3px;
-    letter-spacing: 0.04em;
 }
 
 .speaker-battery {

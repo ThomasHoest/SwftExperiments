@@ -177,6 +177,7 @@ export class Speaker {
             title:      data.title              ?? null,
             artist:     data.artist             ?? null,
             album:      data.album              ?? null,
+            genre:      data.genre              ?? null,
             // trackImage is an array ordered by resolution; take the first entry.
             artworkUrl: data.trackImage?.[0]?.url ?? null,
             durationMs: data.duration           ?? null,

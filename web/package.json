@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "type": "module",
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "ws": "^8.20.0"
+  }
 }
