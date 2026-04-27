@@ -1,5 +1,5 @@
 /**
- * beo-events.js
+ * mozart-events.js
  *
  * WebSocket event client for the Bang & Olufsen Mozart Open API.
  *

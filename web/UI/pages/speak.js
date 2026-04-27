@@ -1,8 +1,9 @@
 'use strict';
 
-import { House }     from './environment/house.js';
-import { Speaker }   from './environment/speaker.js';
-import { Discovery } from './environment/discovery.js';
+import { House }          from '../../environment/house.js';
+import { Speaker }        from '../../environment/speaker.js';
+import { Discovery }      from '../../environment/discovery.js';
+import { addSpeakerCard } from '../components/speakercard.js';
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 
@@ -86,65 +87,6 @@ function setTranscript(text, isInterim) {
         : 'transcript';
 }
 
-// ─── Speaker pane ─────────────────────────────────────────────────────────────
-
-function addSpeakerCard(speaker) {
-    if (discoveryHint) discoveryHint.remove();
-
-    const card = document.createElement('div');
-    card.className    = 'speaker-card';
-    card.dataset.host = speaker.host;
-
-    card.innerHTML = `
-        <div class="speaker-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-            </svg>
-        </div>
-        <div class="speaker-info">
-            <p class="speaker-name"></p>
-            <p class="speaker-state"></p>
-            <p class="speaker-track"></p>
-            <p class="speaker-battery" hidden></p>
-        </div>
-    `;
-
-    speakerList.appendChild(card);
-    renderCard(card, speaker);
-    speaker.onStateChange((s) => renderCard(card, s));
-}
-
-function renderCard(card, speaker) {
-    const icon    = card.querySelector('.speaker-icon');
-    const name    = card.querySelector('.speaker-name');
-    const state   = card.querySelector('.speaker-state');
-    const track   = card.querySelector('.speaker-track');
-    const battery = card.querySelector('.speaker-battery');
-
-    icon.className  = 'speaker-icon' + (speaker.isPlaying ? ' playing' : '');
-    name.textContent  = speaker.name;
-    state.textContent = speaker.state === 'playing'   ? 'Playing'
-                      : speaker.state === 'paused'    ? 'Paused'
-                      : speaker.state === 'buffering' ? 'Buffering'
-                      : 'Idle';
-
-    if (speaker.isPlaying && speaker.metadata?.genre) {
-        track.textContent = speaker.metadata.genre;
-    } else {
-        track.textContent = '';
-    }
-
-    if (speaker.battery) {
-        const { level, isCharging } = speaker.battery;
-        battery.textContent = isCharging ? `${level}% ⚡` : `${level}%`;
-        battery.hidden = false;
-    } else {
-        battery.hidden = true;
-    }
-}
-
 // ─── LAN permission ───────────────────────────────────────────────────────────
 
 function probeLan() {
@@ -168,7 +110,7 @@ async function startDiscovery() {
             const speaker = new Speaker(host);
             await speaker.initialize();
             house.addSpeaker(speaker);
-            addSpeakerCard(speaker);
+            addSpeakerCard(speaker, speakerList, discoveryHint);
         } catch (err) {
             console.warn(`[Dev] ${host} unreachable:`, err.message);
         }

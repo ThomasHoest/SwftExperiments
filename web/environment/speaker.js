@@ -14,8 +14,8 @@
  *   speaker.dispose();              // call when removing from the house
  */
 
-import { BeoClient }              from '../api/beo-client.js';
-import { BeoEvents, BeoEventType } from '../api/beo-events.js';
+import { BeoClient }              from '../api/mozart-client.js';
+import { BeoEvents, BeoEventType } from '../api/mozart-events.js';
 import { logger }                  from '../logger.js';
 
 export class Speaker {
@@ -47,8 +47,8 @@ export class Speaker {
         this.metadata = null;
 
         /**
-         * Current volume state.
-         * @type {{ level: number, muted: boolean }|null}
+         * Current volume level (0–100). Null until the device reports one.
+         * @type {number|null}
          */
         this.volume = null;
 
@@ -77,7 +77,7 @@ export class Speaker {
 
     /** True while the speaker is actively playing audio. */
     get isPlaying() {
-        return this.state === 'playing';
+        return this.state === 'playing' || this.state === 'started';
     }
 
     /**
@@ -158,10 +158,9 @@ export class Speaker {
      * @param {{ value?: string, state?: string }|null} data
      */
     _applyPlaybackState(data) {
-        // The REST response uses "state"; the WebSocket event uses "value".
         const raw = data?.value ?? data?.state;
         if (!raw) return;
-        this.state = raw === 'started' ? 'playing' : raw;
+        this.state = raw;
         this._notify();
     }
 
@@ -192,9 +191,9 @@ export class Speaker {
      * @param {object|null} data
      */
     _applyVolume(data) {
-        const v = data?.volume ?? data;
-        if (v?.level !== undefined) {
-            this.volume = { level: v.level, muted: v.muted ?? false };
+        const level = data?.volume?.level ?? data?.level ?? data?.volume;
+        if (level !== undefined) {
+            this.volume = level.level;
             this._notify();
         }
     }

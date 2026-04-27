@@ -1,5 +1,5 @@
 /**
- * beo-client.js
+ * mozart-client.js
  *
  * REST API client for the Bang & Olufsen Mozart Open API.
  *

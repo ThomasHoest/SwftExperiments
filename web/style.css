@@ -310,6 +310,14 @@ a.btn-mic-retry { display: inline; }
     min-height: 1em;
 }
 
+.speaker-volume {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    align-self: center;
+}
+
 .speaker-battery {
     font-size: 0.7rem;
     color: var(--muted);
