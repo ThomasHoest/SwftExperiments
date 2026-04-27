@@ -22,7 +22,7 @@ public class MdnsDiscovery : IDisposable
             {
                 var hosts = await ZeroconfResolver.ResolveAsync(
                     Protocol,
-                    scanTime: TimeSpan.FromSeconds(3),
+                    scanTime: TimeSpan.FromSeconds(5),
                     cancellationToken: _cts.Token);
 
                 foreach (var host in hosts)
