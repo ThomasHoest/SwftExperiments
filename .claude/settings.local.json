@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"https://raw.githubusercontent.com/bang-olufsen/mozart-open-api/main/mozart-api-5.3.1.108.yaml\")",
+      "Read(//tmp/**)",
+      "Bash(curl -s \"https://api.github.com/repos/bang-olufsen/mozart-open-api/contents/python_client\")",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/bang-olufsen/mozart-open-api/main/python_client/mozart_api/client.py\")",
+      "Bash(curl -s \"https://api.github.com/repos/bang-olufsen/mozart-open-api/contents/python_client/mozart_api\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/bang-olufsen/mozart-open-api/main/python_client/mozart_api/configuration.py\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/bang-olufsen/mozart-open-api/main/python_client/mozart_api/mozart_client.py\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:bang-olufsen.github.io)",
+      "Bash(dotnet run *)"
+    ]
+  }
+}
