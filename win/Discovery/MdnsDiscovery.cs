@@ -1,40 +1,47 @@
-using Makaretu.Dns;
+using Zeroconf;
 using SwftExperiments.Models;
 
 namespace SwftExperiments.Discovery;
 
 public class MdnsDiscovery : IDisposable
 {
-    // B&O Mozart speakers advertise on this service type.
-    private const string ServiceType = "_bangolufsen._tcp";
+    private const string Protocol = "_bangolufsen._tcp.local.";
 
-    private MulticastService? _mdns;
-    private ServiceDiscovery? _sd;
+    private readonly CancellationTokenSource _cts = new();
     private readonly HashSet<string> _found = [];
 
     public event EventHandler<Speaker>? SpeakerFound;
 
-    public void Start()
+    public void Start() => _ = ScanLoopAsync();
+
+    private async Task ScanLoopAsync()
     {
-        _mdns = new MulticastService();
-        _sd   = new ServiceDiscovery(_mdns);
+        while (!_cts.IsCancellationRequested)
+        {
+            try
+            {
+                var hosts = await ZeroconfResolver.ResolveAsync(
+                    Protocol,
+                    scanTime: TimeSpan.FromSeconds(3),
+                    cancellationToken: _cts.Token);
 
-        _sd.ServiceInstanceDiscovered += OnInstanceDiscovered;
+                foreach (var host in hosts)
+                {
+                    var ip = host.IPAddress;
+                    if (string.IsNullOrEmpty(ip) || !_found.Add(ip)) continue;
+                    _ = TryAddSpeakerAsync(ip);
+                }
+            }
+            catch (OperationCanceledException) { break; }
+            catch { }
 
-        _mdns.Start();
-        _sd.QueryServiceInstances(ServiceType);
+            try { await Task.Delay(TimeSpan.FromSeconds(15), _cts.Token); }
+            catch { break; }
+        }
     }
 
-    private async void OnInstanceDiscovered(object? sender, ServiceInstanceDiscoveryEventArgs e)
+    private async Task TryAddSpeakerAsync(string ip)
     {
-        // The response message may include A records in the additional section.
-        var ip = e.Message.AdditionalRecords
-                          .OfType<ARecord>()
-                          .FirstOrDefault()
-                          ?.Address.ToString();
-
-        if (string.IsNullOrEmpty(ip) || !_found.Add(ip)) return;
-
         var speaker = new Speaker(ip);
         try
         {
@@ -48,10 +55,5 @@ public class MdnsDiscovery : IDisposable
         }
     }
 
-    public void Dispose()
-    {
-        _sd?.Dispose();
-        _mdns?.Stop();
-        _mdns?.Dispose();
-    }
+    public void Dispose() => _cts.Cancel();
 }
