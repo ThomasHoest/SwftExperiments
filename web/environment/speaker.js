@@ -117,7 +117,7 @@ export class Speaker {
         ]);
 
         if (identity.status      === 'fulfilled') this._applyIdentity(identity.value);
-        if (playbackState.status === 'fulfilled') this._applyPlaybackState(playbackState.value);
+        if (playbackState.status === 'fulfilled') this._applyPlaybackState(playbackState.value.state);
         if (volume.status        === 'fulfilled') this._applyVolume(volume.value);
         if (battery.status       === 'fulfilled') this._applyBattery(battery.value);
         if (source.status        === 'fulfilled') this._applySource(source.value);
@@ -125,7 +125,7 @@ export class Speaker {
         // Wire up live updates — each event type maps to its local updater.
         this._events
             .on(BeoEventType.PLAYBACK_STATE,    data => this._applyPlaybackState(data))
-            .on(BeoEventType.PLAYBACK_METADATA, data => this._applyMetadata(data))
+            .on(BeoEventType.PLAYBACK_METADATA, data => this._applyMetadata(this._metadataFromEvent(data)))
             .on(BeoEventType.VOLUME,            data => this._applyVolume(data))
             .on(BeoEventType.BATTERY,           data => this._applyBattery(data))
             .on(BeoEventType.PLAYBACK_SOURCE,   data => this._applySource(data));
@@ -182,6 +182,24 @@ export class Speaker {
             durationMs: data.duration           ?? null,
         };
         this._notify();
+    }
+
+    /**
+     * Maps a WebSocketEventPlaybackMetadata eventData payload to the shape
+     * expected by _applyMetadata (mirrors the REST response structure).
+     * @param {object|null} data
+     * @returns {object|null}
+     */
+    _metadataFromEvent(data) {
+        if (!data) return null;
+        return {
+            title:      data.title          ?? null,
+            artist:     data.artistName     ?? null,
+            album:      data.albumName      ?? null,
+            genre:      null,
+            trackImage: data.art?.length ? data.art : null,
+            duration:   data.totalDuration  ?? null,
+        };
     }
 
     /**

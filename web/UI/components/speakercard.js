@@ -58,13 +58,22 @@ function renderCard(card, speaker) {
     icon.className    = 'speaker-icon' + (speaker.isPlaying ? ' playing' : '');
     name.textContent  = speaker.name;
     state.textContent = speaker.state === 'playing'   ? 'Playing'
+                      : speaker.state === 'started'    ? 'Playing'
                       : speaker.state === 'paused'    ? 'Paused'
                       : speaker.state === 'buffering' ? 'Buffering'
                       : 'Idle';
 
-    track.textContent = (speaker.isPlaying && speaker.metadata?.genre)
-        ? speaker.metadata.genre
-        : '';
+    if (speaker.isPlaying) {
+        const { metadata, source } = speaker;
+        const primary   = [metadata?.artist, metadata?.title].filter(Boolean);
+        const secondary = metadata?.genre ?? metadata?.album ?? null;
+        track.textContent = primary.length ? primary.join(' – ')
+                          : secondary      ? [metadata?.artist, secondary].filter(Boolean).join(' – ')
+                          : source         ? source
+                          : '';
+    } else {
+        track.textContent = '';
+    }
 
     if (speaker.volume !== null) {
         volume.textContent = `Vol ${speaker.volume}`;
