@@ -1,26 +1,37 @@
-//
-//  VoiceToText.swift
-//  SwiftExperiments
-//
-//  Created by Thomas Høst Andersen on 23/12/2025.
-//
-import SwiftUI
-internal import Combine
+import AVFoundation
+import Speech
 
-class VoiceToText : ObservableObject {
-    let recorder = AVService()
-    private var transcriptionCallback: (String, Bool) -> Void = {_,_ in }
-    
-    func initialize(transcriptionCallback: @escaping (String, Bool) -> Void){
-        self.transcriptionCallback = transcriptionCallback
-    }
-    
-    func processText(_ text: String, _ error: Bool) {
-        //process command triggers
-        transcriptionCallback(text,error)
-    }
-    
-    func startTranscription() throws {
-        try recorder.startRecording()
+class VoiceToText {
+    private let recorder = AVService()
+
+    var onTranscript: ((String) -> Void)?
+    var onAudioLevel: ((Float) -> Void)?
+
+    func start(onStatus: @escaping (String) -> Void) {
+        onStatus("Initialising microphone…")
+
+        SFSpeechRecognizer.requestAuthorization { [weak self] speechStatus in
+            AVAudioApplication.requestRecordPermission { [weak self] granted in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    guard granted, speechStatus == .authorized else {
+                        onStatus("Microphone access denied")
+                        return
+                    }
+                    self.recorder.onTranscription = { [weak self] text, _ in
+                        self?.onTranscript?(text)
+                    }
+                    self.recorder.onAudioLevel = { [weak self] level in
+                        self?.onAudioLevel?(level)
+                    }
+                    do {
+                        try self.recorder.startRecording()
+                        onStatus("Listening…")
+                    } catch {
+                        onStatus("Microphone unavailable")
+                    }
+                }
+            }
+        }
     }
 }
