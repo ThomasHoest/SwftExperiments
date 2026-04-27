@@ -137,7 +137,7 @@ httpServer.on('upgrade', (req, socket, head) => {
 
         speakerWs.on('close', (code, reason) => {
             logger(`WS proxy closed: ${target} [${code}] ${reason}`);
-            if (browserWs.readyState === WebSocket.OPEN) browserWs.close(code);
+            if (browserWs.readyState === WebSocket.OPEN) browserWs.close(1000);
         });
 
         speakerWs.on('error', (err) => {
@@ -151,7 +151,7 @@ httpServer.on('upgrade', (req, socket, head) => {
 
         browserWs.on('close', (code, reason) => {
             logger(`WS browser closed: ${target} [${code}] ${reason}`);
-            if (speakerWs.readyState === WebSocket.OPEN) speakerWs.close();
+            if (speakerWs.readyState === WebSocket.OPEN) speakerWs.close(1000);
         });
     });
 });
