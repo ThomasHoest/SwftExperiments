@@ -4,7 +4,7 @@ import SwiftUI
 struct VoxioApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HomeView()
                 .preferredColorScheme(.dark)
         }
     }

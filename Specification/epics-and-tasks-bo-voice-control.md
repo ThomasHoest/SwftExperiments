@@ -39,15 +39,15 @@ This document breaks the functional and design specifications into epics and the
 
 Establish the Xcode project, dependency structure, and architectural patterns that all other epics build on.
 
-- [ ] **T-0101** Create Xcode project targeting iOS 26, Swift 6, minimum deployment iOS 25
-- [ ] **T-0102** Set up folder structure: `Features/`, `Core/`, `DesignSystem/`, `Resources/`
+- [x] **T-0101** Create Xcode project targeting iOS 26, Swift 6, minimum deployment iOS 25
+- [x] **T-0102** Set up folder structure: `Features/`, `Core/`, `DesignSystem/`, `Resources/`
 - [ ] **T-0103** Define app architecture pattern (e.g. MVVM + Coordinator or TCA) and document the decision
 - [ ] **T-0104** Add SwiftLint and configure rules file aligned to project conventions
-- [ ] **T-0105** Configure light and dark mode support; verify system colour adaptation on launch
-- [ ] **T-0106** Add design token file (`DesignTokens.swift`) with all spacing, radius, animation, and material constants from the design spec
-- [ ] **T-0107** Add colour asset catalogue with all named colours from the design spec (`accent`, `bgPrimary`, `labelPrimary`, etc.) for both light and dark appearances
+- [x] **T-0105** Configure light and dark mode support; verify system colour adaptation on launch
+- [x] **T-0106** Add design token file (`DesignTokens.swift`) with all spacing, radius, animation, and material constants from the design spec
+- [x] **T-0107** Add colour asset catalogue with all named colours from the design spec (`accent`, `bgPrimary`, `labelPrimary`, etc.) for both light and dark appearances
 - [ ] **T-0108** Set up CI pipeline (e.g. Xcode Cloud or GitHub Actions) with build and test stages
-- [ ] **T-0109** Configure app permissions in `Info.plist`: microphone usage description, local network usage description
+- [x] **T-0109** Configure app permissions in `Info.plist`: microphone usage description, local network usage description
 
 ---
 
@@ -55,19 +55,19 @@ Establish the Xcode project, dependency structure, and architectural patterns th
 
 Build the networking layer that communicates with the Bang & Olufsen Mozart API for all speaker operations.
 
-- [ ] **T-0201** Research and document the Mozart API endpoints required: list speakers, list favorites, play favorite, stop, pause, resume, get volume, set volume, mute, unmute
-- [ ] **T-0202** Create `MozartAPIClient` — a single entry point for all API calls, configured with base URL and auth handling
+- [x] **T-0201** Research and document the Mozart API endpoints required: list speakers, list favorites, play favorite, stop, pause, resume, get volume, set volume, mute, unmute
+- [x] **T-0202** Create `MozartAPIClient` — a single entry point for all API calls, configured with base URL and auth handling
 - [ ] **T-0203** Implement `GET /speakers` — fetch available speakers; parse response into `Speaker` model
-- [ ] **T-0204** Implement `GET /speakers/{id}/favorites` — fetch favorites for a given speaker; parse into `[Favorite]` model
-- [ ] **T-0205** Implement `POST /speakers/{id}/play` — trigger playback of a named favorite
-- [ ] **T-0206** Implement `POST /speakers/{id}/stop` — stop playback
-- [ ] **T-0207** Implement `POST /speakers/{id}/pause` — pause playback
-- [ ] **T-0208** Implement `POST /speakers/{id}/resume` — resume from paused position
-- [ ] **T-0209** Implement `GET /speakers/{id}/volume` — read current volume level (integer 0–100)
-- [ ] **T-0210** Implement `POST /speakers/{id}/volume` — set absolute volume level
-- [ ] **T-0211** Implement `POST /speakers/{id}/mute` and `POST /speakers/{id}/unmute`
-- [ ] **T-0212** Add timeout handling — surface a `MozartError.timeout` when the API does not respond within 5 seconds
-- [ ] **T-0213** Add offline/unreachable detection — surface a `MozartError.unreachable` when the speaker cannot be reached
+- [x] **T-0204** Implement `GET /speakers/{id}/favorites` — fetch favorites for a given speaker; parse into `[Favorite]` model
+- [x] **T-0205** Implement `POST /speakers/{id}/play` — trigger playback of a named favorite
+- [x] **T-0206** Implement `POST /speakers/{id}/stop` — stop playback
+- [x] **T-0207** Implement `POST /speakers/{id}/pause` — pause playback
+- [x] **T-0208** Implement `POST /speakers/{id}/resume` — resume from paused position
+- [x] **T-0209** Implement `GET /speakers/{id}/volume` — read current volume level (integer 0–100)
+- [x] **T-0210** Implement `POST /speakers/{id}/volume` — set absolute volume level
+- [x] **T-0211** Implement `POST /speakers/{id}/mute` and `POST /speakers/{id}/unmute`
+- [x] **T-0212** Add timeout handling — surface a `MozartError.timeout` when the API does not respond within 5 seconds
+- [x] **T-0213** Add offline/unreachable detection — surface a `MozartError.unreachable` when the speaker cannot be reached
 - [ ] **T-0214** Write unit tests for each API method using a mock URLSession; cover success and error cases
 - [ ] **T-0215** Write integration tests against a local Mozart API stub or sandbox environment
 
@@ -77,18 +77,18 @@ Build the networking layer that communicates with the Bang & Olufsen Mozart API 
 
 Implement the full pipeline from microphone input to a structured `VoiceCommand` value that other features can act on.
 
-- [ ] **T-0301** Integrate `SFSpeechRecognizer` with the `en-US` locale; request microphone and speech recognition permissions on first launch
-- [ ] **T-0302** Build `VoiceInputManager` — starts and stops a live `SFSpeechAudioBufferRecognitionRequest`; publishes real-time transcription strings
-- [ ] **T-0303** Implement silence detection — finalise a recognition request after ~1.5 s of silence following speech
-- [ ] **T-0304** Define `VoiceCommand` enum covering all intents: `.playNamed`, `.playDefault`, `.listFavorites`, `.stop`, `.pause`, `.resume`, `.setVolume`, `.adjustVolume`, `.mute`, `.unmute`, `.confirm`, `.cancel`, `.unknown`
-- [ ] **T-0305** Build `CommandParser` — takes a raw transcription string, strips the leading speaker name token, and returns a `VoiceCommand`
-- [ ] **T-0306** Implement intent matching for play-favorite commands: recognise the phrase "play favorite [one|two|three|four]" (spoken number words only, no digits) and resolve to a 1-based index 1–4. Each speaker exposes exactly 4 favorites; if the resolved index exceeds the speaker's favorite count, treat as not-found. No fuzzy matching required.
-- [ ] **T-0307** Implement intent matching for volume commands: parse absolute values ("set volume to 42") and relative values ("up 20", "louder")
-- [ ] **T-0308** Implement intent matching for stop / pause / resume / mute / unmute commands
-- [ ] **T-0309** Implement `.confirm` and `.cancel` recognition ("Yes", "No", "Cancel") for the confirmation step
-- [ ] **T-0310** Handle `.unknown` — any transcription that does not match a known pattern returns `.unknown` with the raw string for error feedback
+- [x] **T-0301** Integrate `SFSpeechRecognizer` with the `en-US` locale; request microphone and speech recognition permissions on first launch
+- [x] **T-0302** Build `VoiceInputManager` — starts and stops a live `SFSpeechAudioBufferRecognitionRequest`; publishes real-time transcription strings
+- [x] **T-0303** Implement silence detection — finalise a recognition request after ~1.5 s of silence following speech
+- [x] **T-0304** Define `VoiceCommand` enum covering all intents: `.playNamed`, `.playDefault`, `.listFavorites`, `.stop`, `.pause`, `.resume`, `.setVolume`, `.adjustVolume`, `.mute`, `.unmute`, `.confirm`, `.cancel`, `.unknown`
+- [x] **T-0305** Build `CommandParser` — takes a raw transcription string, strips the leading speaker name token, and returns a `VoiceCommand`
+- [x] **T-0306** Implement intent matching for play-favorite commands: recognise the phrase "play favorite [one|two|three|four]" (spoken number words only, no digits) and resolve to a 1-based index 1–4. Each speaker exposes exactly 4 favorites; if the resolved index exceeds the speaker's favorite count, treat as not-found. No fuzzy matching required.
+- [x] **T-0307** Implement intent matching for volume commands: parse absolute values ("set volume to 42") and relative values ("up 20", "louder")
+- [x] **T-0308** Implement intent matching for stop / pause / resume / mute / unmute commands
+- [x] **T-0309** Implement `.confirm` and `.cancel` recognition ("Yes", "No", "Cancel") for the confirmation step
+- [x] **T-0310** Handle `.unknown` — any transcription that does not match a known pattern returns `.unknown` with the raw string for error feedback
 - [ ] **T-0311** Write unit tests for `CommandParser` covering all intents, edge cases, and partial matches
-- [ ] **T-0312** Ensure voice recognition is fully stopped and deallocated when the app moves to background
+- [x] **T-0312** Ensure voice recognition is fully stopped and deallocated when the app moves to background
 
 ---
 
@@ -96,13 +96,13 @@ Implement the full pipeline from microphone input to a structured `VoiceCommand`
 
 Discover speakers on the local network via mDNS, maintain a live `SpeakerRegistry`, and route voice commands to the correct speaker. A command may address a speaker explicitly by name or implicitly when exactly one speaker is actively playing.
 
-- [ ] **T-0401** On app launch start an mDNS browser for the `_bangolufsen._tcp.` service type (reusing `MdnsDiscovery`); for each resolved IPv4 address call `Speaker.initialize()` and add the speaker to `SpeakerRegistry` on success; remove it if initialisation throws
+- [x] **T-0401** On app launch start an mDNS browser for the `_bangolufsen._tcp.` service type (reusing `MdnsDiscovery`); for each resolved IPv4 address call `Speaker.initialize()` and add the speaker to `SpeakerRegistry` on success; remove it if initialisation throws
 - [ ] **T-0402** Keep `SpeakerRegistry` live — re-run the mDNS scan on a 15-second interval; add newly appeared speakers and remove speakers whose IPv4 address is no longer resolved
-- [ ] **T-0403** Build `SpeakerNameMatcher` — given the first token(s) of a transcription, returns the best-matching `Speaker` from the registry or `nil`; uses case-insensitive prefix and fuzzy matching (Levenshtein distance ≤ 2) against each speaker's `friendlyName`
-- [ ] **T-0404** Implement implicit active-session addressing — if no speaker name token is found at the head of the transcript AND exactly one speaker in the registry has `isPlaying == true`, route the command to that speaker and set it as `activeSpeaker`; if zero or more than one speaker is playing, fall through to the explicit-name-required error path
-- [ ] **T-0405** Integrate speaker resolution as the first step in the command dispatch pipeline — after resolving the speaker, strip the name token (if present) from the transcript before passing the remainder to `CommandParser`
+- [x] **T-0403** Build `SpeakerNameMatcher` — given the first token(s) of a transcription, returns the best-matching `Speaker` from the registry or `nil`; uses case-insensitive prefix and fuzzy matching (Levenshtein distance ≤ 2) against each speaker's `friendlyName`
+- [x] **T-0404** Implement implicit active-session addressing — if no speaker name token is found at the head of the transcript AND exactly one speaker in the registry has `isPlaying == true`, route the command to that speaker and set it as `activeSpeaker`; if zero or more than one speaker is playing, fall through to the explicit-name-required error path
+- [x] **T-0405** Integrate speaker resolution as the first step in the command dispatch pipeline — after resolving the speaker, strip the name token (if present) from the transcript before passing the remainder to `CommandParser`
 - [ ] **T-0406** When no speaker can be resolved (no name match and no unambiguous active speaker), speak *"Please start your command with a speaker name"* and list discovered speaker names; do not dispatch the command
-- [ ] **T-0407** Expose `SpeakerRegistry.activeSpeaker: Speaker?` — set to the last successfully addressed speaker; used by the implicit active-session path as a secondary fallback when no speaker is playing but one was recently addressed (within the current app session)
+- [x] **T-0407** Expose `SpeakerRegistry.activeSpeaker: Speaker?` — set to the last successfully addressed speaker; used by the implicit active-session path as a secondary fallback when no speaker is playing but one was recently addressed (within the current app session)
 - [ ] **T-0408** Write unit tests for `SpeakerNameMatcher` covering exact match, case variants, minor mispronunciation (distance ≤ 2), distance > 2 (no match), and empty registry
 - [ ] **T-0409** Write unit tests for the implicit active-session path covering: one playing speaker (routes correctly), zero playing speakers (falls through), two playing speakers (falls through), and recently-addressed fallback
 
@@ -112,13 +112,13 @@ Discover speakers on the local network via mDNS, maintain a live `SpeakerRegistr
 
 Implement the three playback-from-favorites user stories end to end.
 
-- [ ] **T-0501** Build `FavoritesService` — wraps `MozartAPIClient.fetchFavorites(for:)` and exposes a method to resolve a spoken name to a `Favorite` using fuzzy matching
+- [x] **T-0501** Build `FavoritesService` — wraps `MozartAPIClient.fetchFavorites(for:)` and exposes a method to resolve a spoken name to a `Favorite` using fuzzy matching
 - [ ] **T-0502** Implement `PlayNamedFavoriteUseCase` — receives `(speaker, favoriteName)`, fetches favorites, resolves the match, builds confirmation string *"Playing [favorite name] on [speaker name]"*, and returns it for confirmation
 - [ ] **T-0503** On confirmation, call `MozartAPIClient.play(favorite:on:)` and verify playback begins within 3 seconds; surface a timeout error if not
 - [ ] **T-0504** Implement "favorite not found" path — speak and display *"[Favorite name] was not found on [speaker name]. Available favorites are: [list]"*
-- [ ] **T-0505** Implement `PlayDefaultFavoriteUseCase` — resolves the last-played favorite from local session state, or falls back to the first favorite in the Mozart API response; builds confirmation string *"Playing [resolved name] on [speaker name]"*
+- [x] **T-0505** Implement `PlayDefaultFavoriteUseCase` — resolves the last-played favorite from local session state, or falls back to the first favorite in the Mozart API response; builds confirmation string *"Playing [resolved name] on [speaker name]"*
 - [ ] **T-0506** Persist last-played favorite per speaker in `UserDefaults` scoped to the session; cleared on app termination
-- [ ] **T-0507** Implement `ListFavoritesUseCase` — fetches favorites live from the Mozart API, builds a spoken list, and appends the prompt *"Say '[Speaker name], play [favorite name]' to start playing"*
+- [x] **T-0507** Implement `ListFavoritesUseCase` — fetches favorites live from the Mozart API, builds a spoken list, and appends the prompt *"Say '[Speaker name], play [favorite name]' to start playing"*
 - [ ] **T-0508** Write unit tests for `FavoritesService` fuzzy matching; cover exact, near-match, and no-match cases
 - [ ] **T-0509** Write unit tests for all three use cases using mock API client and mock speaker registry
 
@@ -183,18 +183,18 @@ Centralise all error states and ensure every failure surfaces a clear, spoken, a
 
 Build the primary screen: idle state, command recognition state, and now-playing state.
 
-- [ ] **T-1001** Implement `HomeView` with full-bleed background showing the user's iOS wallpaper through a Liquid Glass layer; fall back to deep-charcoal gradient if wallpaper is unavailable
-- [ ] **T-1002** Implement `SpeakerCard` — Liquid Glass rounded rect (corner radius 20 pt), horizontally inset 20 pt from screen edges; displays speaker name (SF Pro Display Semibold 34 pt) and playback status subtitle
-- [ ] **T-1003** Implement idle waveform animation — five bars pulsing at ~1 Hz in accent gold (`#C8A97E`) when the app is listening; bars animate to voice amplitude in real time during speech
-- [ ] **T-1004** Implement `SpeakerSelectorPill` — horizontally scrollable Liquid Glass pill row at the bottom of the screen, 12 pt above home indicator; active speaker highlighted with gold tint; snaps to centre on selection
-- [ ] **T-1005** Implement connection status chip — compact Liquid Glass pill in the top trailing corner; green tint for online, gray for offline; uses SF Symbol `wifi.slash` for offline state
-- [ ] **T-1006** Implement card expand animation for command recognition state — scale to 1.02 with spring (damping 0.7, response 0.4 s)
-- [ ] **T-1007** Implement live transcription label below the card during command recognition — SF Pro Text 17 pt; fades in at 0.15 s; text updates with character-by-character reveal
-- [ ] **T-1008** Implement now-playing inset panel within the speaker card — secondary Liquid Glass panel showing track/station name and three-bar animated playback indicator in accent gold
-- [ ] **T-1009** Implement volume track below the card in now-playing state — horizontal Liquid Glass slider, accent gold fill, trailing volume label; display only, not interactive (voice-only control)
-- [ ] **T-1010** Implement iOS 26 materialisation animation on app launch for the speaker card
-- [ ] **T-1011** Implement specular highlight on the speaker card top edge responding to device tilt via CoreMotion
-- [ ] **T-1012** Respect Dynamic Island — no UI elements overlap with the Dynamic Island area
+- [x] **T-1001** Implement `HomeView` with full-bleed background showing the user's iOS wallpaper through a Liquid Glass layer; fall back to deep-charcoal gradient if wallpaper is unavailable
+- [x] **T-1002** Implement `SpeakerCard` — Liquid Glass rounded rect (corner radius 20 pt), horizontally inset 20 pt from screen edges; displays speaker name (SF Pro Display Semibold 34 pt) and playback status subtitle
+- [x] **T-1003** Implement idle waveform animation — five bars pulsing at ~1 Hz in accent gold (`#C8A97E`) when the app is listening; bars animate to voice amplitude in real time during speech
+- [x] **T-1004** Implement `SpeakerSelectorPill` — horizontally scrollable Liquid Glass pill row at the bottom of the screen, 12 pt above home indicator; active speaker highlighted with gold tint; snaps to centre on selection
+- [x] **T-1005** Implement connection status chip — compact Liquid Glass pill in the top trailing corner; green tint for online, gray for offline; uses SF Symbol `wifi.slash` for offline state
+- [x] **T-1006** Implement card expand animation for command recognition state — scale to 1.02 with spring (damping 0.7, response 0.4 s)
+- [x] **T-1007** Implement live transcription label below the card during command recognition — SF Pro Text 17 pt; fades in at 0.15 s; text updates with character-by-character reveal
+- [x] **T-1008** Implement now-playing inset panel within the speaker card — secondary Liquid Glass panel showing track/station name and three-bar animated playback indicator in accent gold
+- [x] **T-1009** Implement volume track below the card in now-playing state — horizontal Liquid Glass slider, accent gold fill, trailing volume label; display only, not interactive (voice-only control)
+- [x] **T-1010** Implement iOS 26 materialisation animation on app launch for the speaker card
+- [x] **T-1011** Implement specular highlight on the speaker card top edge responding to device tilt via CoreMotion
+- [x] **T-1012** Respect Dynamic Island — no UI elements overlap with the Dynamic Island area
 
 ---
 
