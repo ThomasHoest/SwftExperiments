@@ -9,7 +9,7 @@ import Speech
 /// and a fresh request is started automatically.
 class AVService {
     private let engine      = AVAudioEngine()
-    private let recognizer  = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))!
+    private var recognizer: SFSpeechRecognizer
     private var request:    SFSpeechAudioBufferRecognitionRequest?
     private var task:       SFSpeechRecognitionTask?
     private var silenceTimer: Timer?
@@ -22,6 +22,10 @@ class AVService {
     // IPC off Swift's cooperative thread pool and suppresses unsafeForcedSync.
     private let audioQueue = DispatchQueue(label: "com.voxio.audio", qos: .userInitiated)
 
+    init() {
+        recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))!
+    }
+
     // T-0303 — silence gate
     private let silenceThreshold: Float        = 0.01
     private let silenceDuration:  TimeInterval = 1.5
@@ -30,6 +34,19 @@ class AVService {
     var onAudioLevel:    ((Float) -> Void)?
 
     // ── Public ────────────────────────────────────────────────────────────────
+
+    /// Swaps the speech recognizer locale, restarting recording if it was active.
+    func setLocale(_ locale: Locale) {
+        guard let newRecognizer = SFSpeechRecognizer(locale: locale) else {
+            Log.info("[AVService] setLocale: no recognizer available for \(locale.identifier)")
+            return
+        }
+        let wasRunning = !stopped
+        if wasRunning { stopRecording() }
+        recognizer = newRecognizer
+        Log.info("[AVService] locale → \(locale.identifier)")
+        if wasRunning { try? startRecording() }
+    }
 
     func startRecording() throws {
         var startError: Error?

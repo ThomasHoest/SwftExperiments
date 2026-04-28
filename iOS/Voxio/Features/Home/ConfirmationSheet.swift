@@ -5,15 +5,18 @@ struct ConfirmationSheet: View {
     var onConfirm: () -> Void
     var onCancel:  () -> Void
 
+    @ObservedObject private var langService = LanguageService.shared
     @State private var isVisible = false
+
+    private var ui: UIStrings { UIStrings.forLanguage(langService.activeLanguage) }
 
     var body: some View {
         VStack(spacing: 0) {
-            // "or say Yes / No" mic indicator pill (T-1106)
+            // mic indicator pill (T-1106)
             HStack(spacing: 6) {
                 Image(systemName: "mic.fill")
                     .font(.system(size: 11))
-                Text("or say Yes / No")
+                Text(ui.confirmationVoiceHint)
                     .font(.system(size: 13))
             }
             .foregroundStyle(.secondary)
@@ -24,7 +27,7 @@ struct ConfirmationSheet: View {
             .padding(.bottom, 20)
 
             // "About to:" — SF Pro Text 12 pt, label-secondary (T-1103)
-            Text("About to:")
+            Text(ui.confirmationAboutTo)
                 .font(.system(size: 12, weight: .regular))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -46,7 +49,7 @@ struct ConfirmationSheet: View {
                 UINotificationFeedbackGenerator().notificationOccurred(.success) // T-1109
                 onConfirm()
             } label: {
-                Text("Yes")
+                Text(ui.confirmYes)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(Color(hex: "#0D0D14"))
                     .frame(maxWidth: .infinity)
@@ -59,7 +62,7 @@ struct ConfirmationSheet: View {
 
             // No — outlined Liquid Glass (T-1105)
             Button(action: onCancel) {
-                Text("No")
+                Text(ui.confirmNo)
                     .font(.system(size: 17, weight: .medium))
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)

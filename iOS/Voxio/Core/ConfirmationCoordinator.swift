@@ -40,7 +40,7 @@ class ConfirmationCoordinator: NSObject, ObservableObject {
                 guard let self, !Task.isCancelled else { return }
                 Log.info("[Confirmation] timed out — auto-cancelling")
                 resolve(result: false)
-                speak("Action cancelled")
+                speak(CommandStrings.forLanguage(LanguageService.shared.activeLanguage).actionCancelled)
             }
         }
     }
@@ -74,9 +74,13 @@ class ConfirmationCoordinator: NSObject, ObservableObject {
         onSpeechWillStart?()
         let utterance = AVSpeechUtterance(string: text)
         utterance.rate = 0.5
-        // T-0802 — Samantha voice; fall back to system English
-        utterance.voice = AVSpeechSynthesisVoice(identifier: "com.apple.voice.compact.en-US.Samantha")
-            ?? AVSpeechSynthesisVoice(language: "en-US")
+        // T-0802 — language-appropriate TTS voice
+        if LanguageService.shared.activeLanguage == .danish {
+            utterance.voice = AVSpeechSynthesisVoice(language: "da-DK")
+        } else {
+            utterance.voice = AVSpeechSynthesisVoice(identifier: "com.apple.voice.compact.en-US.Samantha")
+                ?? AVSpeechSynthesisVoice(language: "en-US")
+        }
         synthesizer.speak(utterance)
     }
 }

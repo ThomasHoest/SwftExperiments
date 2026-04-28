@@ -4,6 +4,7 @@ struct HomeView: View {
     @StateObject private var registry      = SpeakerRegistry()
     @StateObject private var coordinator   = ConfirmationCoordinator()
     @StateObject private var motionManager = MotionManager()
+    @ObservedObject private var langService = LanguageService.shared
     @State private var voiceToText    = VoiceToText()
     @State private var transcript     = ""
     @State private var micStatus      = "Initialising microphone…"
@@ -15,6 +16,9 @@ struct HomeView: View {
     @State private var successMessage = ""
 
     private let errorService = ErrorResponseService()
+
+    private var cs: CommandStrings { CommandStrings.forLanguage(langService.activeLanguage) }
+    private var ui: UIStrings      { UIStrings.forLanguage(langService.activeLanguage) }
 
     private var displayedSpeaker: Speaker? {
         selectedSpeaker ?? registry.speakers.first
@@ -70,6 +74,9 @@ struct HomeView: View {
             } else if selectedSpeaker == nil {
                 selectedSpeaker = registry.speakers.first
             }
+        }
+        .onChange(of: langService.activeLanguage) { _, language in
+            voiceToText.setLanguage(language)
         }
         .sheet(isPresented: Binding(
             get: { coordinator.isPending },
@@ -131,7 +138,7 @@ struct HomeView: View {
             Image(systemName: "speaker.slash")
                 .font(.system(size: 40))
                 .foregroundStyle(.secondary)
-            Text("Looking for speakers…")
+            Text(ui.lookingForSpeakers)
                 .font(BeoType.body)
                 .foregroundStyle(.secondary)
         }
@@ -200,7 +207,7 @@ struct HomeView: View {
 
                 // While waiting for confirmation, only accept confirm/cancel
                 if coordinator.isPending {
-                    let cmd = CommandParser().parse(text)
+                    let cmd = CommandParser(language: langService.activeLanguage).parse(text)
                     if cmd == .confirm { coordinator.confirm() }
                     else if cmd == .cancel { coordinator.cancel() }
                     return
@@ -217,7 +224,7 @@ struct HomeView: View {
                 }
                 selectedSpeaker = speaker
                 let commandText = remaining.isEmpty ? text : remaining.joined(separator: " ")
-                let command = CommandParser().parse(commandText)
+                let command = CommandParser(language: langService.activeLanguage).parse(commandText)
                 Log.info("[HomeView] → \(speaker.name): \(command)")
 
                 // Commands that need no confirmation (list, confirm, cancel, unknown)
@@ -247,17 +254,17 @@ struct HomeView: View {
 
     private func confirmationMessage(for command: VoiceCommand, speaker: Speaker) -> String? {
         switch command {
-        case .playFavorite(let i):  return "Playing favorite \(i) on \(speaker.name)"
-        case .playDefault:          return "Playing on \(speaker.name)"
-        case .stop:                 return "Stopping playback on \(speaker.name)"
-        case .pause:                return "Pausing \(speaker.name)"
-        case .resume:               return "Resuming \(speaker.name)"
-        case .setVolume(let level): return "Setting \(speaker.name) volume to \(level)"
-        case .adjustVolume(let d):  return "Turning \(speaker.name) volume \(d > 0 ? "up" : "down") by \(abs(d))"
-        case .mute:
-            let vol = speaker.volume.map { " (currently at volume \($0))" } ?? ""
-            return "Muting \(speaker.name)\(vol)"
-        case .unmute:               return "Unmuting \(speaker.name)"
+        case .playFavorite(let i):  return cs.playFavorite(i, speaker.name)
+        case .playDefault:          return cs.playDefault(speaker.name)
+        case .stop:                 return cs.stop(speaker.name)
+        case .pause:                return cs.pause(speaker.name)
+        case .resume:               return cs.resume(speaker.name)
+        case .setVolume(let level): return cs.setVolume(speaker.name, level)
+        case .adjustVolume(let d):  return d > 0
+            ? cs.adjustVolumeUp(speaker.name, abs(d))
+            : cs.adjustVolumeDown(speaker.name, abs(d))
+        case .mute:                 return cs.mute(speaker.name, speaker.volume)
+        case .unmute:               return cs.unmute(speaker.name)
         case .listFavorites, .confirm, .cancel, .unknown:
             return nil
         }
@@ -265,13 +272,13 @@ struct HomeView: View {
 
     private func completionMessage(for command: VoiceCommand, speaker: Speaker) -> String? {
         switch command {
-        case .stop:                 return "\(speaker.name) stopped"
-        case .pause:                return "\(speaker.name) paused"
-        case .resume:               return "\(speaker.name) resumed"
-        case .setVolume(let level): return "\(speaker.name) volume is now \(level)"
-        case .adjustVolume:         return "\(speaker.name) volume adjusted"
-        case .mute:                 return "\(speaker.name) muted"
-        case .unmute:               return "\(speaker.name) unmuted"
+        case .stop:                 return cs.stopped(speaker.name)
+        case .pause:                return cs.paused(speaker.name)
+        case .resume:               return cs.resumed(speaker.name)
+        case .setVolume(let level): return cs.volumeSet(speaker.name, level)
+        case .adjustVolume:         return cs.volumeAdjusted(speaker.name)
+        case .mute:                 return cs.muted(speaker.name)
+        case .unmute:               return cs.unmuted(speaker.name)
         default:                    return nil
         }
     }
@@ -291,7 +298,7 @@ struct HomeView: View {
         case .listFavorites:
             let names = await registry.favorites.listFavorites(for: speaker)
             let list  = names.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: ", ")
-            coordinator.announce("Favorites on \(speaker.name): \(list)")
+            coordinator.announce(cs.listFavoritesResult(speaker.name, list))
             return true
         case .stop:
             guard speaker.isPlaying else {
