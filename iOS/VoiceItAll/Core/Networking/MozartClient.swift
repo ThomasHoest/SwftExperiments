@@ -29,7 +29,7 @@ class MozartClient {
         let data = try await send(path, method: "GET")
         do { return try decoder.decode(T.self, from: data) } catch {
             Log.error("[\(host)] GET \(path) decode error: \(error)")
-            throw error
+            throw MozartError.invalidResponse
         }
     }
 
@@ -42,7 +42,7 @@ class MozartClient {
     }
 
     private func send(_ path: String, method: String, body: Data? = nil) async throws -> Data {
-        guard let url = URL(string: baseUrl + path) else { throw URLError(.badURL) }
+        guard let url = URL(string: baseUrl + path) else { throw MozartError.invalidResponse }
         Log.info("[\(host)] \(method) \(path)")
         var req = URLRequest(url: url)
         req.httpMethod = method
@@ -50,14 +50,29 @@ class MozartClient {
             req.httpBody = body
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
-        let (data, response) = try await session.data(for: req)
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard (200..<300).contains(status) else {
-            Log.error("[\(host)] \(method) \(path) → \(status)")
-            throw URLError(.badServerResponse)
+        do {
+            let (data, response) = try await session.data(for: req)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            if status == 404 { throw MozartError.notFound }
+            guard (200..<300).contains(status) else {
+                Log.error("[\(host)] \(method) \(path) → \(status)")
+                throw MozartError.httpError(status)
+            }
+            Log.info("[\(host)] \(method) \(path) → \(status)")
+            return data
+        } catch let error as MozartError {
+            throw error
+        } catch let urlError as URLError {
+            switch urlError.code {
+            case .timedOut:
+                throw MozartError.timeout
+            case .cannotConnectToHost, .networkConnectionLost, .notConnectedToInternet,
+                 .cannotFindHost, .dnsLookupFailed:
+                throw MozartError.unreachable
+            default:
+                throw MozartError.unreachable
+            }
         }
-        Log.info("[\(host)] \(method) \(path) → \(status)")
-        return data
     }
 
     private func encode<T: Encodable>(_ value: T) throws -> Data {
@@ -163,6 +178,20 @@ class MozartClient {
     /// Clears all tracks from the playback queue.
     func clearQueue() async throws {
         try await postVoid("/playback/queue/clear")
+    }
+
+    // ── Favorites ─────────────────────────────────────────────────────────────
+
+    /// Returns the list of favorites (presets) stored on this speaker.
+    func getFavorites() async throws -> [Favorite] {
+        try await get("/content/favorites")
+    }
+
+    /// Activates a favorite by its ID, starting playback immediately.
+    /// - Parameter id: Favorite ID as returned by ``getFavorites()``.
+    func playFavorite(id: String) async throws {
+        let encoded = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        try await postVoid("/content/favorites/\(encoded)")
     }
 
     // ── Volume ────────────────────────────────────────────────────────────────

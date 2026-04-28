@@ -48,14 +48,14 @@ struct ContentView: View {
                     .font(.custom("Georgia", size: 22).italic())
                     .multilineTextAlignment(.center)
                     .foregroundColor(BeoColor.text)
-                    .padding(.horizontal, 40)
-                    .padding(.top, 32)
+                    .padding(.horizontal, Spacing.s24 * 2)
+                    .padding(.top, Spacing.s24 + Spacing.s8)
             }
 
             Text(micStatus)
                 .font(.system(size: 11))
                 .foregroundColor(BeoColor.muted)
-                .padding(.top, 16)
+                .padding(.top, Spacing.s16)
 
             Spacer()
         }
@@ -81,18 +81,18 @@ struct ContentView: View {
             Text("S P E A K E R S")
                 .font(.system(size: 11, weight: .regular))
                 .foregroundColor(BeoColor.accent)
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 12)
+                .padding(.horizontal, Spacing.s20)
+                .padding(.top, Spacing.s20)
+                .padding(.bottom, Spacing.s12)
 
             ScrollView {
-                LazyVStack(spacing: 8) {
+                LazyVStack(spacing: Spacing.s8) {
                     ForEach(discovery.speakers) { speaker in
                         SpeakerCardView(speaker: speaker)
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, Spacing.s20)
                     }
                 }
-                .padding(.bottom, 20)
+                .padding(.bottom, Spacing.s20)
             }
         }
     }
@@ -132,7 +132,7 @@ struct ContentView: View {
         breathingTask = Task { @MainActor in
             var expand = true
             while !Task.isCancelled {
-                withAnimation(.easeInOut(duration: 2)) {
+                withAnimation(BeoAnimation.spring) {
                     orbScale = expand ? 1.045 : 1.0
                 }
                 expand.toggle()
