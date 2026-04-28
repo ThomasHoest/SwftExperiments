@@ -1,32 +1,25 @@
 import Foundation
 import Observation
 
-struct SpeakerMetadata {
-    var title: String?
-    var artist: String?
-    var album: String?
-    var genre: String?
-}
-
 @Observable @MainActor
 class Speaker: Identifiable {
     let id = UUID()
     let host: String
     var name: String
-    var state = "unknown"
-    var metadata: SpeakerMetadata?
+    var state: PlaybackValue = .unknown
+    var metadata: PlaybackMetadata?
     var volume: Int?
     var source: String?
     var batteryLevel: Int?
 
-    var isPlaying: Bool { state == "playing" || state == "started" }
+    var isPlaying: Bool { state == .playing || state == .started }
 
     var stateDisplay: String {
         switch state {
-        case "playing", "started": return "Playing"
-        case "paused":             return "Paused"
-        case "buffering":          return "Buffering"
-        default:                   return "Idle"
+        case .playing, .started: return "Playing"
+        case .paused:            return "Paused"
+        case .buffering:         return "Buffering"
+        default:                 return "Idle"
         }
     }
 
@@ -34,8 +27,8 @@ class Speaker: Identifiable {
         guard isPlaying else { return "" }
         let parts = [metadata?.artist, metadata?.title].compactMap { $0 }.filter { !$0.isEmpty }
         if !parts.isEmpty { return parts.joined(separator: " – ") }
-        if let g = metadata?.genre,  !g.isEmpty { return g }
-        if let a = metadata?.album,  !a.isEmpty { return a }
+        if let g = metadata?.genre, !g.isEmpty { return g }
+        if let a = metadata?.album, !a.isEmpty { return a }
         return source ?? ""
     }
 
@@ -54,11 +47,8 @@ class Speaker: Identifiable {
 
     func initialize() async throws {
         Log.info("[\(host)] initializing")
-        guard let identity = await client.get("/beolink/self") else {
-            Log.error("[\(host)] failed to reach /beolink/self — discarding")
-            throw URLError(.cannotConnectToHost)
-        }
-        if let n = identity["friendlyName"] as? String {
+        let identity = try await client.getSelf()
+        if let n = identity.friendlyName {
             name = n
             Log.info("[\(host)] identified as \(n)")
         }
@@ -69,84 +59,73 @@ class Speaker: Identifiable {
             g.addTask { await self.loadBattery() }
             g.addTask { await self.loadActiveSource() }
         }
-        Log.info("[\(name)] initial state — state:\(state) vol:\(volume.map(String.init) ?? "?") src:\(source ?? "?")")
+        Log.info("[\(name)] initial state — state:\(state.rawValue) vol:\(volume.map(String.init) ?? "?") src:\(source ?? "?")")
 
-        events.onEvent = { [weak self] type, data in
-            Task { @MainActor in self?.handleEvent(eventType: type, data: data) }
+        events.onEvent = { [weak self] event in
+            Task { @MainActor in self?.handleEvent(event) }
         }
         events.connect()
     }
 
     private func loadPlaybackState() async {
-        guard let d = await client.get("/playback/state"),
-              let s = d["state"] as? String else { return }
-        state = s
+        guard let ps = try? await client.getPlaybackState() else { return }
+        state = ps.value
     }
 
     private func loadVolume() async {
-        guard let d   = await client.get("/sound/volume"),
-              let vol = d["volume"] as? [String: Any],
-              let lev = vol["level"] as? Int else { return }
-        volume = lev
+        guard let vol = try? await client.getVolume() else { return }
+        volume = vol.volume.level
     }
 
     private func loadBattery() async {
-        guard let d   = await client.get("/battery"),
-              let lev = d["batteryLevel"] as? Int else { return }
-        let charging = d["isCharging"] as? Bool ?? false
-        if lev > 0 || charging { batteryLevel = lev }
+        guard let bat = try? await client.getBattery() else { return }
+        if bat.batteryLevel > 0 || bat.isCharging { batteryLevel = bat.batteryLevel }
     }
 
     private func loadActiveSource() async {
-        guard let d = await client.get("/playback/sources/active") else { return }
-        let name = (d["friendlyName"] as? String) ?? (d["id"] as? String)
-        if let name { source = name }
+        guard let src = try? await client.getActiveSource() else { return }
+        source = src.displayName
     }
 
-    private func handleEvent(eventType: String, data: [String: Any]) {
-        switch eventType {
-        case "WebSocketEventPlaybackState":
-            if let v = data["value"] as? String {
-                Log.verbose("[\(name)] playback state → \(v)")
-                state = v
-            }
+    private func handleEvent(_ event: BeoEvent) {
+        switch event {
+        case .playbackState(let e):
+            Log.verbose("[\(name)] playback state → \(e.value.rawValue)")
+            state = e.value
 
-        case "WebSocketEventPlaybackMetadata":
-            let title  = data["title"]      as? String
-            let artist = data["artistName"] as? String
-            Log.verbose("[\(name)] metadata → \(artist ?? "?") – \(title ?? "?")")
-            metadata = SpeakerMetadata(
-                title:  title,
-                artist: artist,
-                album:  data["albumName"] as? String,
-                genre:  nil
+        case .playbackMetadata(let e):
+            Log.verbose("[\(name)] metadata → \(e.artistName ?? "?") – \(e.title ?? "?")")
+            metadata = PlaybackMetadata(
+                title:      e.title,
+                artist:     e.artistName,
+                album:      e.albumName,
+                genre:      e.genre,
+                artworkUrl: nil,
+                durationMs: nil
             )
 
-        case "WebSocketEventVolume":
-            if let vol = data["volume"] as? [String: Any],
-               let lev = vol["level"] as? Int {
-                Log.verbose("[\(name)] volume → \(lev)")
-                volume = lev
+        case .volume(let e):
+            Log.verbose("[\(name)] volume → \(e.volume.level)")
+            volume = e.volume.level
+
+        case .battery(let e):
+            if e.batteryLevel > 0 || e.isCharging {
+                Log.verbose("[\(name)] battery → \(e.batteryLevel)% charging:\(e.isCharging)")
+                batteryLevel = e.batteryLevel
             }
 
-        case "WebSocketEventBattery":
-            if let lev = data["batteryLevel"] as? Int {
-                let charging = data["isCharging"] as? Bool ?? false
-                if lev > 0 || charging {
-                    Log.verbose("[\(name)] battery → \(lev)% charging:\(charging)")
-                    batteryLevel = lev
-                }
-            }
+        case .playbackSource(let e):
+            Log.verbose("[\(name)] source → \(e.displayName ?? "?")")
+            if let src = e.displayName { source = src }
 
-        case "WebSocketEventPlaybackSource":
-            let src = (data["friendlyName"] as? String) ?? (data["id"] as? String)
-            if let src {
-                Log.verbose("[\(name)] source → \(src)")
-                source = src
-            }
+        case .power(let e):
+            Log.verbose("[\(name)] power → \(e.state.rawValue)")
 
-        default:
-            Log.verbose("[\(name)] unhandled event: \(eventType)")
+        case .progress:
+            break
+
+        case .unknown(let type):
+            Log.verbose("[\(name)] unhandled event: \(type)")
         }
     }
 
