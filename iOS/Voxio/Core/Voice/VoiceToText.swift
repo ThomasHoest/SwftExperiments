@@ -15,6 +15,13 @@ class VoiceToText {
     /// Called once per finalised utterance with the parsed command.
     var onCommand: ((VoiceCommand) -> Void)?
 
+    /// Suspends transcription callbacks while keeping the audio engine alive.
+    /// Call before TTS playback to prevent feedback loops.
+    func pauseRecognition()  { recorder.mute() }
+
+    /// Resumes transcription after a pause.
+    func resumeRecognition() { recorder.unmute() }
+
     func start(onStatus: @escaping (String) -> Void) {
         onStatus("Initialising microphone…")
 

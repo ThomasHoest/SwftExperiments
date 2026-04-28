@@ -2,15 +2,16 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject private var registry      = SpeakerRegistry()
+    @StateObject private var coordinator   = ConfirmationCoordinator()
     @StateObject private var motionManager = MotionManager()
-    @State private var voiceToText   = VoiceToText()
-    @State private var transcript    = ""
-    @State private var micStatus     = "Initialising microphone…"
-    @State private var audioLevel:   Float   = 0
-    @State private var isListening   = false
-    @State private var isCommandActive = false
+    @State private var voiceToText    = VoiceToText()
+    @State private var transcript     = ""
+    @State private var micStatus      = "Initialising microphone…"
+    @State private var audioLevel:    Float   = 0
+    @State private var isListening    = false
+    @State private var isCommandActive  = false
     @State private var selectedSpeaker: Speaker?
-    @State private var hasAppeared   = false
+    @State private var hasAppeared    = false
 
     private var displayedSpeaker: Speaker? {
         selectedSpeaker ?? registry.speakers.first
@@ -49,6 +50,18 @@ struct HomeView: View {
                 selectedSpeaker = registry.speakers.first
             } else if selectedSpeaker == nil {
                 selectedSpeaker = registry.speakers.first
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { coordinator.isPending },
+            set: { if !$0 { coordinator.cancel() } }
+        )) {
+            if case .pending(let message) = coordinator.state {
+                ConfirmationSheet(
+                    message: message,
+                    onConfirm: { coordinator.confirm() },
+                    onCancel:  { coordinator.cancel() }
+                )
             }
         }
     }
@@ -146,6 +159,10 @@ struct HomeView: View {
         registry.start()
         motionManager.start()
 
+        // Wire TTS pause/resume — prevents synthesizer output feeding back into recognition
+        coordinator.onSpeechWillStart = { [self] in voiceToText.pauseRecognition() }
+        coordinator.onSpeechDidEnd    = { [self] in voiceToText.resumeRecognition() }
+
         voiceToText.onTranscript = { text in
             DispatchQueue.main.async {
                 transcript = text
@@ -161,6 +178,15 @@ struct HomeView: View {
         voiceToText.onFinalTranscript = { text in
             Task { @MainActor in
                 isCommandActive = false
+
+                // While waiting for confirmation, only accept confirm/cancel
+                if coordinator.isPending {
+                    let cmd = CommandParser().parse(text)
+                    if cmd == .confirm { coordinator.confirm() }
+                    else if cmd == .cancel { coordinator.cancel() }
+                    return
+                }
+
                 let words = text.lowercased()
                     .components(separatedBy: .whitespaces)
                     .filter { !$0.isEmpty }
@@ -172,11 +198,55 @@ struct HomeView: View {
                 let commandText = remaining.isEmpty ? text : remaining.joined(separator: " ")
                 let command = CommandParser().parse(commandText)
                 Log.info("[HomeView] → \(speaker.name): \(command)")
-                await dispatch(command: command, to: speaker)
+
+                // Commands that need no confirmation (list, confirm, cancel, unknown)
+                guard let confirmMsg = confirmationMessage(for: command, speaker: speaker) else {
+                    await dispatch(command: command, to: speaker)
+                    return
+                }
+
+                let confirmed = await coordinator.request(message: confirmMsg)
+                if confirmed {
+                    await dispatch(command: command, to: speaker)
+                    if let completion = completionMessage(for: command, speaker: speaker) {
+                        coordinator.announce(completion)
+                    }
+                }
             }
         }
         voiceToText.start { status in
             micStatus = status
+        }
+    }
+
+    // ── Confirmation messages ─────────────────────────────────────────────────
+
+    private func confirmationMessage(for command: VoiceCommand, speaker: Speaker) -> String? {
+        switch command {
+        case .playFavorite(let i):  return "Playing favorite \(i) on \(speaker.name)"
+        case .playDefault:          return "Playing on \(speaker.name)"
+        case .stop:                 return "Stopping \(speaker.name)"
+        case .pause:                return "Pausing \(speaker.name)"
+        case .resume:               return "Resuming \(speaker.name)"
+        case .setVolume(let level): return "Setting \(speaker.name) volume to \(level)"
+        case .adjustVolume(let d):  return "Turning \(speaker.name) volume \(d > 0 ? "up" : "down") by \(abs(d))"
+        case .mute:                 return "Muting \(speaker.name)"
+        case .unmute:               return "Unmuting \(speaker.name)"
+        case .listFavorites, .confirm, .cancel, .unknown:
+            return nil
+        }
+    }
+
+    private func completionMessage(for command: VoiceCommand, speaker: Speaker) -> String? {
+        switch command {
+        case .stop:                 return "\(speaker.name) stopped"
+        case .pause:                return "\(speaker.name) paused"
+        case .resume:               return "\(speaker.name) resumed"
+        case .setVolume(let level): return "\(speaker.name) volume is now \(level)"
+        case .adjustVolume:         return "\(speaker.name) volume adjusted"
+        case .mute:                 return "\(speaker.name) muted"
+        case .unmute:               return "\(speaker.name) unmuted"
+        default:                    return nil
         }
     }
 
@@ -191,7 +261,8 @@ struct HomeView: View {
             await registry.favorites.playDefault(on: speaker)
         case .listFavorites:
             let names = await registry.favorites.listFavorites(for: speaker)
-            Log.info("[Favorites] \(speaker.name): \(names.joined(separator: ", "))")
+            let list  = names.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: ", ")
+            coordinator.announce("Favorites on \(speaker.name): \(list)")
         case .stop:
             try? await speaker.stop()
         case .pause:

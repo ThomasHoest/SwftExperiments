@@ -15,6 +15,7 @@ class AVService {
     private var silenceTimer: Timer?
     private var hasSpeech   = false
     private var stopped     = true
+    private var isMuted     = false
 
     // T-0303 — silence gate
     private let silenceThreshold: Float        = 0.01
@@ -46,6 +47,29 @@ class AVService {
         task?.cancel()
     }
 
+    /// Suspends recognition while the engine keeps running — used to prevent
+    /// TTS output from being transcribed as voice commands.
+    func mute() {
+        guard !isMuted else { return }
+        isMuted = true
+        silenceTimer?.invalidate()
+        silenceTimer = nil
+        hasSpeech = false
+        task?.cancel()
+        task = nil
+        request?.endAudio()
+        request = nil
+        Log.verbose("[AVService] muted")
+    }
+
+    /// Resumes recognition with a fresh request after a mute period.
+    func unmute() {
+        guard isMuted else { return }
+        isMuted = false
+        startRequest()
+        Log.verbose("[AVService] unmuted")
+    }
+
     // ── Private ───────────────────────────────────────────────────────────────
 
     /// Installs a single audio tap that feeds audio to the current request
@@ -55,14 +79,15 @@ class AVService {
         let inputNode = engine.inputNode
         let format    = inputNode.outputFormat(forBus: 0)
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
-            self?.request?.append(buffer)
-            guard let self, let data = buffer.floatChannelData?[0] else { return }
+            guard let self else { return }
+            if !self.isMuted { self.request?.append(buffer) }
+            guard let data = buffer.floatChannelData?[0] else { return }
             let frames = Int(buffer.frameLength)
             let rms    = Float(sqrt(
                 (0..<frames).reduce(0.0) { $0 + Double(data[$1] * data[$1]) } / Double(frames)
             ))
             self.onAudioLevel?(rms)
-            DispatchQueue.main.async { self.trackSilence(rms: rms) }
+            if !self.isMuted { DispatchQueue.main.async { self.trackSilence(rms: rms) } }
         }
         engine.prepare()
     }
@@ -76,7 +101,7 @@ class AVService {
         request = req
 
         task = recognizer.recognitionTask(with: req) { [weak self] result, error in
-            guard let self, !self.stopped else { return }
+            guard let self, !self.stopped, !self.isMuted else { return }
 
             if let result {
                 self.onTranscription?(result.bestTranscription.formattedString, result.isFinal)
