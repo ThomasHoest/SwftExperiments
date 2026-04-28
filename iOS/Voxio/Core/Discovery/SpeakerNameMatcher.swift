@@ -9,12 +9,15 @@ struct SpeakerNameMatcher {
     func match(words: [String], in speakers: [Speaker]) -> (Speaker, tokensConsumed: Int)? {
         guard !speakers.isEmpty, !words.isEmpty else { return nil }
 
+        Log.verbose("[SpeakerMatcher] resolving from words=\(words) against \(speakers.map(\.name))")
+
         var best: (speaker: Speaker, tokens: Int, distance: Int)?
 
         for tokenCount in 1...min(3, words.count) {
             let candidate = words.prefix(tokenCount).joined(separator: " ")
             for speaker in speakers {
                 let d = levenshtein(candidate, speaker.name.lowercased())
+                Log.verbose("[SpeakerMatcher] candidate=\"\(candidate)\" vs \"\(speaker.name)\" distance=\(d)")
                 guard d <= 2 else { continue }
                 if best == nil || d < best!.distance {
                     best = (speaker, tokenCount, d)
@@ -24,6 +27,11 @@ struct SpeakerNameMatcher {
             if let b = best, b.distance == 0 { break }
         }
 
+        if let b = best {
+            Log.info("[SpeakerMatcher] matched \"\(b.speaker.name)\" (distance=\(b.distance), tokens=\(b.tokens))")
+        } else {
+            Log.info("[SpeakerMatcher] no match for words=\(words)")
+        }
         return best.map { ($0.speaker, $0.tokens) }
     }
 

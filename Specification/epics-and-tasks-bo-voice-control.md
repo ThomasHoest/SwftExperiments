@@ -101,7 +101,7 @@ Discover speakers on the local network via mDNS, maintain a live `SpeakerRegistr
 - [x] **T-0403** Build `SpeakerNameMatcher` — given the first token(s) of a transcription, returns the best-matching `Speaker` from the registry or `nil`; uses case-insensitive prefix and fuzzy matching (Levenshtein distance ≤ 2) against each speaker's `friendlyName`
 - [x] **T-0404** Implement implicit active-session addressing — if no speaker name token is found at the head of the transcript AND exactly one speaker in the registry has `isPlaying == true`, route the command to that speaker and set it as `activeSpeaker`; if zero or more than one speaker is playing, fall through to the explicit-name-required error path
 - [x] **T-0405** Integrate speaker resolution as the first step in the command dispatch pipeline — after resolving the speaker, strip the name token (if present) from the transcript before passing the remainder to `CommandParser`
-- [ ] **T-0406** When no speaker can be resolved (no name match and no unambiguous active speaker), speak *"Please start your command with a speaker name"* and list discovered speaker names; do not dispatch the command
+- [x] **T-0406** When no speaker can be resolved (no name match and no unambiguous active speaker), speak *"Please start your command with a speaker name"* and list discovered speaker names; do not dispatch the command
 - [x] **T-0407** Expose `SpeakerRegistry.activeSpeaker: Speaker?` — set to the last successfully addressed speaker; used by the implicit active-session path as a secondary fallback when no speaker is playing but one was recently addressed (within the current app session)
 - [ ] **T-0408** Write unit tests for `SpeakerNameMatcher` covering exact match, case variants, minor mispronunciation (distance ≤ 2), distance > 2 (no match), and empty registry
 - [ ] **T-0409** Write unit tests for the implicit active-session path covering: one playing speaker (routes correctly), zero playing speakers (falls through), two playing speakers (falls through), and recently-addressed fallback
@@ -156,12 +156,12 @@ Implement absolute volume, relative volume adjustment, mute, and unmute.
 
 Implement the cross-cutting confirmation pattern shared by all commands — read-back, voice confirmation, and spoken completion.
 
-- [ ] **T-0801** Build `ConfirmationCoordinator` — receives a confirmation string from any use case; speaks it aloud via `AVSpeechSynthesizer`; publishes `.pending` state to the UI; listens for `.confirm` or `.cancel` from `VoiceInputManager`
-- [ ] **T-0802** Configure `AVSpeechSynthesizer` with `com.apple.voice.compact.en-US.Samantha` voice, speech rate 0.5; fall back to system default English if voice is unavailable
-- [ ] **T-0803** Ensure voice recognition is paused while `AVSpeechSynthesizer` is speaking to prevent feedback loops; resume recognition immediately after speech ends
-- [ ] **T-0804** Implement tap-to-confirm fallback — "Yes" and "No" buttons in the confirmation sheet trigger the same `.confirm` / `.cancel` path as voice
-- [ ] **T-0805** Implement confirmation timeout — if neither voice nor tap confirmation is received within 10 seconds, auto-cancel and speak *"Action cancelled"*
-- [ ] **T-0806** Implement post-action spoken completion feedback (e.g. *"[Speaker name] volume is now [value]"*) for use cases that specify it
+- [x] **T-0801** Build `ConfirmationCoordinator` — receives a confirmation string from any use case; speaks it aloud via `AVSpeechSynthesizer`; publishes `.pending` state to the UI; listens for `.confirm` or `.cancel` from `VoiceInputManager`
+- [x] **T-0802** Configure `AVSpeechSynthesizer` with `com.apple.voice.compact.en-US.Samantha` voice, speech rate 0.5; fall back to system default English if voice is unavailable
+- [x] **T-0803** Ensure voice recognition is paused while `AVSpeechSynthesizer` is speaking to prevent feedback loops; resume recognition immediately after speech ends
+- [x] **T-0804** Implement tap-to-confirm fallback — "Yes" and "No" buttons in the confirmation sheet trigger the same `.confirm` / `.cancel` path as voice
+- [x] **T-0805** Implement confirmation timeout — if neither voice nor tap confirmation is received within 10 seconds, auto-cancel and speak *"Action cancelled"*
+- [x] **T-0806** Implement post-action spoken completion feedback (e.g. *"[Speaker name] volume is now [value]"*) for use cases that specify it
 - [ ] **T-0807** Write unit tests for `ConfirmationCoordinator`; cover confirm-by-voice, cancel-by-voice, confirm-by-tap, cancel-by-tap, and timeout paths
 
 ---
@@ -170,10 +170,10 @@ Implement the cross-cutting confirmation pattern shared by all commands — read
 
 Centralise all error states and ensure every failure surfaces a clear, spoken, and visual response.
 
-- [ ] **T-0901** Define `AppError` enum covering all error cases from the functional spec: `.noSpeakerSpoken`, `.speakerNotFound`, `.favoriteNotFound`, `.speakerUnreachable`, `.nothingPlaying`, `.volumeAtLimit`, `.pauseNotSupported`, `.alreadyMuted`, `.voiceNotRecognised`, `.apiTimeout`
-- [ ] **T-0902** Build `ErrorResponseService` — maps each `AppError` to its exact spoken and display string from the functional spec
-- [ ] **T-0903** Ensure all use cases surface errors through `ErrorResponseService` rather than ad-hoc strings
-- [ ] **T-0904** Implement graceful API degradation — when `MozartError.timeout` or `MozartError.unreachable` is received, surface the appropriate `AppError` without crashing
+- [x] **T-0901** Define `AppError` enum covering all error cases from the functional spec: `.noSpeakerSpoken`, `.speakerNotFound`, `.favoriteNotFound`, `.speakerUnreachable`, `.nothingPlaying`, `.volumeAtLimit`, `.pauseNotSupported`, `.alreadyMuted`, `.voiceNotRecognised`, `.apiTimeout`
+- [x] **T-0902** Build `ErrorResponseService` — maps each `AppError` to its exact spoken and display string from the functional spec
+- [x] **T-0903** Ensure all use cases surface errors through `ErrorResponseService` rather than ad-hoc strings
+- [x] **T-0904** Implement graceful API degradation — when `MozartError.timeout` or `MozartError.unreachable` is received, surface the appropriate `AppError` without crashing
 - [ ] **T-0905** Ensure the app never crashes on network loss; write a test that simulates network unavailability mid-command
 - [ ] **T-0906** Write unit tests for `ErrorResponseService`; verify every `AppError` maps to the correct string from the functional spec
 
@@ -202,16 +202,16 @@ Build the primary screen: idle state, command recognition state, and now-playing
 
 Build the bottom sheet that appears for every confirmation step.
 
-- [ ] **T-1101** Implement `ConfirmationSheet` as a SwiftUI `.sheet` with `presentationDetents([.height(280)])`; no drag handle; drag-to-dismiss disabled
-- [ ] **T-1102** Apply Liquid Glass material to the sheet surface with medium blur radius
-- [ ] **T-1103** Implement sheet content layout: "About to:" label in `--label-secondary` (SF Pro Text 12 pt), action read-back text in SF Pro Display Regular 22 pt, "Yes" and "No" buttons full-width stacked
-- [ ] **T-1104** Implement "Yes" button — filled Liquid Glass button with accent gold tint; triggers `ConfirmationCoordinator.confirm()`
-- [ ] **T-1105** Implement "No" button — outlined Liquid Glass button; triggers `ConfirmationCoordinator.cancel()`
-- [ ] **T-1106** Implement "or say Yes / No" mic indicator pill at the top of the sheet
-- [ ] **T-1107** Implement sheet entry animation — slide up from below with spring (damping 0.75, response 0.5 s)
-- [ ] **T-1108** Trigger `.medium` haptic impact when the sheet appears
-- [ ] **T-1109** Trigger `.success` notification haptic on confirmation; dismiss the sheet and show a brief success toast
-- [ ] **T-1110** Ensure all elements in the sheet respect bottom safe area insets
+- [x] **T-1101** Implement `ConfirmationSheet` as a SwiftUI `.sheet` with `presentationDetents([.height(280)])`; no drag handle; drag-to-dismiss disabled
+- [x] **T-1102** Apply Liquid Glass material to the sheet surface with medium blur radius
+- [x] **T-1103** Implement sheet content layout: "About to:" label in `--label-secondary` (SF Pro Text 12 pt), action read-back text in SF Pro Display Regular 22 pt, "Yes" and "No" buttons full-width stacked
+- [x] **T-1104** Implement "Yes" button — filled Liquid Glass button with accent gold tint; triggers `ConfirmationCoordinator.confirm()`
+- [x] **T-1105** Implement "No" button — outlined Liquid Glass button; triggers `ConfirmationCoordinator.cancel()`
+- [x] **T-1106** Implement "or say Yes / No" mic indicator pill at the top of the sheet
+- [x] **T-1107** Implement sheet entry animation — slide up from below with spring (damping 0.75, response 0.5 s)
+- [x] **T-1108** Trigger `.medium` haptic impact when the sheet appears
+- [x] **T-1109** Trigger `.success` notification haptic on confirmation; dismiss the sheet and show a brief success toast
+- [x] **T-1110** Ensure all elements in the sheet respect bottom safe area insets
 
 ---
 

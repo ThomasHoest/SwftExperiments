@@ -18,16 +18,25 @@ struct CommandParser {
     func parse(_ transcript: String) -> VoiceCommand {
         let raw   = transcript.trimmingCharacters(in: .whitespaces).lowercased()
         let words = raw.split(separator: " ").map(String.init)
-        guard !words.isEmpty else { return .unknown(transcript) }
+        guard !words.isEmpty else {
+            Log.info("[CommandParser] empty transcript → unknown")
+            return .unknown(transcript)
+        }
+
+        Log.verbose("[CommandParser] input: \"\(raw)\" words=\(words)")
 
         // Evaluation order matters — more specific patterns first.
-        if let cmd = parsePlayFavorite(words)  { return cmd }
-        if let cmd = parseListFavorites(raw)   { return cmd }
-        if let cmd = parseConfirmCancel(words) { return cmd }
-        if let cmd = parseVolume(words, raw: raw) { return cmd }
-        if let cmd = parseSimple(words, raw: raw) { return cmd }
-        if words.contains("play")              { return .playDefault }
+        if let cmd = parsePlayFavorite(words)     { Log.info("[CommandParser] → \(cmd)"); return cmd }
+        if let cmd = parseListFavorites(raw)       { Log.info("[CommandParser] → \(cmd)"); return cmd }
+        if let cmd = parseConfirmCancel(words)    { Log.info("[CommandParser] → \(cmd)"); return cmd }
+        if let cmd = parseVolume(words, raw: raw) { Log.info("[CommandParser] → \(cmd)"); return cmd }
+        if let cmd = parseSimple(words, raw: raw) { Log.info("[CommandParser] → \(cmd)"); return cmd }
+        if words.contains("play") {
+            Log.info("[CommandParser] → playDefault (bare 'play' fallback)")
+            return .playDefault
+        }
 
+        Log.info("[CommandParser] → unknown(\"\(transcript)\")")
         return .unknown(transcript)
     }
 

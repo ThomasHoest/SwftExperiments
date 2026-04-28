@@ -17,6 +17,11 @@ class AVService {
     private var stopped     = true
     private var isMuted     = false
 
+    // AVAudioSession.setActive() and AVAudioEngine.start() perform synchronous
+    // IPC internally. Routing them through a dedicated serial queue keeps that
+    // IPC off Swift's cooperative thread pool and suppresses unsafeForcedSync.
+    private let audioQueue = DispatchQueue(label: "com.voxio.audio", qos: .userInitiated)
+
     // T-0303 — silence gate
     private let silenceThreshold: Float        = 0.01
     private let silenceDuration:  TimeInterval = 1.5
@@ -27,24 +32,40 @@ class AVService {
     // ── Public ────────────────────────────────────────────────────────────────
 
     func startRecording() throws {
-        let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker])
-        try session.setActive(true)
-        stopped = false
-        installTap()
-        try engine.start()
+        var startError: Error?
+        audioQueue.sync {
+            let session = AVAudioSession.sharedInstance()
+            do {
+                try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker])
+                try session.setActive(true)
+            } catch {
+                startError = error
+                return
+            }
+            stopped = false
+            installTap()
+            do { try engine.start() }
+            catch { startError = error }
+        }
+        if let err = startError { throw err }
         startRequest()
     }
 
     func stopRecording() {
         stopped = true
+        // Invalidate timer on the thread it was scheduled on (main).
         silenceTimer?.invalidate()
         silenceTimer = nil
         hasSpeech = false
-        engine.inputNode.removeTap(onBus: 0)
-        engine.stop()
-        request?.endAudio()
-        task?.cancel()
+        // Capture then nil out so the tap closure sees nil immediately.
+        let req = request; let tsk = task
+        request = nil;     task    = nil
+        req?.endAudio()
+        tsk?.cancel()
+        audioQueue.async {
+            self.engine.inputNode.removeTap(onBus: 0)
+            self.engine.stop()
+        }
     }
 
     /// Suspends recognition while the engine keeps running — used to prevent
@@ -73,17 +94,21 @@ class AVService {
     // ── Private ───────────────────────────────────────────────────────────────
 
     /// Installs a single audio tap that feeds audio to the current request
-    /// and drives the RMS/silence logic. Called once; the engine stays running
-    /// between utterances while only the recognition request is recycled.
+    /// and drives the RMS/silence logic. Called once on `audioQueue`; the
+    /// engine stays running between utterances while only the recognition
+    /// request is recycled.
     private func installTap() {
         let inputNode = engine.inputNode
         let format    = inputNode.outputFormat(forBus: 0)
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
-            guard let self else { return }
+            guard let self, !self.stopped else { return }
+            // Guard zero-frame buffers that appear during engine startup —
+            // appending them triggers an mDataByteSize assertion in AVAudioBuffer.
+            let frames = Int(buffer.frameLength)
+            guard frames > 0 else { return }
             if !self.isMuted { self.request?.append(buffer) }
             guard let data = buffer.floatChannelData?[0] else { return }
-            let frames = Int(buffer.frameLength)
-            let rms    = Float(sqrt(
+            let rms = Float(sqrt(
                 (0..<frames).reduce(0.0) { $0 + Double(data[$1] * data[$1]) } / Double(frames)
             ))
             self.onAudioLevel?(rms)
