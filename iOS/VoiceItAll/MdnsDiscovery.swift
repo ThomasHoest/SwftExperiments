@@ -1,6 +1,8 @@
 import Foundation
 import Network
+import Combine
 
+@MainActor
 class MdnsDiscovery: NSObject, ObservableObject {
     @Published var speakers: [Speaker] = []
 
@@ -21,7 +23,6 @@ class MdnsDiscovery: NSObject, ObservableObject {
         browser.stop()
     }
 
-    @MainActor
     private func tryAdd(ip: String) async {
         guard foundHosts.insert(ip).inserted else { return }
         let speaker = Speaker(host: ip)
