@@ -94,15 +94,17 @@ Implement the full pipeline from microphone input to a structured `VoiceCommand`
 
 ## E-04 — Speaker Addressing
 
-Enforce that every command begins with a recognised speaker name and route the command to the correct speaker.
+Discover speakers on the local network via mDNS, maintain a live `SpeakerRegistry`, and route voice commands to the correct speaker. A command may address a speaker explicitly by name or implicitly when exactly one speaker is actively playing.
 
-- [ ] **T-0401** On app launch, call `GET /speakers` and populate a `SpeakerRegistry` with available speaker names and IDs
-- [ ] **T-0402** Build `SpeakerNameMatcher` — given the first token(s) of a transcription, returns the best-matching `Speaker` or `nil`; uses case-insensitive fuzzy matching (Levenshtein distance ≤ 2)
-- [ ] **T-0403** Integrate `SpeakerNameMatcher` as the first step in `CommandParser` — reject the command if no speaker match is found
-- [ ] **T-0404** When no speaker name is recognised, trigger the "no speaker" error response: speak *"Please start your command with a speaker name"* and list available speakers
-- [ ] **T-0405** Expose the active speaker through `SpeakerRegistry.activeSpeaker` — updated each time a command successfully addresses a speaker
-- [ ] **T-0406** Handle the single-speaker case — still require the speaker name; no implicit default
-- [ ] **T-0407** Write unit tests for `SpeakerNameMatcher` covering exact matches, case variants, minor mispronunciations, and unrecognised names
+- [ ] **T-0401** On app launch start an mDNS browser for the `_bangolufsen._tcp.` service type (reusing `MdnsDiscovery`); for each resolved IPv4 address call `Speaker.initialize()` and add the speaker to `SpeakerRegistry` on success; remove it if initialisation throws
+- [ ] **T-0402** Keep `SpeakerRegistry` live — re-run the mDNS scan on a 15-second interval; add newly appeared speakers and remove speakers whose IPv4 address is no longer resolved
+- [ ] **T-0403** Build `SpeakerNameMatcher` — given the first token(s) of a transcription, returns the best-matching `Speaker` from the registry or `nil`; uses case-insensitive prefix and fuzzy matching (Levenshtein distance ≤ 2) against each speaker's `friendlyName`
+- [ ] **T-0404** Implement implicit active-session addressing — if no speaker name token is found at the head of the transcript AND exactly one speaker in the registry has `isPlaying == true`, route the command to that speaker and set it as `activeSpeaker`; if zero or more than one speaker is playing, fall through to the explicit-name-required error path
+- [ ] **T-0405** Integrate speaker resolution as the first step in the command dispatch pipeline — after resolving the speaker, strip the name token (if present) from the transcript before passing the remainder to `CommandParser`
+- [ ] **T-0406** When no speaker can be resolved (no name match and no unambiguous active speaker), speak *"Please start your command with a speaker name"* and list discovered speaker names; do not dispatch the command
+- [ ] **T-0407** Expose `SpeakerRegistry.activeSpeaker: Speaker?` — set to the last successfully addressed speaker; used by the implicit active-session path as a secondary fallback when no speaker is playing but one was recently addressed (within the current app session)
+- [ ] **T-0408** Write unit tests for `SpeakerNameMatcher` covering exact match, case variants, minor mispronunciation (distance ≤ 2), distance > 2 (no match), and empty registry
+- [ ] **T-0409** Write unit tests for the implicit active-session path covering: one playing speaker (routes correctly), zero playing speakers (falls through), two playing speakers (falls through), and recently-addressed fallback
 
 ---
 
@@ -300,7 +302,7 @@ Provide UI and account management for the online gen AI backend. Users must auth
 | E-01 Foundation | 9 | Prerequisite for all other epics |
 | E-02 Mozart API | 15 | Prerequisite for E-05 through E-07 |
 | E-03 Voice Recognition | 12 | Prerequisite for E-04 through E-08 |
-| E-04 Speaker Addressing | 7 | Prerequisite for E-05 through E-07 |
+| E-04 Speaker Addressing | 9 | Prerequisite for E-05 through E-07 |
 | E-05 Playback — Favorites | 9 | Depends on E-02, E-03, E-04, E-08 |
 | E-06 Playback — Stop/Pause/Resume | 6 | Depends on E-02, E-03, E-04, E-08 |
 | E-07 Volume Control | 8 | Depends on E-02, E-03, E-04, E-08 |
@@ -313,4 +315,4 @@ Provide UI and account management for the online gen AI backend. Users must auth
 | E-14 Animation & Haptics | 10 | Depends on E-10, E-11, E-12 |
 | E-15 AI-Powered Command Recognition | 10 | Depends on E-03, E-16; enhances E-05 through E-08 |
 | E-16 Gen AI Service Authentication | 10 | Prerequisite for E-15 |
-| **Total** | **146** | |
+| **Total** | **148** | |
