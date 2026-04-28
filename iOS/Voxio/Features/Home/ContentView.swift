@@ -109,6 +109,10 @@ struct ContentView: View {
         voiceToText.onAudioLevel = { rms in
             DispatchQueue.main.async { driveOrb(rms: Double(rms)) }
         }
+        voiceToText.onCommand = { command in
+            // Speaker routing added in E-04; commands are parsed and logged here.
+            Log.info("[ContentView] command parsed: \(command)")
+        }
         voiceToText.start { status in
             micStatus = status
             if status == "Listening…" {

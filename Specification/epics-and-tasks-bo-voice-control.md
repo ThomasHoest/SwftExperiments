@@ -30,6 +30,8 @@ This document breaks the functional and design specifications into epics and the
 | E-12 | UI — Toasts & Notifications | Design spec §Screen 5, 6 |
 | E-13 | Accessibility | Design spec §Accessibility |
 | E-14 | Polish — Animation & Haptics | Design spec §Interaction |
+| E-15 | AI-Powered Command Recognition | US-00 through US-08 |
+| E-16 | Gen AI Service Authentication | — |
 
 ---
 
@@ -80,7 +82,7 @@ Implement the full pipeline from microphone input to a structured `VoiceCommand`
 - [ ] **T-0303** Implement silence detection — finalise a recognition request after ~1.5 s of silence following speech
 - [ ] **T-0304** Define `VoiceCommand` enum covering all intents: `.playNamed`, `.playDefault`, `.listFavorites`, `.stop`, `.pause`, `.resume`, `.setVolume`, `.adjustVolume`, `.mute`, `.unmute`, `.confirm`, `.cancel`, `.unknown`
 - [ ] **T-0305** Build `CommandParser` — takes a raw transcription string, strips the leading speaker name token, and returns a `VoiceCommand`
-- [ ] **T-0306** Implement intent matching for play commands: exact match and fuzzy match (Levenshtein distance ≤ 2) against known favorite names
+- [ ] **T-0306** Implement intent matching for play-favorite commands: recognise the phrase "play favorite [one|two|three|four]" (spoken number words only, no digits) and resolve to a 1-based index 1–4. Each speaker exposes exactly 4 favorites; if the resolved index exceeds the speaker's favorite count, treat as not-found. No fuzzy matching required.
 - [ ] **T-0307** Implement intent matching for volume commands: parse absolute values ("set volume to 42") and relative values ("up 20", "louder")
 - [ ] **T-0308** Implement intent matching for stop / pause / resume / mute / unmute commands
 - [ ] **T-0309** Implement `.confirm` and `.cancel` recognition ("Yes", "No", "Cancel") for the confirmation step
@@ -257,6 +259,40 @@ Implement the full animation and haptic system as specified in the design spec.
 
 ---
 
+## E-15 — AI-Powered Command Recognition
+
+Replace the rule-based `CommandParser` with a cloud gen AI backend that understands natural, varied speech — including follow-up commands, ambiguous phrasing, and multi-intent utterances. The iOS client never calls the gen AI provider directly; all LLM calls are proxied through a backend service that holds the provider credentials.
+
+- [ ] **T-1501** Define the backend NLU service API contract: `POST /nlu/parse` accepts `{ transcript, context[] }` and returns `{ command, confidence, rawIntent }` where `command` maps to the `VoiceCommand` JSON schema
+- [ ] **T-1502** Build `NLUClient` in iOS — sends the raw transcript and conversation context window to the backend; deserialises the response into a `VoiceCommand`; 5-second timeout with `URLError.timedOut` on failure
+- [ ] **T-1503** Design the backend NLU system prompt: enumerate all `VoiceCommand` cases and their expected JSON shape; instruct the model to return a confidence score 0.0–1.0 and to prefer `.unknown` over guessing when confidence is below 0.7
+- [ ] **T-1504** Implement the backend NLU endpoint — validate and sanitise the incoming transcript; call the gen AI provider API; parse the structured JSON response; return it to the iOS client
+- [ ] **T-1505** Implement local fallback — if `NLUClient` times out or returns a network error, transparently fall back to the local `CommandParser` and log the degraded mode at INFO level
+- [ ] **T-1506** Implement conversation context window — send the last 5 finalised transcripts with each request so the model can resolve follow-up commands (e.g. "play the second one" after listing favorites)
+- [ ] **T-1507** Implement client-side transcript caching — identical transcripts within a 30-second window return the cached `VoiceCommand` without a network round-trip
+- [ ] **T-1508** Implement confidence gating — if the returned confidence is below 0.7, return `.unknown` and surface the "voice not recognised" error path; log the raw intent for debugging
+- [ ] **T-1509** Add consent-aware logging — log NLU request latency and command type at INFO level; never log raw transcript content to any external service without explicit user consent (see E-16 privacy settings)
+- [ ] **T-1510** Write integration tests against a mock NLU backend; verify each `VoiceCommand` case round-trips correctly and that the fallback path triggers on timeout
+
+---
+
+## E-16 — Gen AI Service Authentication
+
+Provide UI and account management for the online gen AI backend. Users must authenticate before AI-powered recognition is active; the local `CommandParser` remains available as an unauthenticated fallback.
+
+- [ ] **T-1601** Build `AuthService` — manages the lifecycle of the user's backend credential (API key or OAuth token); exposes `isAuthenticated: Bool` and async `signIn(credential:)` / `signOut()` methods
+- [ ] **T-1602** Implement keychain storage for the auth credential using `Security.framework`; credential is stored under a namespaced service key and never written to `UserDefaults` or logs
+- [ ] **T-1603** Build `SignInView` — full-screen onboarding screen presented modally on first launch when no credential is stored; contains a branded header, a secure text field for the API key or token, a "Connect" primary button, and a "Use without AI" secondary link
+- [ ] **T-1604** Implement credential validation on sign-in — call `POST /auth/validate` on the backend before persisting; show an inline error if validation fails; never store an unvalidated credential
+- [ ] **T-1605** Implement sign-out — clear the keychain entry; reset `AuthService.isAuthenticated` to `false`; navigate back to `SignInView`; AI-powered recognition deactivates immediately
+- [ ] **T-1606** Implement token refresh — if the backend returns HTTP 401, attempt a silent token refresh; if refresh fails, sign the user out and present `SignInView` with a "Session expired, please sign in again" banner
+- [ ] **T-1607** Surface auth state in the connection status chip (E-10 T-1005) — add a distinct AI indicator icon (`sparkles`) alongside the WiFi status; gold tint when AI is authenticated, gray with slash when not
+- [ ] **T-1608** Add an "AI Service" row to the app settings screen — shows the connected account identifier (masked), a "Disconnect" button, and a toggle to enable/disable AI recognition while staying signed in
+- [ ] **T-1609** Implement privacy settings — a toggle that controls whether raw transcripts may be sent to the backend at all; when off, force local `CommandParser` regardless of auth state; default to off on first launch
+- [ ] **T-1610** Write unit tests for `AuthService` covering sign-in success, sign-in failure (invalid credential), sign-out, silent token refresh success, and refresh failure paths
+
+---
+
 ## Task Summary
 
 | Epic | Tasks | Notes |
@@ -275,4 +311,6 @@ Implement the full animation and haptic system as specified in the design spec.
 | E-12 UI — Toasts | 7 | Depends on E-09, E-10 |
 | E-13 Accessibility | 8 | Depends on E-10, E-11, E-12 |
 | E-14 Animation & Haptics | 10 | Depends on E-10, E-11, E-12 |
-| **Total** | **126** | |
+| E-15 AI-Powered Command Recognition | 10 | Depends on E-03, E-16; enhances E-05 through E-08 |
+| E-16 Gen AI Service Authentication | 10 | Prerequisite for E-15 |
+| **Total** | **146** | |
