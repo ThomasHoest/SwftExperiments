@@ -1,6 +1,7 @@
 import Foundation
 
 class MozartEvents {
+    private let host: String
     private let url: URL
     private var task: URLSessionWebSocketTask?
     private var retryCount = 0
@@ -9,6 +10,7 @@ class MozartEvents {
     var onEvent: ((String, [String: Any]) -> Void)?
 
     init(host: String) {
+        self.host = host
         url = URL(string: "ws://\(host):9339/")!
     }
 
@@ -19,6 +21,7 @@ class MozartEvents {
 
     private func openSocket() {
         guard !cancelled else { return }
+        Log.info("[WS:\(host)] connecting")
         task = URLSession.shared.webSocketTask(with: url)
         task?.resume()
         receive()
@@ -32,8 +35,9 @@ class MozartEvents {
                 self.retryCount = 0
                 if case .string(let text) = message { self.processMessage(text) }
                 self.receive()
-            case .failure:
+            case .failure(let error):
                 let delay = min(pow(2.0, Double(self.retryCount)), 30.0)
+                Log.info("[WS:\(self.host)] disconnected (\(error.localizedDescription)) — reconnecting in \(Int(delay))s")
                 self.retryCount = min(self.retryCount + 1, 5)
                 DispatchQueue.global().asyncAfter(deadline: .now() + delay) { self.openSocket() }
             }
@@ -46,10 +50,12 @@ class MozartEvents {
               let type = obj["eventType"] as? String,
               let body = obj["eventData"] as? [String: Any]
         else { return }
+        Log.verbose("[WS:\(host)] event: \(type) \(body)")
         onEvent?(type, body)
     }
 
     func disconnect() {
+        Log.info("[WS:\(host)] disconnecting")
         cancelled = true
         task?.cancel(with: .normalClosure, reason: nil)
     }

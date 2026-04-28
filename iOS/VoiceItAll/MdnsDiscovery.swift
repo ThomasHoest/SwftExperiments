@@ -16,20 +16,25 @@ class MdnsDiscovery: NSObject, ObservableObject {
     }
 
     func start() {
+        Log.info("[mDNS] started browsing for _bangolufsen._tcp.")
         browser.searchForServices(ofType: "_bangolufsen._tcp.", inDomain: "local.")
     }
 
     func stop() {
+        Log.info("[mDNS] stopped browsing")
         browser.stop()
     }
 
     private func tryAdd(ip: String) async {
         guard foundHosts.insert(ip).inserted else { return }
+        Log.info("[mDNS] attempting to add speaker at \(ip)")
         let speaker = Speaker(host: ip)
         do {
             try await speaker.initialize()
             speakers.append(speaker)
+            Log.info("[mDNS] added speaker \(speaker.name) (\(ip))")
         } catch {
+            Log.error("[mDNS] rejected \(ip): \(error.localizedDescription)")
             foundHosts.remove(ip)
             speaker.dispose()
         }
@@ -50,6 +55,7 @@ class MdnsDiscovery: NSObject, ObservableObject {
 
 extension MdnsDiscovery: NetServiceBrowserDelegate, NetServiceDelegate {
     func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
+        Log.verbose("[mDNS] found service: \(service.name)")
         service.delegate = self
         pendingServices.append(service)
         service.resolve(withTimeout: 5)
@@ -60,13 +66,16 @@ extension MdnsDiscovery: NetServiceBrowserDelegate, NetServiceDelegate {
         guard let addresses = sender.addresses else { return }
         for data in addresses {
             if let ip = ipv4(from: data) {
+                Log.info("[mDNS] resolved \(sender.name) → \(ip)")
                 Task { await self.tryAdd(ip: ip) }
                 return
             }
         }
+        Log.error("[mDNS] could not extract IPv4 for \(sender.name)")
     }
 
     func netService(_ sender: NetService, didNotResolve errorDict: [String: NSNumber]) {
+        Log.error("[mDNS] failed to resolve \(sender.name): \(errorDict)")
         pendingServices.removeAll { $0 === sender }
     }
 }
