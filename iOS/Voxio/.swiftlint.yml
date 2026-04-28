@@ -1,0 +1,23 @@
+disabled_rules:
+  - trailing_whitespace
+  - line_length
+
+opt_in_rules:
+  - empty_count
+  - first_where
+  - sorted_imports
+
+included:
+  - Core
+  - Features
+  - DesignSystem
+
+excluded:
+  - .build
+  - DerivedData
+
+identifier_name:
+  min_length: 2
+
+type_name:
+  min_length: 3
