@@ -9,6 +9,7 @@ class MdnsDiscovery: NSObject, ObservableObject {
     private let browser = NetServiceBrowser()
     private var pendingServices: [NetService] = []
     private var foundHosts = Set<String>()
+    private var serviceNameToHost: [String: String] = [:]
 
     override init() {
         super.init()
@@ -67,11 +68,23 @@ extension MdnsDiscovery: NetServiceBrowserDelegate, NetServiceDelegate {
         for data in addresses {
             if let ip = ipv4(from: data) {
                 Log.info("[mDNS] resolved \(sender.name) → \(ip)")
+                serviceNameToHost[sender.name] = ip
                 Task { await self.tryAdd(ip: ip) }
                 return
             }
         }
         Log.error("[mDNS] could not extract IPv4 for \(sender.name)")
+    }
+
+    func netServiceBrowser(_ browser: NetServiceBrowser, didRemove service: NetService, moreComing: Bool) {
+        Log.info("[mDNS] lost service: \(service.name)")
+        guard let host = serviceNameToHost.removeValue(forKey: service.name) else { return }
+        foundHosts.remove(host)
+        if let idx = speakers.firstIndex(where: { $0.host == host }) {
+            speakers[idx].dispose()
+            speakers.remove(at: idx)
+            Log.info("[mDNS] removed speaker at \(host)")
+        }
     }
 
     func netService(_ sender: NetService, didNotResolve errorDict: [String: NSNumber]) {

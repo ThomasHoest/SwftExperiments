@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var discovery = MdnsDiscovery()
+    @StateObject private var registry = SpeakerRegistry()
     @State private var voiceToText = VoiceToText()
     @State private var transcript = ""
     @State private var micStatus = "Initialising microphone…"
@@ -87,7 +87,7 @@ struct ContentView: View {
 
             ScrollView {
                 LazyVStack(spacing: Spacing.s8) {
-                    ForEach(discovery.speakers) { speaker in
+                    ForEach(registry.speakers) { speaker in
                         SpeakerCardView(speaker: speaker)
                             .padding(.horizontal, Spacing.s20)
                     }
@@ -101,7 +101,7 @@ struct ContentView: View {
 
     private func onAppear() {
         startBreathing()
-        discovery.start()
+        registry.start()
 
         voiceToText.onTranscript = { text in
             DispatchQueue.main.async { transcript = text }
@@ -109,9 +109,20 @@ struct ContentView: View {
         voiceToText.onAudioLevel = { rms in
             DispatchQueue.main.async { driveOrb(rms: Double(rms)) }
         }
-        voiceToText.onCommand = { command in
-            // Speaker routing added in E-04; commands are parsed and logged here.
-            Log.info("[ContentView] command parsed: \(command)")
+        voiceToText.onFinalTranscript = { text in
+            Task { @MainActor in
+                let words = text.lowercased()
+                    .components(separatedBy: .whitespaces)
+                    .filter { !$0.isEmpty }
+                guard let (speaker, remaining) = registry.resolve(words: words) else {
+                    Log.info("[ContentView] no speaker resolved for: \(text)")
+                    return
+                }
+                let commandText = remaining.isEmpty ? text : remaining.joined(separator: " ")
+                let command = CommandParser().parse(commandText)
+                Log.info("[ContentView] → \(speaker.name): \(command)")
+                await dispatch(command: command, to: speaker)
+            }
         }
         voiceToText.start { status in
             micStatus = status
@@ -122,6 +133,39 @@ struct ContentView: View {
             }
         }
     }
+
+    // ── Dispatch ──────────────────────────────────────────────────────────────
+
+    @MainActor
+    private func dispatch(command: VoiceCommand, to speaker: Speaker) async {
+        switch command {
+        case .playFavorite(let index):
+            await registry.favorites.play(index: index, on: speaker)
+        case .playDefault:
+            await registry.favorites.playDefault(on: speaker)
+        case .listFavorites:
+            let names = await registry.favorites.listFavorites(for: speaker)
+            Log.info("[Favorites] \(speaker.name): \(names.joined(separator: ", "))")
+        case .stop:
+            try? await speaker.stop()
+        case .pause:
+            try? await speaker.pause()
+        case .resume:
+            try? await speaker.play()
+        case .setVolume(let level):
+            try? await speaker.setVolume(level)
+        case .adjustVolume(let delta):
+            try? await speaker.adjustVolume(delta)
+        case .mute:
+            try? await speaker.mute()
+        case .unmute:
+            try? await speaker.unmute()
+        case .confirm, .cancel, .unknown:
+            Log.info("[ContentView] unhandled command: \(command)")
+        }
+    }
+
+    // ── Orb animation ─────────────────────────────────────────────────────────
 
     private func driveOrb(rms: Double) {
         let boost = min(rms * 4.0, 0.55)

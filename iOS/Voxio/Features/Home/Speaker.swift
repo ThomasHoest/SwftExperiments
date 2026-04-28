@@ -130,4 +130,36 @@ class Speaker: Identifiable {
     }
 
     func dispose() { events.disconnect() }
+
+    // ── Commands ──────────────────────────────────────────────────────────────
+
+    func ping() async -> Bool {
+        (try? await client.getSelf()) != nil
+    }
+
+    func play() async throws    { try await client.play() }
+    func pause() async throws   { try await client.pause() }
+    func stop() async throws    { try await client.stop() }
+
+    func setVolume(_ level: Int) async throws {
+        try await client.setVolume(level)
+        volume = level
+    }
+
+    func adjustVolume(_ delta: Int) async throws {
+        let newLevel = max(0, min(100, (volume ?? 50) + delta))
+        try await client.setVolume(newLevel)
+        volume = newLevel
+    }
+
+    func mute() async throws   { try await client.setMute(true) }
+    func unmute() async throws { try await client.setMute(false) }
+
+    func getFavorites() async throws -> [Favorite] {
+        try await client.getFavorites()
+    }
+
+    func playFavorite(id: String) async throws {
+        try await client.playFavorite(id: id)
+    }
 }

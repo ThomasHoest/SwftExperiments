@@ -10,6 +10,8 @@ class VoiceToText {
     var onTranscript: ((String) -> Void)?
     /// Called with the RMS audio level on every buffer tick.
     var onAudioLevel: ((Float) -> Void)?
+    /// Called once per finalised utterance with the raw transcript text.
+    var onFinalTranscript: ((String) -> Void)?
     /// Called once per finalised utterance with the parsed command.
     var onCommand: ((VoiceCommand) -> Void)?
 
@@ -30,6 +32,7 @@ class VoiceToText {
                         if isFinal, !text.trimmingCharacters(in: .whitespaces).isEmpty {
                             let command = self?.parser.parse(text) ?? .unknown(text)
                             Log.info("[Voice] \(command)")
+                            self?.onFinalTranscript?(text)
                             self?.onCommand?(command)
                         }
                     }
