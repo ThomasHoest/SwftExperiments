@@ -12,7 +12,7 @@ on:
 
 jobs:
   build:
-    name: Build VoiceItAll
+    name: Build Voxio
     runs-on: macos-15
 
     steps:
@@ -24,8 +24,8 @@ jobs:
       - name: Build
         run: |
           xcodebuild \
-            -project iOS/VoiceItAll.xcodeproj \
-            -scheme VoiceItAll \
+            -project iOS/Voxio.xcodeproj \
+            -scheme Voxio \
             -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
             -configuration Debug \
             build \
@@ -35,8 +35,8 @@ jobs:
       - name: Run unit tests
         run: |
           xcodebuild \
-            -project iOS/VoiceItAll.xcodeproj \
-            -scheme VoiceItAll \
+            -project iOS/Voxio.xcodeproj \
+            -scheme Voxio \
             -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
             -configuration Debug \
             test \

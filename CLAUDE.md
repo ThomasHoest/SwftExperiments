@@ -70,16 +70,16 @@ Or open `win/SwftExperiments.Win.csproj` and press F5 (VS Code launch config is 
 
 ## iOS (`iOS/`)
 
-Xcode project: `iOS/VoiceItAll.xcodeproj`  
-Source folder: `iOS/VoiceItAll/`  
-Target/bundle: `VoiceItAll` / `T-Creative.VoiceItAll`
+Xcode project: `iOS/Voxio.xcodeproj`  
+Source folder: `iOS/Voxio/`  
+Target/bundle: `Voxio` / `T-Creative.Voxio`
 
-The project uses **`PBXFileSystemSynchronizedRootGroup`** (Xcode 16+) — any `.swift` file dropped into `iOS/VoiceItAll/` is automatically compiled; no pbxproj editing needed.
+The project uses **`PBXFileSystemSynchronizedRootGroup`** (Xcode 16+) — any `.swift` file dropped into `iOS/Voxio/` is automatically compiled; no pbxproj editing needed.
 
 ### Folder structure
 
 ```
-iOS/VoiceItAll/
+iOS/Voxio/
 ├── Core/
 │   ├── Discovery/MdnsDiscovery.swift   — NetServiceBrowser → Speaker init
 │   ├── Models/                          — Codable value types (Playback, Volume, Source, BeoEvent, Favorite…)
@@ -96,7 +96,7 @@ iOS/VoiceItAll/
 │   ├── Speaker.swift                    — @Observable @MainActor view model; initializes from REST+WS
 │   ├── ContentView.swift                — single screen: orb, transcript, speaker list
 │   └── SpeakerCardView.swift            — card UI using design tokens
-└── VoiceItAllApp.swift                  — @main entry point
+└── VoxioApp.swift                  — @main entry point
 ```
 
 `PBXFileSystemSynchronizedRootGroup` (Xcode 16+) — every `.swift` file in the tree is auto-compiled; no pbxproj edits needed.

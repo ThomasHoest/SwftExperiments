@@ -7,26 +7,26 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		E7B041772ED825090000F56C /* VoiceItAll.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoiceItAll.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E7B041772ED825090000F56C /* Voxio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Voxio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		E76750152EFACE8B00DCEB12 /* Exceptions for "VoiceItAll" folder in "VoiceItAll" target */ = {
+		E76750152EFACE8B00DCEB12 /* Exceptions for "Voxio" folder in "Voxio" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = E7B041762ED825090000F56C /* VoiceItAll */;
+			target = E7B041762ED825090000F56C /* Voxio */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		E7B041792ED825090000F56C /* VoiceItAll */ = {
+		E7B041792ED825090000F56C /* Voxio */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				E76750152EFACE8B00DCEB12 /* Exceptions for "VoiceItAll" folder in "VoiceItAll" target */,
+				E76750152EFACE8B00DCEB12 /* Exceptions for "Voxio" folder in "Voxio" target */,
 			);
-			path = VoiceItAll;
+			path = Voxio;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -45,7 +45,7 @@
 		E7B0416E2ED825090000F56C = {
 			isa = PBXGroup;
 			children = (
-				E7B041792ED825090000F56C /* VoiceItAll */,
+				E7B041792ED825090000F56C /* Voxio */,
 				E7B041782ED825090000F56C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -53,7 +53,7 @@
 		E7B041782ED825090000F56C /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				E7B041772ED825090000F56C /* VoiceItAll.app */,
+				E7B041772ED825090000F56C /* Voxio.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -61,9 +61,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		E7B041762ED825090000F56C /* VoiceItAll */ = {
+		E7B041762ED825090000F56C /* Voxio */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = E7B041842ED8250B0000F56C /* Build configuration list for PBXNativeTarget "VoiceItAll" */;
+			buildConfigurationList = E7B041842ED8250B0000F56C /* Build configuration list for PBXNativeTarget "Voxio" */;
 			buildPhases = (
 				E7B041732ED825090000F56C /* Sources */,
 				E7B041742ED825090000F56C /* Frameworks */,
@@ -74,13 +74,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				E7B041792ED825090000F56C /* VoiceItAll */,
+				E7B041792ED825090000F56C /* Voxio */,
 			);
-			name = VoiceItAll;
+			name = Voxio;
 			packageProductDependencies = (
 			);
-			productName = VoiceItAll;
-			productReference = E7B041772ED825090000F56C /* VoiceItAll.app */;
+			productName = Voxio;
+			productReference = E7B041772ED825090000F56C /* Voxio.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -98,7 +98,7 @@
 					};
 				};
 			};
-			buildConfigurationList = E7B041722ED825090000F56C /* Build configuration list for PBXProject "VoiceItAll" */;
+			buildConfigurationList = E7B041722ED825090000F56C /* Build configuration list for PBXProject "Voxio" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -112,7 +112,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				E7B041762ED825090000F56C /* VoiceItAll */,
+				E7B041762ED825090000F56C /* Voxio */,
 			);
 		};
 /* End PBXProject section */
@@ -267,7 +267,7 @@
 				DEVELOPMENT_TEAM = PDS954CY3Y;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = VoiceItAll/Info.plist;
+				INFOPLIST_FILE = Voxio/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is required for speech input.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech recognition is used to convert voice to text.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -280,7 +280,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "T-Creative.VoiceItAll";
+				PRODUCT_BUNDLE_IDENTIFIER = "T-Creative.Voxio";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -302,7 +302,7 @@
 				DEVELOPMENT_TEAM = PDS954CY3Y;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = VoiceItAll/Info.plist;
+				INFOPLIST_FILE = Voxio/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is required for speech input.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech recognition is used to convert voice to text.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -315,7 +315,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "T-Creative.VoiceItAll";
+				PRODUCT_BUNDLE_IDENTIFIER = "T-Creative.Voxio";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -330,7 +330,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		E7B041722ED825090000F56C /* Build configuration list for PBXProject "VoiceItAll" */ = {
+		E7B041722ED825090000F56C /* Build configuration list for PBXProject "Voxio" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E7B041822ED8250B0000F56C /* Debug */,
@@ -339,7 +339,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		E7B041842ED8250B0000F56C /* Build configuration list for PBXNativeTarget "VoiceItAll" */ = {
+		E7B041842ED8250B0000F56C /* Build configuration list for PBXNativeTarget "Voxio" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E7B041852ED8250B0000F56C /* Debug */,
