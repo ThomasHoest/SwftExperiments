@@ -21,7 +21,7 @@ This document breaks the functional and design specifications into epics and the
 | E-02 | Mozart API Integration | US-00 |
 | E-03 | Voice Recognition & Command Parsing | US-00 through US-08 |
 | E-04 | Speaker Addressing | US-00 |
-| E-05 | Playback — Favorites | US-01, US-02, US-03 |
+| E-05 | Playback — Favorites | US-01, US-01b, US-02, US-03 |
 | E-06 | Playback — Stop, Pause & Resume | US-04, US-05 |
 | E-07 | Volume Control | US-06, US-07, US-08 |
 | E-08 | Confirmation & Feedback Loop | US-01 through US-08 |
@@ -114,7 +114,7 @@ Discover speakers on the local network via mDNS, maintain a live `SpeakerRegistr
 
 ## E-05 — Playback — Favorites
 
-Implement the three playback-from-favorites user stories end to end.
+Implement the four playback-from-favorites user stories end to end.
 
 - [x] **T-0501** Build `FavoritesService` — wraps `MozartAPIClient.fetchFavorites(for:)` and exposes a method to resolve a spoken name to a `Favorite` using fuzzy matching
 - [ ] **T-0502** Implement `PlayNamedFavoriteUseCase` — receives `(speaker, favoriteName)`, fetches favorites, resolves the match, builds confirmation string *"Playing [favorite name] on [speaker name]"*, and returns it for confirmation
@@ -125,6 +125,7 @@ Implement the three playback-from-favorites user stories end to end.
 - [x] **T-0507** Implement `ListFavoritesUseCase` — fetches favorites live from the Mozart API, builds a spoken list, and appends the prompt *"Say '[Speaker name], play [favorite name]' to start playing"*
 - [ ] **T-0508** Write unit tests for `FavoritesService` fuzzy matching; cover exact, near-match, and no-match cases
 - [ ] **T-0509** Write unit tests for all three use cases using mock API client and mock speaker registry
+- [x] **T-0510** Implement `PlayFavoriteByNumberUseCase` — parses spoken number words (one–four / en–fire) to a 1-based position index, fetches favorites for the named speaker, selects the favorite at that position, builds confirmation string *"Playing [favorite name] on [speaker name]"*, and returns it for confirmation; if the index exceeds the speaker's favorite count, speaks *"[Speaker name] does not have a favorite [number]. Available favorites are: [list]"* without showing the confirmation sheet
 
 ---
 
@@ -223,13 +224,13 @@ Build the bottom sheet that appears for every confirmation step.
 
 Build the non-blocking toast system used for errors and volume limit notifications.
 
-- [ ] **T-1201** Implement `ToastView` — Liquid Glass pill/banner that slides down from the top safe area with spring (damping 0.8); auto-dismisses after 4 seconds with fade + slide-up exit
-- [ ] **T-1202** Implement error toast variant — icon (`exclamationmark.bubble` in `--label-secondary`), message text SF Pro Text 15 pt, using the exact string from `ErrorResponseService`
-- [ ] **T-1203** Implement expandable list within the error toast for errors that include a list (e.g. available favorites); compact scrollable list beneath the message
-- [ ] **T-1204** Implement volume limit toast variant — icon (`speaker.slash` or `speaker.wave.3`), accent tint on icon only, neutral label text
-- [ ] **T-1205** Implement success toast — brief green-tinted pill after a confirmed action completes; auto-dismisses after 2 seconds
-- [ ] **T-1206** Trigger `.error` notification haptic when an error toast appears; trigger `.warning` for volume limit toast
-- [ ] **T-1207** Ensure toasts do not overlap the Dynamic Island; respect top safe area inset
+- [x] **T-1201** Implement `ToastView` — Liquid Glass pill/banner that slides down from the top safe area with spring (damping 0.8); auto-dismisses after 4 seconds with fade + slide-up exit
+- [x] **T-1202** Implement error toast variant — icon (`exclamationmark.bubble` in `--label-secondary`), message text SF Pro Text 15 pt, using the exact string from `ErrorResponseService`
+- [x] **T-1203** Implement expandable list within the error toast for errors that include a list (e.g. available favorites); compact scrollable list beneath the message
+- [x] **T-1204** Implement volume limit toast variant — icon (`speaker.slash` or `speaker.wave.3`), accent tint on icon only, neutral label text
+- [x] **T-1205** Implement success toast — brief green-tinted pill after a confirmed action completes; auto-dismisses after 2 seconds
+- [x] **T-1206** Trigger `.error` notification haptic when an error toast appears; trigger `.warning` for volume limit toast
+- [x] **T-1207** Ensure toasts do not overlap the Dynamic Island; respect top safe area inset
 
 ---
 
@@ -304,8 +305,8 @@ Provide UI and account management for the online gen AI backend. Users must auth
 Add full Danish (`da-DK`) support alongside English (`en-US`) across the entire voice pipeline — recognition, command parsing, TTS feedback, error strings, and UI labels. Language selection follows the device's primary language by default with a user-accessible override.
 
 Danish command keywords:
-- **Play:** *afspil*, *spil*
-- **Play favorite N:** *afspil favorit [en|to|tre|fire]*, *spil favorit [en|to|tre|fire]*
+- **Play:** *afspil*, *spil*, *start*
+- **Play favorite N:** *afspil favorit [en|et|to|tre|fire]*, *spil favorit [en|et|to|tre|fire]*, *start favorit [en|et|to|tre|fire]*
 - **Stop:** *stop* (same)
 - **Pause:** *pause* (same)
 - **Resume:** *fortsæt*, *genoptag*

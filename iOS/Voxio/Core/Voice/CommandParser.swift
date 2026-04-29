@@ -14,7 +14,7 @@ struct CommandParser {
 
     // ── T-0306 / T-1703,T-1704: spoken number words per language ─────────────
     private static let numberWordsEN: [String: Int] = ["one": 1, "two": 2, "three": 3, "four": 4]
-    private static let numberWordsDA: [String: Int] = ["en": 1,  "to": 2,  "tre": 3,  "fire": 4]
+    private static let numberWordsDA: [String: Int] = ["en": 1, "et": 1, "to": 2, "tre": 3, "fire": 4]
 
     private let language: Language
     private let numberWords: [String: Int]
@@ -39,7 +39,7 @@ struct CommandParser {
         if let cmd = parseConfirmCancel(words)    { Log.info("[CommandParser] → \(cmd)"); return cmd }
         if let cmd = parseVolume(words, raw: raw) { Log.info("[CommandParser] → \(cmd)"); return cmd }
         if let cmd = parseSimple(words, raw: raw) { Log.info("[CommandParser] → \(cmd)"); return cmd }
-        if words.contains("play") || words.contains("afspil") || words.contains("spil") {
+        if words.contains("play") || words.contains("afspil") || words.contains("spil") || words.contains("start") {
             Log.info("[CommandParser] → playDefault (bare play fallback)")
             return .playDefault
         }
@@ -54,7 +54,7 @@ struct CommandParser {
     /// EN: "play favorite [one|two|three|four]"
     /// DA: "afspil favorit [en|to|tre|fire]" / "spil favorit [en|to|tre|fire]"
     private func parsePlayFavorite(_ words: [String]) -> VoiceCommand? {
-        let playTriggers     = ["play", "afspil", "spil"]
+        let playTriggers     = ["play", "afspil", "spil", "start"]
         let favoriteTriggers = ["favorite", "favourite", "favorit"]
 
         guard words.count >= 3,

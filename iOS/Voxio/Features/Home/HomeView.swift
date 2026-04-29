@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
     @StateObject private var registry      = SpeakerRegistry()
@@ -14,7 +15,7 @@ struct HomeView: View {
     @State private var isCommandActive  = false
     @State private var selectedSpeaker: Speaker?
     @State private var hasAppeared    = false
-    @State private var successMessage = ""
+    @State private var currentToast:  Toast?
 
     private let errorService = ErrorResponseService()
 
@@ -52,22 +53,20 @@ struct HomeView: View {
             }
             .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 0) }
 
-            // Success toast (E-09 T-0904)
-            if !successMessage.isEmpty {
+            // Toast overlay (errors, volume limit, success)
+            if let toast = currentToast {
                 VStack {
+                    ToastView(toast: toast)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .top).combined(with: .opacity),
+                            removal:   .move(edge: .top).combined(with: .opacity)
+                        ))
                     Spacer()
-                    Text(successMessage)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.primary)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .glassEffect(in: Capsule())
-                        .padding(.bottom, 48)
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
+                .padding(.top, 8)
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: successMessage)
+        .animation(BeoAnimation.toast, value: currentToast)
         .onAppear(perform: onAppear)
         .onChange(of: registry.speakers.map(\.id)) { _, ids in
             if let sel = selectedSpeaker, !ids.contains(sel.id) {
@@ -221,7 +220,7 @@ struct HomeView: View {
                 guard let (speaker, remaining) = registry.resolve(words: words) else {
                     Log.info("[HomeView] no speaker resolved for: \(text)")
                     let available = registry.speakers.map(\.name)
-                    coordinator.announce(errorService.spoken(.noSpeakerSpoken(available: available)))
+                    handleError(.noSpeakerSpoken(available: available))
                     return
                 }
                 selectedSpeaker = speaker
@@ -235,6 +234,11 @@ struct HomeView: View {
                     favoriteNames:    favoriteNames
                 )
                 Log.info("[HomeView] → \(speaker.name): \(command)")
+
+                if command.intent == .playFavoriteByNumber {
+                    await handlePlayFavoriteByNumber(command: command, speaker: speaker)
+                    return
+                }
 
                 // Commands that need no confirmation (list, confirm, cancel, unknown)
                 guard let confirmMsg = confirmationMessage(forParsed: command, speaker: speaker) else {
@@ -312,13 +316,13 @@ struct HomeView: View {
             return true
         case .stop:
             guard speaker.isPlaying else {
-                coordinator.announce(errorService.spoken(.nothingPlaying(speaker: speaker.name)))
+                handleError(.nothingPlaying(speaker: speaker.name))
                 return false
             }
             return await perform(speaker: speaker) { try await speaker.stop() }
         case .pause:
             guard speaker.isPlaying else {
-                coordinator.announce(errorService.spoken(.nothingPlaying(speaker: speaker.name)))
+                handleError(.nothingPlaying(speaker: speaker.name))
                 return false
             }
             return await perform(speaker: speaker) { try await speaker.pause() }
@@ -328,11 +332,11 @@ struct HomeView: View {
             return await perform(speaker: speaker) { try await speaker.setVolume(level) }
         case .adjustVolume(let delta):
             if delta > 0, let vol = speaker.volume, vol >= 100 {
-                coordinator.announce(errorService.spoken(.volumeAtLimit(speaker: speaker.name, atMax: true)))
+                handleError(.volumeAtLimit(speaker: speaker.name, atMax: true))
                 return false
             }
             if delta < 0, let vol = speaker.volume, vol <= 0 {
-                coordinator.announce(errorService.spoken(.volumeAtLimit(speaker: speaker.name, atMax: false)))
+                handleError(.volumeAtLimit(speaker: speaker.name, atMax: false))
                 return false
             }
             return await perform(speaker: speaker) { try await speaker.adjustVolume(delta) }
@@ -357,11 +361,32 @@ struct HomeView: View {
             let appError: AppError
             if case .timeout = error { appError = .apiTimeout }
             else { appError = .speakerUnreachable(speaker: speaker.name) }
-            coordinator.announce(errorService.spoken(appError))
+            handleError(appError)
             return false
         } catch {
-            coordinator.announce(errorService.spoken(.speakerUnreachable(speaker: speaker.name)))
+            handleError(.speakerUnreachable(speaker: speaker.name))
             return false
+        }
+    }
+
+    @MainActor
+    private func handlePlayFavoriteByNumber(command: ParsedCommand, speaker: Speaker) async {
+        guard let index = command.favoriteIndex else {
+            handleError(.voiceNotRecognised)
+            return
+        }
+        guard let favorite = await registry.favorites.favorite(at: index, for: speaker) else {
+            let available = await registry.favorites.listFavorites(for: speaker)
+            handleError(.favoriteIndexOutOfRange(index: index, speaker: speaker.name, available: available))
+            return
+        }
+        let confirmMsg = cs.playFavoriteByName(favorite.displayName, speaker.name)
+        let confirmed = await coordinator.request(message: confirmMsg)
+        if confirmed {
+            let succeeded = await perform(speaker: speaker) {
+                try await speaker.playFavorite(id: favorite.id)
+            }
+            if succeeded { showSuccess("Done") }
         }
     }
 
@@ -372,12 +397,44 @@ struct HomeView: View {
         }
     }
 
-    private func showSuccess(_ message: String) {
-        successMessage = message
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            successMessage = ""
+    private func handleError(_ error: AppError) {
+        coordinator.announce(errorService.spoken(error))
+        let message = errorService.spoken(error)
+        let kind: ToastKind
+        switch error {
+        case .volumeAtLimit(_, let isMax):
+            kind = .volumeLimit(message: message, isMax: isMax)
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        case .noSpeakerSpoken(let available):
+            kind = .error(message: message, list: available)
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+        case .speakerNotFound(_, let available):
+            kind = .error(message: message, list: available)
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+        case .favoriteNotFound(_, _, let available):
+            kind = .error(message: message, list: available)
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+        case .favoriteIndexOutOfRange(_, _, let available):
+            kind = .error(message: message, list: available)
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+        default:
+            kind = .error(message: message, list: [])
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
         }
+        showToast(Toast(kind: kind))
+    }
+
+    private func showToast(_ toast: Toast) {
+        currentToast = toast
+        let toastID = toast.id
+        Task {
+            try? await Task.sleep(for: .seconds(toast.dismissDelay))
+            if currentToast?.id == toastID { currentToast = nil }
+        }
+    }
+
+    private func showSuccess(_ message: String) {
+        showToast(Toast(kind: .success(message: message)))
     }
 
     // ── E-18: ParsedCommand confirmation / completion / dispatch ──────────────
@@ -395,7 +452,7 @@ struct HomeView: View {
         case .volumeDown:    return cs.adjustVolumeDown(speaker.name, step)
         case .mute:          return cs.mute(speaker.name, speaker.volume)
         case .unmute:        return cs.unmute(speaker.name)
-        case .listFavorites, .confirm, .cancel, .unknown:
+        case .playFavoriteByNumber, .listFavorites, .confirm, .cancel, .unknown:
             return nil
         }
     }
@@ -422,14 +479,13 @@ struct HomeView: View {
         case .playNamed:
             let name = command.favoriteName ?? ""
             guard !name.isEmpty else {
-                coordinator.announce(errorService.spoken(.voiceNotRecognised))
+                handleError(.voiceNotRecognised)
                 return false
             }
             let found = await registry.favorites.playNamed(name, on: speaker)
             if !found {
                 let available = await registry.favorites.listFavorites(for: speaker)
-                coordinator.announce(errorService.spoken(.favoriteNotFound(
-                    name: name, speaker: speaker.name, available: available)))
+                handleError(.favoriteNotFound(name: name, speaker: speaker.name, available: available))
             }
             return found
 
@@ -445,14 +501,14 @@ struct HomeView: View {
 
         case .stop:
             guard speaker.isPlaying else {
-                coordinator.announce(errorService.spoken(.nothingPlaying(speaker: speaker.name)))
+                handleError(.nothingPlaying(speaker: speaker.name))
                 return false
             }
             return await perform(speaker: speaker) { try await speaker.stop() }
 
         case .pause:
             guard speaker.isPlaying else {
-                coordinator.announce(errorService.spoken(.nothingPlaying(speaker: speaker.name)))
+                handleError(.nothingPlaying(speaker: speaker.name))
                 return false
             }
             return await perform(speaker: speaker) { try await speaker.pause() }
@@ -466,14 +522,14 @@ struct HomeView: View {
 
         case .volumeUp:
             if let vol = speaker.volume, vol >= 100 {
-                coordinator.announce(errorService.spoken(.volumeAtLimit(speaker: speaker.name, atMax: true)))
+                handleError(.volumeAtLimit(speaker: speaker.name, atMax: true))
                 return false
             }
             return await perform(speaker: speaker) { try await speaker.adjustVolume(+step) }
 
         case .volumeDown:
             if let vol = speaker.volume, vol <= 0 {
-                coordinator.announce(errorService.spoken(.volumeAtLimit(speaker: speaker.name, atMax: false)))
+                handleError(.volumeAtLimit(speaker: speaker.name, atMax: false))
                 return false
             }
             return await perform(speaker: speaker) { try await speaker.adjustVolume(-step) }
@@ -483,6 +539,11 @@ struct HomeView: View {
 
         case .unmute:
             return await perform(speaker: speaker) { try await speaker.unmute() }
+
+        case .playFavoriteByNumber:
+            // handled before dispatch via handlePlayFavoriteByNumber
+            Log.info("[HomeView] playFavoriteByNumber reached dispatch unexpectedly")
+            return false
 
         case .confirm, .cancel, .unknown:
             Log.info("[HomeView] unhandled parsed command: \(command)")

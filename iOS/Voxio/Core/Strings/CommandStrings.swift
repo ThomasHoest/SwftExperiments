@@ -5,8 +5,9 @@ import Foundation
 /// Strings match functional-spec-bo-voice-control v1.3.
 struct CommandStrings {
     // ── Confirmation read-backs (spoken before execution) ─────────────────────
-    var playFavorite:     (_ index: Int, _ speaker: String) -> String
-    var playDefault:      (_ speaker: String) -> String
+    var playFavorite:       (_ index: Int, _ speaker: String) -> String
+    var playFavoriteByName: (_ name: String, _ speaker: String) -> String
+    var playDefault:        (_ speaker: String) -> String
     var stop:             (_ speaker: String) -> String
     var pause:            (_ speaker: String) -> String
     var resume:           (_ speaker: String) -> String
@@ -32,8 +33,9 @@ struct CommandStrings {
     var actionCancelled: String
 
     static let english = CommandStrings(
-        playFavorite:     { i, s in "Playing favorite \(i) on \(s)" },
-        playDefault:      { s in "Playing on \(s)" },
+        playFavorite:       { i, s in "Playing favorite \(i) on \(s)" },
+        playFavoriteByName: { n, s in "Playing \(n) on \(s)" },
+        playDefault:        { s in "Playing on \(s)" },
         stop:             { s in "Stopping playback on \(s)" },
         pause:            { s in "Pausing \(s)" },
         resume:           { s in "Resuming \(s)" },
@@ -54,8 +56,9 @@ struct CommandStrings {
     )
 
     static let danish = CommandStrings(
-        playFavorite:     { i, s in "Afspiller favorit \(i) på \(s)" },
-        playDefault:      { s in "Afspiller på \(s)" },
+        playFavorite:       { i, s in "Afspiller favorit \(i) på \(s)" },
+        playFavoriteByName: { n, s in "Afspiller \(n) på \(s)" },
+        playDefault:        { s in "Afspiller på \(s)" },
         stop:             { s in "Stopper afspilning på \(s)" },
         pause:            { s in "Pauser \(s)" },
         resume:           { s in "Genoptager \(s)" },

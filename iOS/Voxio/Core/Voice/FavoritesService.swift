@@ -70,6 +70,15 @@ class FavoritesService {
         return true
     }
 
+    func favorite(at index: Int, for speaker: Speaker) async -> Favorite? {
+        let list = await fetch(for: speaker)
+        guard index >= 1, index <= list.count else {
+            Log.info("[Favorites] index \(index) out of range (have \(list.count)) on \(speaker.name)")
+            return nil
+        }
+        return list[index - 1]
+    }
+
     func invalidate(for speaker: Speaker) {
         cache.removeValue(forKey: speaker.host)
     }

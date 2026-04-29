@@ -75,6 +75,20 @@ A voice-controlled interface for Bang & Olufsen speakers that allows users to st
 
 ---
 
+**US-01b — Play a favorite by number**
+> As a user, I want to say the speaker name followed by "play favorite [number]" so that the speaker plays whatever is stored on that numbered favorite button.
+
+**Acceptance criteria:**
+- Command format: *"[Speaker name], play favorite [one|two|three|four]"* / *"[Højttalernavn], afspil favorit [en|to|tre|fire]"*
+- Spoken number words (one–four) map to favorite positions 1–4; spoken digits are not supported
+- The app fetches the current favorites list from the named speaker via the Mozart API and selects the favorite at the given position
+- Before executing, the app reads back in the active language: *"Playing [favorite name] on [speaker name]"* / *"Afspiller [favorit] på [højttaler]"*
+- User must confirm (*"Yes"* / *"Ja"*) or cancel (*"No"* / *"Cancel"* / *"Nej"* / *"Annuller"*) before playback starts
+- If the requested position exceeds the number of favorites on the speaker, the app responds: *"[Speaker name] does not have a favorite [number]. Available favorites are: [list]"* / *"[Højttaler] har ikke favorit [nummer]. Tilgængelige favoritter er: [liste]"*
+- Playback begins within 3 seconds of the user confirming
+
+---
+
 **US-02 — Play the most recent or default favorite**
 > As a user, I want to say a simple play command after the speaker name so that the last-played favorite starts without me having to name it.
 
