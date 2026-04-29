@@ -112,7 +112,7 @@ struct TwoStageFallbackParser {
             "one": 1, "two": 2, "three": 3, "four": 4,
             "en": 1, "et": 1,  "to": 2,    "tre": 3,  "fire": 4
         ]
-        if let match = text.firstMatch(of: /\b(?:play|afspil|spil|start)\s+favou?rites?\s+(\w+)/) {
+        if let match = text.firstMatch(of: /\b(?:play|afspil|spil|start)\s+favou?rite?s?\s+(\w+)/) {
             let word = String(match.1).lowercased()
             if let index = numberWordMap[word] {
                 return ParsedCommand(intent: .playFavoriteByNumber, favoriteIndex: index)
