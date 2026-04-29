@@ -47,20 +47,27 @@ final class CommandParserRouter {
         allSpeakers:   [String] = [],
         favoriteNames: [String] = []
     ) async -> ParsedCommand {
+        Log.info("[CommandParserRouter] parsing: \"\(remainder)\" for speaker: \(addressedSpeaker.name)")
+
 #if canImport(FoundationModels)
         if #available(iOS 26, *), let fp = foundationParser as? FoundationModelParser {
+            Log.info("[CommandParserRouter] path: FoundationModelParser")
             fp.updateContext(
                 speakers:      allSpeakers,
                 activeSpeaker: addressedSpeaker.name,
                 favorites:     favoriteNames
             )
             if let result = try? await fp.parse(remainder, speaker: addressedSpeaker) {
+                Log.info("[CommandParserRouter] result: \(result) (FoundationModel)")
                 return result
             }
             Log.info("[CommandParserRouter] FoundationModel failed — falling back to TwoStageFallbackParser")
         }
 #endif
-        return fallback.parse(remainder)
+        Log.info("[CommandParserRouter] path: TwoStageFallbackParser")
+        let result = fallback.parse(remainder)
+        Log.info("[CommandParserRouter] result: \(result) (Fallback)")
+        return result
     }
 
     /// Pre-warms the Foundation Models session on launch. No-op on unsupported devices.

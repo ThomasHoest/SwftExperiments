@@ -24,19 +24,24 @@ struct TwoStageFallbackParser {
 
     func parse(_ remainder: String) -> ParsedCommand {
         let text = remainder.trimmingCharacters(in: .whitespaces).lowercased()
-        guard !text.isEmpty else { return .unknown(remainder) }
-
-        if let stage1 = parseStage1(text, raw: remainder) {
-            Log.info("[TwoStageFallbackParser] Stage 1 → \(stage1)")
-            return stage1
+        Log.verbose("[TwoStageFallbackParser] input: \"\(text)\"")
+        guard !text.isEmpty else {
+            Log.info("[TwoStageFallbackParser] empty input → unknown")
+            return .unknown(remainder)
         }
 
+        if let stage1 = parseStage1(text, raw: remainder) {
+            Log.info("[TwoStageFallbackParser] Stage 1 match → \(stage1)")
+            return stage1
+        }
+        Log.verbose("[TwoStageFallbackParser] Stage 1 no match — trying Stage 2")
+
         if let stage2 = parseStage2(text, raw: remainder) {
-            Log.info("[TwoStageFallbackParser] Stage 2 → \(stage2)")
+            Log.info("[TwoStageFallbackParser] Stage 2 match → \(stage2)")
             return stage2
         }
 
-        Log.info("[TwoStageFallbackParser] no match → unknown")
+        Log.info("[TwoStageFallbackParser] Stage 1 + Stage 2 no match → unknown(\"\(text)\")")
         return .unknown(remainder)
     }
 
@@ -118,11 +123,15 @@ struct TwoStageFallbackParser {
         guard let model = TwoStageFallbackParser.nlModel else { return nil }
 
         let hypotheses = model.predictedLabelHypotheses(for: text, maximumCount: 1)
-        guard let (label, confidence) = hypotheses.first,
-              confidence >= TwoStageFallbackParser.confidenceThreshold,
+        guard let (label, confidence) = hypotheses.first else {
+            Log.info("[TwoStageFallbackParser] Stage 2 produced no hypotheses")
+            return nil
+        }
+        Log.verbose("[TwoStageFallbackParser] Stage 2 top: \"\(label)\" confidence=\(String(format: "%.2f", confidence)) (threshold=\(TwoStageFallbackParser.confidenceThreshold))")
+        guard confidence >= TwoStageFallbackParser.confidenceThreshold,
               let intent = CommandIntent(rawValue: label)
         else {
-            Log.verbose("[TwoStageFallbackParser] Stage 2 below threshold or no match")
+            Log.info("[TwoStageFallbackParser] Stage 2 rejected: \"\(label)\" confidence=\(String(format: "%.2f", confidence)) below threshold")
             return nil
         }
 
