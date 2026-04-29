@@ -138,6 +138,7 @@ class AVService {
     /// while the engine is running — the existing tap feeds audio into the
     /// new request immediately.
     private func startRequest() {
+        guard !isMuted, !stopped else { return }
         let req = SFSpeechAudioBufferRecognitionRequest()
         req.shouldReportPartialResults = true
         request = req
