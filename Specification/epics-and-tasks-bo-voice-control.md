@@ -1,8 +1,8 @@
 # Epics & Tasks: Bang & Olufsen Voice Controller
-**Version:** 1.1  
+**Version:** 1.2  
 **Status:** Draft  
-**Date:** 2026-04-28  
-**References:** functional-spec-bo-voice-control v1.2, design-spec-bo-voice-control v1.0  
+**Date:** 2026-04-29  
+**References:** functional-spec-bo-voice-control v1.3, design-spec-bo-voice-control v1.0, spec-command-parser-bo-voice-control v1.1  
 **Languages:** English (`en-US`) and Danish (`da-DK`) — both fully supported
 
 ---
@@ -34,6 +34,7 @@ This document breaks the functional and design specifications into epics and the
 | E-15 | AI-Powered Command Recognition | US-00 through US-08 |
 | E-16 | Gen AI Service Authentication | — |
 | E-17 | Danish & Multilingual Support | All US |
+| E-18 | Robust Command Parsing (Foundation Models + NLModel) | US-00 through US-08 |
 
 ---
 
@@ -342,6 +343,58 @@ Danish error strings (spoken and display):
 
 ---
 
+## E-18 — Robust Command Parsing (Foundation Models + NLModel)
+
+Replace the rule-based `CommandParser` from E-03 with a two-path architecture that handles natural language variation without an enumerated phrase list. On Apple Intelligence-capable devices (A17 Pro / M1+, iOS 26+) a `FoundationModelParser` runs on-device inference via `LanguageModelSession`. On all other devices a `TwoStageFallbackParser` uses deterministic Swift `Regex` patterns first, then a bundled `NLModel` classifier. A `CommandParserRouter` selects the appropriate path at runtime. `SpeakerNameMatcher` (E-04) remains the mandatory pipeline entry point — neither parser is invoked until a speaker is resolved.
+
+**Depends on:** E-03 (T-0304 `VoiceCommand` enum, T-0312 background stop), E-04 (T-0403 `SpeakerNameMatcher`), E-05 (T-0501 `FavoritesService` for slot resolution)  
+**Supersedes:** E-03 T-0305–T-0311 (existing `CommandParser`; those tasks remain complete in history)
+
+### Task dependency chain
+
+```
+T-1801 (ParsedCommand types)
+  ├── T-1802 (FoundationModelParser) ──► T-1809 (integration tests)
+  │       └── T-1804 (Router)
+  └── T-1803 (TwoStageFallbackParser) ──► T-1808 (unit tests)
+          └── T-1804 (Router)
+T-1806 (Train NLModel) ──► T-1803
+                       └── T-1807 (CI accuracy gate)
+T-1804 (Router) + T-0403 ──► T-1805 (pipeline integration) ──► T-1810 (voice pause test)
+```
+
+- [ ] **T-1801** Define `ParsedCommand` `@Generable` struct and `CommandIntent` / `VolumeDirection` enums; place in `Core/CommandParsing/ParsedCommand.swift`; all types must conform to `Generable`, `Codable`, and `Equatable`
+  *No E-18 dependencies. Prerequisite for T-1802, T-1803.*
+
+- [ ] **T-1802** Build `FoundationModelParser` — create and hold a `LanguageModelSession` with a system-instructions template that injects the active speaker name and favorites list; expose `parse(_:speaker:) async throws -> ParsedCommand` and `warmUp()` for pre-loading; call `warmUp()` from app launch after speaker list loads (aligns with T-0401)
+  *Depends on: T-1801, T-0501. Prerequisite for T-1804, T-1809.*
+
+- [ ] **T-1803** Build `TwoStageFallbackParser` — Stage 1: Swift `Regex` patterns for all 13 intents as specified in the command parser spec; Stage 2: `NLModel` loaded from the bundled `.mlmodel` (produced by T-1806) with confidence threshold 0.65; returns `ParsedCommand(intent: .unknown, ...)` when both stages fail
+  *Depends on: T-1801, T-1806 (`.mlmodel` artifact). Prerequisite for T-1804, T-1808.*
+
+- [ ] **T-1804** Build `CommandParserRouter` — check `SystemLanguageModel.availability` at init; instantiate `FoundationModelParser` only when available; `parse(_:addressedSpeaker:) async throws` delegates to the appropriate parser; does not catch-and-reroute errors
+  *Depends on: T-1802, T-1803. Prerequisite for T-1805.*
+
+- [ ] **T-1805** Integrate `SpeakerNameMatcher` as mandatory pipeline entry point — wire into `VoiceInputManager` so the raw transcription is passed to `SpeakerNameMatcher` first; on `nil` result surface `.noSpeakerSpoken` and halt; on success pass `(remainder, speaker)` to `CommandParserRouter`
+  *Depends on: T-1804, T-0403. Prerequisite for T-1810.*
+
+- [ ] **T-1806** Train and bundle `NLModel` classifier — create training corpus at `Resources/CommandClassifier/TrainingData.json` with ≥ 200 examples per intent covering canonical phrasings, word-order variants, ASR noise forms, and numeric vs. word-form numbers; compile to `.mlmodel`; check both files into the repository
+  *No E-18 dependencies. Prerequisite for T-1803, T-1807.*
+
+- [ ] **T-1807** Add classifier accuracy gate to CI pipeline — load the bundled `NLModel`, run inference against the held-out validation set, fail the build with a non-zero exit code if accuracy drops below 85%; run on every PR that touches `TrainingData.json` or the `.mlmodel`; output per-intent accuracy breakdown
+  *Depends on: T-1806.*
+
+- [ ] **T-1808** Unit tests for `TwoStageFallbackParser` — one positive + one negative test per Stage 1 regex pattern; volume boundary tests (0, 1, 99, 100, out-of-range); one canonical example per Stage 2 intent class; confirm and cancel variants ("yeah", "never mind"); all tests must pass on the CI simulator without Apple Intelligence
+  *Depends on: T-1803.*
+
+- [ ] **T-1809** Integration tests for `FoundationModelParser` — gated behind `SystemLanguageModel.availability == .available`; cover: playNamed with exact favorite, playNamed with paraphrased name, volumeUp with spoken number, stop, confirm, unknown utterance; assert `intent` and slot values
+  *Depends on: T-1802.*
+
+- [ ] **T-1810** Verify voice recognition pauses during `AVSpeechSynthesizer` output — `VoiceInputManager` suspends `SFSpeechAudioBufferRecognitionRequest` while `AVSpeechSynthesizer.isSpeaking`; resumes within 200 ms of speech end; no self-triggered parse events in the test harness
+  *Depends on: T-1805, T-0803.*
+
+---
+
 ## Task Summary
 
 | Epic | Tasks | Notes |
@@ -363,4 +416,5 @@ Danish error strings (spoken and display):
 | E-15 AI-Powered Command Recognition | 10 | Depends on E-03, E-16; enhances E-05 through E-08 |
 | E-16 Gen AI Service Authentication | 10 | Prerequisite for E-15 |
 | E-17 Danish & Multilingual Support | 12 | Depends on E-03, E-08, E-09, E-11 |
-| **Total** | **160** | |
+| E-18 Robust Command Parsing | 10 | Depends on E-03, E-04, E-05; supersedes E-03 T-0305–T-0311 |
+| **Total** | **170** | |
