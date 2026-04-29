@@ -18,5 +18,9 @@ struct ConnectionStatusChip: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .glassEffect(in: Capsule())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(isOnline
+            ? "\(speakerCount) speaker\(speakerCount == 1 ? "" : "s") connected"
+            : "Offline, no speakers found")
     }
 }

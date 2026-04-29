@@ -1,5 +1,5 @@
 # Functional Specification: Bang & Olufsen Voice Controller
-**Version:** 1.3  
+**Version:** 1.4  
 **Status:** Draft  
 **Date:** 2026-04-28
 
@@ -7,7 +7,7 @@
 
 ## Overview
 
-A voice-controlled interface for Bang & Olufsen speakers that allows users to start playback from favorites, stop the current session, and adjust volume — all through natural spoken commands. Every command must be prefixed with the speaker's name, and the app always reads back exactly what it is about to do before executing. The app supports both English (`en-US`) and Danish (`da-DK`); all voice commands, spoken feedback, error messages, and UI labels are available in both languages.
+A voice-controlled interface for Bang & Olufsen speakers that allows users to start playback from favorites, stop the current session, and adjust volume — all through natural spoken commands. Every command must be prefixed with the speaker's name, and the app always displays exactly what it is about to do before executing. Feedback is text-only: confirmation messages and results appear on screen; there is no text-to-speech output. The app supports both English (`en-US`) and Danish (`da-DK`); all voice commands, error messages, and UI labels are available in both languages.
 
 ---
 
@@ -21,7 +21,7 @@ A voice-controlled interface for Bang & Olufsen speakers that allows users to st
 | Favorites source | Read from the individual speaker via Mozart API |
 | Volume scale | 0–100 in 1% steps |
 | Speaker addressing | Speaker name must be spoken before every command |
-| Confirmation feedback | App reads back the exact action before executing |
+| Confirmation feedback | App displays the exact action in a confirmation sheet before executing; no TTS |
 | Languages | English (`en-US`) and Danish (`da-DK`) — auto-detected from device; user-overridable |
 
 ---
@@ -54,7 +54,7 @@ A voice-controlled interface for Bang & Olufsen speakers that allows users to st
 **Acceptance criteria:**
 - Every voice command must begin with the speaker's name as registered in the Mozart API (e.g. *"Beosound, play Jazz Radio"* / *"Beosound, afspil Jazz Radio"*)
 - The app retrieves the list of available speaker names from the Mozart API on launch
-- If a command is spoken without a recognized speaker name, the app responds in the active language: *"Please start your command with a speaker name"* / *"Start din kommando med et højttalernavn"* and lists available speakers
+- If a command is spoken without a recognized speaker name, the app displays an error toast in the active language: *"Please start your command with a speaker name"* / *"Start din kommando med et højttalernavn"* and lists available speakers
 - Speaker name matching is case-insensitive and tolerates minor mispronunciation through fuzzy matching; speaker names are matched regardless of the active language
 - If only one speaker is available, that speaker is still addressed by name; there is no implicit default
 
@@ -68,9 +68,9 @@ A voice-controlled interface for Bang & Olufsen speakers that allows users to st
 **Acceptance criteria:**
 - Command format: *"[Speaker name], play [favorite name]"* / *"[Højttalernavn], afspil [favorit]"*
 - The app fetches the current favorites list from the named speaker via the Mozart API, then maps the spoken name to a match
-- Before executing, the app reads back in the active language: *"Playing [favorite name] on [speaker name]"* / *"Afspiller [favorit] på [højttaler]"*
+- Before executing, the app displays in a confirmation sheet: *"Playing [favorite name] on [speaker name]"* / *"Afspiller [favorit] på [højttaler]"*
 - User must confirm (*"Yes"* / *"Ja"*) or cancel (*"No"* / *"Cancel"* / *"Nej"* / *"Annuller"*) before playback starts
-- If the favorite name is not recognized, the app responds in the active language: *"[Favorite name] was not found on [speaker name]. Available favorites are: [list]"* / *"[Favorit] blev ikke fundet på [højttaler]. Tilgængelige favoritter er: [liste]"*
+- If the favorite name is not recognized, the app displays an error toast: *"[Favorite name] was not found on [speaker name]. Available favorites are: [list]"* / *"[Favorit] blev ikke fundet på [højttaler]. Tilgængelige favoritter er: [liste]"*
 - Playback begins within 3 seconds of the user confirming
 
 ---
@@ -82,9 +82,9 @@ A voice-controlled interface for Bang & Olufsen speakers that allows users to st
 - Command format: *"[Speaker name], play favorite [one|two|three|four]"* / *"[Højttalernavn], afspil favorit [en|to|tre|fire]"*
 - Spoken number words (one–four) map to favorite positions 1–4; spoken digits are not supported
 - The app fetches the current favorites list from the named speaker via the Mozart API and selects the favorite at the given position
-- Before executing, the app reads back in the active language: *"Playing [favorite name] on [speaker name]"* / *"Afspiller [favorit] på [højttaler]"*
+- Before executing, the app displays in a confirmation sheet: *"Playing [favorite name] on [speaker name]"* / *"Afspiller [favorit] på [højttaler]"*
 - User must confirm (*"Yes"* / *"Ja"*) or cancel (*"No"* / *"Cancel"* / *"Nej"* / *"Annuller"*) before playback starts
-- If the requested position exceeds the number of favorites on the speaker, the app responds: *"[Speaker name] does not have a favorite [number]. Available favorites are: [list]"* / *"[Højttaler] har ikke favorit [nummer]. Tilgængelige favoritter er: [liste]"*
+- If the requested position exceeds the number of favorites on the speaker, the app displays an error toast: *"[Speaker name] does not have a favorite [number]. Available favorites are: [list]"* / *"[Højttaler] har ikke favorit [nummer]. Tilgængelige favoritter er: [liste]"*
 - Playback begins within 3 seconds of the user confirming
 
 ---
@@ -95,7 +95,7 @@ A voice-controlled interface for Bang & Olufsen speakers that allows users to st
 **Acceptance criteria:**
 - Command format: *"[Speaker name], play music"* / *"[Højttalernavn], afspil musik"* or *"[Speaker name], start playing"* / *"[Højttalernavn], spil"*
 - Triggers the last-played favorite on that speaker, or the first in the favorites list if no history exists
-- Before executing, the app reads back in the active language: *"Playing [resolved favorite name] on [speaker name]"* / *"Afspiller [favorit] på [højttaler]"*
+- Before executing, the app displays in a confirmation sheet: *"Playing [resolved favorite name] on [speaker name]"* / *"Afspiller [favorit] på [højttaler]"*
 - User must confirm before playback starts
 
 ---
@@ -106,8 +106,7 @@ A voice-controlled interface for Bang & Olufsen speakers that allows users to st
 **Acceptance criteria:**
 - Command format: *"[Speaker name], what are my favorites?"* / *"[Højttalernavn], list favoritter"*
 - The app fetches the favorites list from that speaker via the Mozart API at the time of the request
-- The app reads out all favorites stored on the speaker in the active language
-- After listing, the app prompts in the active language: *"Say '[Speaker name], play [favorite name]' to start playing"* / *"Sig '[Højttalernavn], afspil [favorit]' for at starte afspilning"*
+- The app displays all favorites stored on the speaker in the transcript area: *"Favorites on [speaker name]: 1. [name] · 2. [name] …"*
 
 ---
 
@@ -118,9 +117,9 @@ A voice-controlled interface for Bang & Olufsen speakers that allows users to st
 
 **Acceptance criteria:**
 - Command format: *"[Speaker name], stop"* (same in Danish)
-- Before executing, the app reads back in the active language: *"Stopping playback on [speaker name]"* / *"Stopper afspilning på [højttaler]"*
+- Before executing, the app displays in a confirmation sheet: *"Stopping playback on [speaker name]"* / *"Stopper afspilning på [højttaler]"*
 - User must confirm before the stop is sent
-- If nothing is playing, the app responds in the active language: *"[Speaker name] is not currently playing anything"* / *"[Højttaler] afspiller ikke noget i øjeblikket"*
+- If nothing is playing, the app displays an error toast: *"[Speaker name] is not currently playing anything"* / *"[Højttaler] afspiller ikke noget i øjeblikket"*
 
 ---
 
@@ -129,10 +128,10 @@ A voice-controlled interface for Bang & Olufsen speakers that allows users to st
 
 **Acceptance criteria:**
 - Command formats: *"[Speaker name], pause"* / *"[Højttalernavn], pause"* and *"[Speaker name], resume"* / *"[Højttalernavn], fortsæt"*
-- Before executing pause in the active language: *"Pausing [speaker name]"* / *"Pauser [højttaler]"*; before executing resume: *"Resuming [speaker name]"* / *"Genoptager [højttaler]"*
+- Before executing, the app displays in a confirmation sheet: *"Pausing [speaker name]"* / *"Pauser [højttaler]"* or *"Resuming [speaker name]"* / *"Genoptager [højttaler]"*
 - User must confirm before the action is sent
 - Pause halts playback and preserves the current position; resume restarts from the paused position
-- If the source does not support pause (e.g. live radio), the app responds in the active language: *"[Speaker name] does not support pause for this source. Say '[Speaker name], stop' to stop instead"* / *"[Højttaler] understøtter ikke pause for denne kilde. Sig [højttaler], stop for at stoppe i stedet"*
+- If the source does not support pause (e.g. live radio), the app displays an error toast: *"[Speaker name] does not support pause for this source. Say '[Speaker name], stop' to stop instead"* / *"[Højttaler] understøtter ikke pause for denne kilde. Sig [højttaler], stop for at stoppe i stedet"*
 
 ---
 
@@ -144,9 +143,9 @@ A voice-controlled interface for Bang & Olufsen speakers that allows users to st
 **Acceptance criteria:**
 - Command format: *"[Speaker name], set volume to [0–100]"* / *"[Højttalernavn], sæt lydstyrke til [0–100]"*
 - The app accepts integer values from 0 to 100 (each unit = 1%)
-- Before executing in the active language: *"Setting [speaker name] volume to [value]"* / *"Sætter [højttaler] lydstyrke til [værdi]"*
+- Before executing, the app displays in a confirmation sheet: *"Setting [speaker name] volume to [value]"* / *"Sætter [højttaler] lydstyrke til [værdi]"*
 - User must confirm before the change is applied
-- The app confirms completion in the active language: *"[Speaker name] volume is now [value]"* / *"[Højttaler] lydstyrke er nu [værdi]"*
+- On success a toast confirms: *"[Speaker name] volume is now [value]"* / *"[Højttaler] lydstyrke er nu [værdi]"*
 
 ---
 
@@ -157,9 +156,9 @@ A voice-controlled interface for Bang & Olufsen speakers that allows users to st
 - Command formats: *"[Speaker name], volume up [amount]"* / *"[Højttalernavn], skru op [beløb]"*, *"[Speaker name], louder"* / *"[Højttalernavn], højere"*, *"[Speaker name], volume down [amount]"* / *"[Højttalernavn], skru ned [beløb]"*, *"[Speaker name], quieter"* / *"[Højttalernavn], lavere"*
 - Relative commands without a number adjust by a default step of 10%
 - Named increments adjust by the specified number of percentage points (1–100)
-- Before executing in the active language: *"Turning [speaker name] volume up/down by [amount]"* / *"Skruer [højttaler] lydstyrke op/ned med [beløb]"*
+- Before executing, the app displays in a confirmation sheet: *"Turning [speaker name] volume up/down by [amount]"* / *"Skruer [højttaler] lydstyrke op/ned med [beløb]"*
 - User must confirm before the change is applied
-- Volume is clamped at 0 and 100; if a limit is reached the app responds in the active language: *"[Speaker name] is already at [maximum/minimum] volume"* / *"[Højttaler] er allerede ved [maksimal|minimal] lydstyrke"*
+- Volume is clamped at 0 and 100; if a limit is reached the app displays an error toast: *"[Speaker name] is already at [maximum/minimum] volume"* / *"[Højttaler] er allerede ved [maksimal|minimal] lydstyrke"*
 
 ---
 

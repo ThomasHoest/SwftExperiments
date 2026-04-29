@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ConfirmationSheet: View {
     var message: String
@@ -46,7 +47,7 @@ struct ConfirmationSheet: View {
 
             // Yes — filled Liquid Glass, accent gold tint (T-1104)
             Button {
-                UINotificationFeedbackGenerator().notificationOccurred(.success) // T-1109
+                HapticEngine.shared.actionConfirmed()
                 onConfirm()
             } label: {
                 Text(ui.confirmYes)
@@ -57,6 +58,7 @@ struct ConfirmationSheet: View {
                     .background(Color(hex: "#C8A97E"), in: RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Yes, confirm")
             .padding(.horizontal, 24)
             .padding(.bottom, 10)
 
@@ -74,6 +76,7 @@ struct ConfirmationSheet: View {
                     )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("No, cancel")
             .padding(.horizontal, 24)
             .safeAreaPadding(.bottom) // T-1110
         }
@@ -87,7 +90,8 @@ struct ConfirmationSheet: View {
         .opacity(isVisible ? 1 : 0)
         .offset(y: isVisible ? 0 : 32)
         .onAppear {
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred() // T-1108
+            HapticEngine.shared.sheetAppeared()
+            UIAccessibility.post(notification: .announcement, argument: message)
             withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
                 isVisible = true
             }

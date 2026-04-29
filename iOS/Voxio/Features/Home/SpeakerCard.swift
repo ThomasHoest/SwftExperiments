@@ -6,14 +6,31 @@ struct SpeakerCard: View {
     var roll: Double
     var pitch: Double
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorSchemeContrast) private var colorContrast
+
     var body: some View {
         ZStack(alignment: .top) {
             cardContent
-            specularHighlight
+            if !reduceMotion { specularHighlight }
         }
         .glassEffect(in: RoundedRectangle(cornerRadius: Radius.card))
-        .scaleEffect(isExpanded ? 1.02 : 1.0)
-        .animation(BeoAnimation.cardExpand, value: isExpanded)
+        .overlay(
+            colorContrast == .increased
+                ? RoundedRectangle(cornerRadius: Radius.card).stroke(Color.secondary.opacity(0.6), lineWidth: 1)
+                : nil
+        )
+        .scaleEffect(reduceMotion ? 1.0 : (isExpanded ? 1.02 : 1.0))
+        .animation(reduceMotion ? .easeInOut(duration: 0.2) : BeoAnimation.cardExpand, value: isExpanded)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityDescription)
+    }
+
+    private var accessibilityDescription: String {
+        var parts = [speaker.name, speaker.stateDisplay]
+        if speaker.isPlaying, !speaker.trackDisplay.isEmpty { parts.append(speaker.trackDisplay) }
+        if let vol = speaker.volume { parts.append("Volume \(vol)") }
+        return parts.joined(separator: ", ")
     }
 
     // ── Card content ──────────────────────────────────────────────────────────
