@@ -4,6 +4,7 @@ struct WaveformView: View {
     var audioLevel: Float
     var isListening: Bool
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var breathPhase = false
     @State private var breathTask: Task<Void, Never>?
 
@@ -31,15 +32,24 @@ struct WaveformView: View {
     @ViewBuilder
     private func bar(at index: Int) -> some View {
         let h = height(at: index)
-        RoundedRectangle(cornerRadius: 2)
-            .fill(Color(hex: "#C8A97E"))
-            .frame(width: 4, height: h)
-            .animation(
-                isListening
-                    ? .linear(duration: 0.06)
-                    : .easeInOut(duration: 1.0).delay(Double(index) * 0.10),
-                value: h
-            )
+        let base = Self.baseHeights[index]
+        if reduceMotion {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color(hex: "#C8A97E"))
+                .frame(width: 4, height: Self.maxHeight * base)
+                .opacity(isListening ? 1.0 : (breathPhase ? 0.8 : 0.35))
+                .animation(.easeInOut(duration: 1.0), value: breathPhase)
+        } else {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color(hex: "#C8A97E"))
+                .frame(width: 4, height: h)
+                .animation(
+                    isListening
+                        ? .linear(duration: 0.06)
+                        : .easeInOut(duration: 1.0).delay(Double(index) * 0.10),
+                    value: h
+                )
+        }
     }
 
     private func height(at index: Int) -> CGFloat {

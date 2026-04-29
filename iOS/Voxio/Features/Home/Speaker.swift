@@ -9,6 +9,7 @@ class Speaker: Identifiable {
     var state: PlaybackValue = .unknown
     var metadata: PlaybackMetadata?
     var volume: Int?
+    var isMuted: Bool = false
     var source: String?
     var batteryLevel: Int?
 
@@ -75,6 +76,7 @@ class Speaker: Identifiable {
     private func loadVolume() async {
         guard let vol = try? await client.getVolume() else { return }
         volume = vol.volume.level
+        isMuted = vol.volume.muted ?? false
     }
 
     private func loadBattery() async {
@@ -105,8 +107,9 @@ class Speaker: Identifiable {
             )
 
         case .volume(let e):
-            Log.verbose("[\(name)] volume → \(e.volume.level)")
+            Log.verbose("[\(name)] volume → \(e.volume.level) muted:\(e.volume.muted ?? false)")
             volume = e.volume.level
+            isMuted = e.volume.muted ?? false
 
         case .battery(let e):
             if e.batteryLevel > 0 || e.isCharging {
@@ -152,8 +155,14 @@ class Speaker: Identifiable {
         volume = newLevel
     }
 
-    func mute() async throws   { try await client.setMute(true) }
-    func unmute() async throws { try await client.setMute(false) }
+    func mute() async throws {
+        try await client.setMute(true)
+        isMuted = true
+    }
+    func unmute() async throws {
+        try await client.setMute(false)
+        isMuted = false
+    }
 
     func getFavorites() async throws -> [Favorite] {
         try await client.getFavorites()

@@ -159,24 +159,24 @@ Implement absolute volume, relative volume adjustment, mute, and unmute.
 
 ## E-08 — Confirmation & Feedback Loop
 
-Implement the cross-cutting confirmation pattern shared by all commands — read-back, voice confirmation, and spoken completion.
+Implement the cross-cutting confirmation pattern shared by all commands — text display, voice confirmation, and success feedback. All feedback is text-only; there is no TTS.
 
-- [x] **T-0801** Build `ConfirmationCoordinator` — receives a confirmation string from any use case; speaks it aloud via `AVSpeechSynthesizer`; publishes `.pending` state to the UI; listens for `.confirm` or `.cancel` from `VoiceInputManager`
-- [x] **T-0802** Configure `AVSpeechSynthesizer` with `com.apple.voice.compact.en-US.Samantha` voice (English) or the best available `da-DK` system voice (Danish), speech rate 0.5; fall back to the system default voice for the active language if the preferred identifier is unavailable
-- [x] **T-0803** Ensure voice recognition is paused while `AVSpeechSynthesizer` is speaking to prevent feedback loops; resume recognition immediately after speech ends
+- [x] **T-0801** Build `ConfirmationCoordinator` — receives a confirmation string from any use case; publishes `.pending(message:)` state to show the confirmation sheet; listens for `.confirm` or `.cancel` from voice or tap
+- [x] **T-0802** ~~Configure AVSpeechSynthesizer~~ — removed; no TTS output
+- [x] **T-0803** ~~Pause voice recognition during TTS~~ — removed; no TTS output
 - [x] **T-0804** Implement tap-to-confirm fallback — "Yes" and "No" buttons in the confirmation sheet trigger the same `.confirm` / `.cancel` path as voice
-- [x] **T-0805** Implement confirmation timeout — if neither voice nor tap confirmation is received within 10 seconds, auto-cancel and speak *"Action cancelled"*
-- [x] **T-0806** Implement post-action spoken completion feedback (e.g. *"[Speaker name] volume is now [value]"*) for use cases that specify it
+- [x] **T-0805** Implement confirmation timeout — if neither voice nor tap confirmation is received within 10 seconds, auto-cancel
+- [x] **T-0806** ~~Post-action spoken completion feedback~~ — removed; success is shown via a toast only
 - [ ] **T-0807** Write unit tests for `ConfirmationCoordinator`; cover confirm-by-voice, cancel-by-voice, confirm-by-tap, cancel-by-tap, and timeout paths
 
 ---
 
 ## E-09 — Error Handling
 
-Centralise all error states and ensure every failure surfaces a clear, spoken, and visual response.
+Centralise all error states and ensure every failure surfaces a clear text response via toast.
 
 - [x] **T-0901** Define `AppError` enum covering all error cases from the functional spec: `.noSpeakerSpoken`, `.speakerNotFound`, `.favoriteNotFound`, `.speakerUnreachable`, `.nothingPlaying`, `.volumeAtLimit`, `.pauseNotSupported`, `.alreadyMuted`, `.voiceNotRecognised`, `.apiTimeout`
-- [x] **T-0902** Build `ErrorResponseService` — maps each `AppError` to its exact spoken and display string from the functional spec; returns the string in the active language (English or Danish)
+- [x] **T-0902** Build `ErrorResponseService` — maps each `AppError` to its display string from the functional spec; returns the string in the active language (English or Danish)
 - [x] **T-0903** Ensure all use cases surface errors through `ErrorResponseService` rather than ad-hoc strings
 - [x] **T-0904** Implement graceful API degradation — when `MozartError.timeout` or `MozartError.unreachable` is received, surface the appropriate `AppError` without crashing
 - [ ] **T-0905** Ensure the app never crashes on network loss; write a test that simulates network unavailability mid-command
@@ -334,7 +334,7 @@ Danish error strings (spoken and display):
 - [ ] **T-1702** Update `AVService` to instantiate `SFSpeechRecognizer` with the locale from `LanguageService`; reinitialise the recogniser (stop current request, create new instance, restart) when `activeLanguage` changes
 - [ ] **T-1703** Extend `CommandParser` to accept a `Language` parameter; add Danish keyword mappings for all command intents using the keyword table above
 - [ ] **T-1704** Add Danish spoken-number words (`en`, `to`, `tre`, `fire`) to the play-favorite number map in `CommandParser`
-- [ ] **T-1705** Update `ConfirmationCoordinator` to select the `da-DK` system TTS voice when Danish is active (`AVSpeechSynthesisVoice(language: "da-DK")`); fall back to any available Danish voice; apply the same speech rate (0.5)
+- [x] **T-1705** ~~Configure TTS voice for Danish~~ — removed; no TTS output
 - [ ] **T-1706** Extend `ErrorResponseService` to return Danish strings for all `AppError` cases when `LanguageService.activeLanguage == .danish`; use the Danish strings listed above
 - [ ] **T-1707** Translate all confirmation and completion message strings in `HomeView` (`confirmationMessage(for:speaker:)`, `completionMessage(for:speaker:)`) to Danish; select the correct language via `LanguageService`
 - [ ] **T-1708** Translate all static UI strings to Danish via `String(localized:)`: ConfirmationSheet labels ("About to:" → "Er ved at:", "eller sig Ja / Nej"), `HomeView` status messages ("Listening…" → "Lytter…", "Looking for speakers…" → "Leder efter højttalere…", "Microphone access denied" → "Mikrofonadgang nægtet")
@@ -392,8 +392,8 @@ T-1804 (Router) + T-0403 ──► T-1805 (pipeline integration) ──► T-181
 - [ ] **T-1809** Integration tests for `FoundationModelParser` — gated behind `SystemLanguageModel.availability == .available`; cover: playNamed with exact favorite, playNamed with paraphrased name, volumeUp with spoken number, stop, confirm, unknown utterance; assert `intent` and slot values
   *Depends on: T-1802.*
 
-- [ ] **T-1810** Verify voice recognition pauses during `AVSpeechSynthesizer` output — `VoiceInputManager` suspends `SFSpeechAudioBufferRecognitionRequest` while `AVSpeechSynthesizer.isSpeaking`; resumes within 200 ms of speech end; no self-triggered parse events in the test harness
-  *Depends on: T-1805, T-0803.*
+- [x] **T-1810** ~~Verify voice recognition pauses during TTS~~ — removed; no TTS output
+  *Depends on: T-1805.*
 
 ---
 
@@ -431,10 +431,10 @@ T-1909 (unit tests) ── depends on T-1901–T-1908
 - [ ] **T-1903** Wire `LanguagePickerSheet` into `HomeView` — present the sheet on `HomeView.onAppear` when `!languageService.hasExplicitlyChosen`; do not call `voiceToText.start()` or begin the mDNS scan until the sheet has been dismissed (sheet dismissal is the trigger for mic and discovery initialisation); the picker must appear within 500 ms of `onAppear`; on every subsequent launch the sheet is not presented and the existing startup flow is unchanged.
   *Depends on: T-1902.*
 
-- [ ] **T-1904** Announce `voiceNotRecognised` on `.unknown` command intent — in the E-18 dispatch path in `HomeView` (the `switch parsed.intent` block), add `coordinator.announce(errorService.spoken(.voiceNotRecognised))` to the `.unknown` case; the existing `clearTranscriptAfterDelay()` call in that branch remains; spoken feedback must begin within 500 ms of the final transcript delivering `.unknown`; voice recognition is paused while speaking (existing `onSpeechWillStart` / `onSpeechDidEnd` hooks are authoritative and require no changes).
+- [ ] **T-1904** Show `voiceNotRecognised` error toast on `.unknown` command intent — in the E-18 dispatch path in `HomeView` (the `switch parsed.intent` block), call `handleError(.voiceNotRecognised)` in the `.unknown` case; the existing `clearTranscriptAfterDelay()` call in that branch remains.
   *No E-19 dependencies.*
 
-- [ ] **T-1905** Build `HintCardView` — a SwiftUI `View` rendered inside the `voiceFeedback` `VStack` (`HomeView.swift:155–177`); shows three example command phrases in the active language using `speakers.first?.friendlyName` (or a placeholder if no speaker has been discovered yet); EN copy: "Try saying:" + `"<Name>, play"` + `"<Name>, pause"` + `"<Name>, volume 50"`; DA copy: "Prøv at sige:" + `"<Navn>, afspil"` + `"<Navn>, pause"` + `"<Navn>, lydstyrke 50"`; placeholder copy when no speaker is discovered yet: "Looking for speakers… Once one is found you can say e.g. 'Beolab, play'" / "Leder efter højttalere… Når en er fundet kan du f.eks. sige 'Beolab, afspil'"; a "Got it" / "OK" button sets `@AppStorage("hasSeenHint") = true` and hides the card; auto-hides (without setting `hasSeenHint`) when `transcript` becomes non-empty; must not appear while `coordinator.isPending == true` or while `AVSpeechSynthesizer.isSpeaking`; Reduce Motion: entry/exit uses `.opacity` cross-fade only; Dynamic Type: all text scales to the user's preferred size; dismiss control `accessibilityLabel`: "Dismiss hint" / "Afvis tip".
+- [ ] **T-1905** Build `HintCardView` — a SwiftUI `View` rendered inside the `voiceFeedback` `VStack` (`HomeView.swift:155–177`); shows three example command phrases in the active language using `speakers.first?.friendlyName` (or a placeholder if no speaker has been discovered yet); EN copy: "Try saying:" + `"<Name>, play"` + `"<Name>, pause"` + `"<Name>, volume 50"`; DA copy: "Prøv at sige:" + `"<Navn>, afspil"` + `"<Navn>, pause"` + `"<Navn>, lydstyrke 50"`; placeholder copy when no speaker is discovered yet: "Looking for speakers… Once one is found you can say e.g. 'Beolab, play'" / "Leder efter højttalere… Når en er fundet kan du f.eks. sige 'Beolab, afspil'"; a "Got it" / "OK" button sets `@AppStorage("hasSeenHint") = true` and hides the card; auto-hides (without setting `hasSeenHint`) when `transcript` becomes non-empty; must not appear while `coordinator.isPending == true`; Reduce Motion: entry/exit uses `.opacity` cross-fade only; Dynamic Type: all text scales to the user's preferred size; dismiss control `accessibilityLabel`: "Dismiss hint" / "Afvis tip".
   *No E-19 dependencies. Prerequisite for T-1906.*
 
 - [ ] **T-1906** Add "?" button to `statusBar` — place a `Button` on the leading edge of the `statusBar` HStack in `HomeView`, 20 pt horizontal and 8 pt top inset (mirroring `ConnectionStatusChip` alignment at the trailing edge); tapping toggles a `@State var showHintManually: Bool`; `HintCardView` is visible when `showHintManually == true` OR when `hasSeenHint == false && speakers.isNotEmpty`; tapping "?" while the card is visible hides it (sets `showHintManually = false`); `accessibilityLabel`: "Show getting-started hint" / "Vis kom-godt-i-gang-tip"; button uses SF Symbol `questionmark.circle` at the same point size as `ConnectionStatusChip`'s icon.

@@ -17,6 +17,8 @@ struct HomeView: View {
     @State private var hasAppeared    = false
     @State private var currentToast:  Toast?
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private let errorService = ErrorResponseService()
 
     private var cs: CommandStrings { CommandStrings.forLanguage(langService.activeLanguage) }
@@ -178,17 +180,16 @@ struct HomeView: View {
     // ── Setup ─────────────────────────────────────────────────────────────────
 
     private func onAppear() {
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15)) {
+        withAnimation(reduceMotion
+            ? .easeIn(duration: 0.2)
+            : .spring(response: 0.5, dampingFraction: 0.8).delay(0.15)
+        ) {
             hasAppeared = true
         }
 
         registry.start()
         motionManager.start()
         Task { await commandRouter.warmUp() }
-
-        // Wire TTS pause/resume — prevents synthesizer output feeding back into recognition
-        coordinator.onSpeechWillStart = { [self] in voiceToText.pauseRecognition() }
-        coordinator.onSpeechDidEnd    = { [self] in voiceToText.resumeRecognition() }
 
         voiceToText.onTranscript = { text in
             DispatchQueue.main.async {
@@ -234,6 +235,7 @@ struct HomeView: View {
                     favoriteNames:    favoriteNames
                 )
                 Log.info("[HomeView] → \(speaker.name): \(command)")
+                if command.intent != .unknown { HapticEngine.shared.commandRecognised() }
 
                 if command.intent == .playFavoriteByNumber {
                     await handlePlayFavoriteByNumber(command: command, speaker: speaker)
@@ -247,15 +249,15 @@ struct HomeView: View {
                     return
                 }
 
+                if let preflight = preflightError(for: command, speaker: speaker) {
+                    handleError(preflight)
+                    return
+                }
+
                 let confirmed = await coordinator.request(message: confirmMsg)
                 if confirmed {
                     let succeeded = await dispatchParsed(command: command, to: speaker)
-                    if succeeded {
-                        showSuccess("Done")
-                        if let completion = completionMessage(forParsed: command, speaker: speaker) {
-                            coordinator.announce(completion)
-                        }
-                    }
+                    if succeeded { showSuccess("Done") }
                 }
             }
         }
@@ -311,8 +313,9 @@ struct HomeView: View {
             return true
         case .listFavorites:
             let names = await registry.favorites.listFavorites(for: speaker)
-            let list  = names.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: ", ")
-            coordinator.announce(cs.listFavoritesResult(speaker.name, list))
+            let list  = names.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "  ·  ")
+            transcript = cs.listFavoritesResult(speaker.name, list)
+            clearTranscriptAfterDelay()
             return true
         case .stop:
             guard speaker.isPlaying else {
@@ -390,6 +393,20 @@ struct HomeView: View {
         }
     }
 
+    /// Returns an error that should skip the confirmation sheet entirely (volume limits, already muted).
+    private func preflightError(for command: ParsedCommand, speaker: Speaker) -> AppError? {
+        switch command.intent {
+        case .volumeUp:
+            if let vol = speaker.volume, vol >= 100 { return .volumeAtLimit(speaker: speaker.name, atMax: true) }
+        case .volumeDown:
+            if let vol = speaker.volume, vol <= 0 { return .volumeAtLimit(speaker: speaker.name, atMax: false) }
+        case .mute:
+            if speaker.isMuted { return .alreadyMuted(speaker: speaker.name) }
+        default: break
+        }
+        return nil
+    }
+
     private func clearTranscriptAfterDelay() {
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(5))
@@ -398,28 +415,27 @@ struct HomeView: View {
     }
 
     private func handleError(_ error: AppError) {
-        coordinator.announce(errorService.spoken(error))
         let message = errorService.spoken(error)
         let kind: ToastKind
         switch error {
         case .volumeAtLimit(_, let isMax):
             kind = .volumeLimit(message: message, isMax: isMax)
-            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            HapticEngine.shared.limitReached()
         case .noSpeakerSpoken(let available):
             kind = .error(message: message, list: available)
-            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            HapticEngine.shared.errorOccurred()
         case .speakerNotFound(_, let available):
             kind = .error(message: message, list: available)
-            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            HapticEngine.shared.errorOccurred()
         case .favoriteNotFound(_, _, let available):
             kind = .error(message: message, list: available)
-            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            HapticEngine.shared.errorOccurred()
         case .favoriteIndexOutOfRange(_, _, let available):
             kind = .error(message: message, list: available)
-            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            HapticEngine.shared.errorOccurred()
         default:
             kind = .error(message: message, list: [])
-            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            HapticEngine.shared.errorOccurred()
         }
         showToast(Toast(kind: kind))
     }
@@ -495,8 +511,9 @@ struct HomeView: View {
 
         case .listFavorites:
             let names = await registry.favorites.listFavorites(for: speaker)
-            let list  = names.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: ", ")
-            coordinator.announce(cs.listFavoritesResult(speaker.name, list))
+            let list  = names.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "  ·  ")
+            transcript = cs.listFavoritesResult(speaker.name, list)
+            clearTranscriptAfterDelay()
             return true
 
         case .stop:
@@ -511,7 +528,19 @@ struct HomeView: View {
                 handleError(.nothingPlaying(speaker: speaker.name))
                 return false
             }
-            return await perform(speaker: speaker) { try await speaker.pause() }
+            do {
+                try await speaker.pause()
+                return true
+            } catch MozartError.httpError(let code) where code == 405 {
+                handleError(.pauseNotSupported(speaker: speaker.name))
+                return false
+            } catch MozartError.timeout {
+                handleError(.apiTimeout)
+                return false
+            } catch {
+                handleError(.speakerUnreachable(speaker: speaker.name))
+                return false
+            }
 
         case .resume:
             return await perform(speaker: speaker) { try await speaker.play() }
