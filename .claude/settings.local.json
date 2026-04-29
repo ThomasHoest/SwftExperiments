@@ -13,7 +13,20 @@
       "Bash(git commit -m ' *)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:bang-olufsen.github.io)",
-      "Bash(dotnet run *)"
+      "Bash(dotnet run *)",
+      "Bash(xcodebuild -project Voxio.xcodeproj -scheme Voxio -destination 'platform=iOS Simulator,name=iPhone 16' build)",
+      "Bash(sudo xcode-select *)",
+      "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/mrandersen/Projects/SwftExperiments-usability/iOS/Voxio.xcodeproj -scheme Voxio -destination 'generic/platform=iOS Simulator' build)",
+      "Bash(git -C /Users/mrandersen/Projects/SwftExperiments-usability status)",
+      "Bash(git -C /Users/mrandersen/Projects/SwftExperiments-usability log --oneline -5)",
+      "Bash(git -C /Users/mrandersen/Projects/SwftExperiments-usability add iOS/Voxio/Core/CommandParsing/TwoStageFallbackParser.swift)",
+      "Bash(git -C /Users/mrandersen/Projects/SwftExperiments-usability commit -m ' *)",
+      "Bash(git -C /Users/mrandersen/Projects/SwftExperiments-usability push origin usability-improvements)",
+      "WebSearch",
+      "WebFetch(domain:api.github.com)",
+      "Bash(xcodebuild -project iOS/Voxio.xcodeproj -scheme Voxio -destination \"generic/platform=iOS Simulator\" -quiet build)",
+      "mcp__ide__getDiagnostics",
+      "Bash(xargs ls *)"
     ]
   }
 }
