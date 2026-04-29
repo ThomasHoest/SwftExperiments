@@ -8,7 +8,7 @@ enum BeoColor {
     static let accent      = Color("Accent")
     static let cardBg      = Color("CardSurface")
     static let cardBorder  = Color("CardBorder")
-    static let separator   = Color("Separator")
+    static let separator   = Color("BeoSeparator")
 }
 
 extension Color {

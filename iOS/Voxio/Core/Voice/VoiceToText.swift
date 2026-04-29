@@ -3,7 +3,7 @@ import Speech
 import UIKit
 
 class VoiceToText {
-    private let recorder = AVService()
+    private let recorder = AVService(locale: LanguageService.shared.activeLanguage.locale)
     private var currentLanguage: Language = LanguageService.shared.activeLanguage
 
     /// Called with every partial transcription string (for live display).

@@ -159,7 +159,7 @@ class Speaker: Identifiable {
         try await client.getFavorites()
     }
 
-    func playFavorite(id: String) async throws {
-        try await client.playFavorite(id: id)
+    func playFavorite(presetIndex: Int) async throws {
+        try await client.playFavorite(presetIndex: presetIndex)
     }
 }

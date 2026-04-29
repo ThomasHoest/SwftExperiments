@@ -384,7 +384,7 @@ struct HomeView: View {
         let confirmed = await coordinator.request(message: confirmMsg)
         if confirmed {
             let succeeded = await perform(speaker: speaker) {
-                try await speaker.playFavorite(id: favorite.id)
+                try await speaker.playFavorite(presetIndex: favorite.presetIndex)
             }
             if succeeded { showSuccess("Done") }
         }

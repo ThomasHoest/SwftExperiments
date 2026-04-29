@@ -118,8 +118,8 @@ iOS/Voxio/
 - REST base: `http://<speaker-ip>/api/v1/`
 - WebSocket events: `ws://<speaker-ip>:9339/`
 - mDNS service type: `_bangolufsen._tcp`
-- Key REST endpoints: `/beolink/self`, `/playback/state`, `/sound/volume`, `/battery`, `/playback/sources/active`, `/content/favorites`
-- Favorites: `GET /content/favorites` returns `[Favorite]`; `POST /content/favorites/{id}` activates one
+- Key REST endpoints: `/beolink/self`, `/playback/state`, `/sound/volume`, `/battery`, `/playback/sources/active`, `/scenes`
+- Favorites/Scenes: `GET /scenes` returns `[Favorite]`; `POST /playback/preset/{id}/trigger` activates one
 - WS event types: `WebSocketEventPlaybackState`, `WebSocketEventPlaybackMetadata`, `WebSocketEventVolume`, `WebSocketEventBattery`, `WebSocketEventPlaybackSource`
 - Metadata WS shape differs from REST: uses `artistName` / `albumName` instead of `artist` / `album`
 - `"started"` playback state is equivalent to `"playing"`

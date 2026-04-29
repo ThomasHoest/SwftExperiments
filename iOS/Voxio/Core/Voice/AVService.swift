@@ -22,8 +22,9 @@ class AVService {
     // IPC off Swift's cooperative thread pool and suppresses unsafeForcedSync.
     private let audioQueue = DispatchQueue(label: "com.voxio.audio", qos: .userInitiated)
 
-    init() {
-        recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))!
+    init(locale: Locale = Locale(identifier: "en-US")) {
+        recognizer = SFSpeechRecognizer(locale: locale)
+            ?? SFSpeechRecognizer(locale: Locale(identifier: "en-US"))!
     }
 
     // T-0303 — silence gate
@@ -53,7 +54,7 @@ class AVService {
         audioQueue.sync {
             let session = AVAudioSession.sharedInstance()
             do {
-                try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker])
+                try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
                 try session.setActive(true)
             } catch {
                 startError = error
