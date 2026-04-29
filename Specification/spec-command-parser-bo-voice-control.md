@@ -1,22 +1,22 @@
 # Technical Specification: Robust Command Parsing
 ## Bang & Olufsen Voice Controller
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Status:** Draft  
-**Date:** 2026-04-28  
-**References:** functional-spec-bo-voice-control v1.2, epics-and-tasks-bo-voice-control v1.0
+**Date:** 2026-04-29  
+**References:** functional-spec-bo-voice-control v1.3, epics-and-tasks-bo-voice-control v1.1
 
 ---
 
 ## Overview
 
-This specification replaces the `CommandParser` design proposed in E-03 (tasks T-0305 through T-0311) of the epics-and-tasks document. It addresses the inherent fragility of the original Levenshtein-distance rule-based approach and defines a more robust two-path architecture: a Foundation Models-powered semantic parser for Apple Intelligence-capable devices, with a deterministic + probabilistic fallback for older hardware.
+This specification defines **Epic E-18: Robust Command Parsing** — a new epic that supersedes the `CommandParser` implementation delivered in E-03 (T-0305–T-0311). The existing E-03 tasks are complete and remain in the task history unchanged; E-18 is a forward-looking replacement that addresses the inherent fragility of the rule-based approach. It defines a more robust two-path architecture: a Foundation Models-powered semantic parser for Apple Intelligence-capable devices, with a deterministic + probabilistic fallback for older hardware.
 
 ---
 
 ## Problem Statement
 
-The original `CommandParser` design (T-0305–T-0311) relies on:
+The `CommandParser` delivered in E-03 (T-0305–T-0311) relies on:
 
 - Stripping the leading speaker name token from the raw transcription
 - Matching the remainder against a fixed set of known phrase patterns
@@ -279,13 +279,13 @@ The router does not retry across paths on failure. If `FoundationModelParser` th
 
 ---
 
-## Revised Task List (Replaces T-0305–T-0311)
+## Epic E-18: Robust Command Parsing — Task List
 
-The following tasks replace the original T-0305 through T-0311 block in E-03.
+These are new tasks under E-18. The original E-03 tasks T-0305–T-0311 are not modified; E-18 delivers a replacement implementation that is deployed alongside and then replaces the E-03 `CommandParser` at runtime.
 
 ---
 
-### T-0305a — Define ParsedCommand and CommandIntent types
+### T-1801 — Define ParsedCommand and CommandIntent types
 
 Define the `ParsedCommand` `@Generable` struct and `CommandIntent` / `VolumeDirection` enums as specified above. Both types must conform to `Generable`, `Codable`, and `Equatable`. Place in `Core/CommandParsing/ParsedCommand.swift`.
 
@@ -296,7 +296,7 @@ Define the `ParsedCommand` `@Generable` struct and `CommandIntent` / `VolumeDire
 
 ---
 
-### T-0305b — Build FoundationModelParser
+### T-1802 — Build FoundationModelParser
 
 Implement `FoundationModelParser` as described in Path A above.
 
@@ -308,7 +308,7 @@ Implement `FoundationModelParser` as described in Path A above.
 
 ---
 
-### T-0305c — Build TwoStageFallbackParser
+### T-1803 — Build TwoStageFallbackParser
 
 Implement `TwoStageFallbackParser` as described in Path B above.
 
@@ -321,7 +321,7 @@ Implement `TwoStageFallbackParser` as described in Path B above.
 
 ---
 
-### T-0305d — Build CommandParserRouter
+### T-1804 — Build CommandParserRouter
 
 Implement `CommandParserRouter` as specified above.
 
@@ -332,7 +332,7 @@ Implement `CommandParserRouter` as specified above.
 
 ---
 
-### T-0305e — Integrate SpeakerNameMatcher as pipeline entry point
+### T-1805 — Integrate SpeakerNameMatcher as pipeline entry point
 
 Wire `SpeakerNameMatcher` (E-04, T-0402) as the mandatory first step before `CommandParserRouter`. Neither parser is invoked if `SpeakerNameMatcher` returns `nil`.
 
@@ -343,7 +343,7 @@ Wire `SpeakerNameMatcher` (E-04, T-0402) as the mandatory first step before `Com
 
 ---
 
-### T-0305f — Train and bundle NLModel classifier
+### T-1806 — Train and bundle NLModel classifier
 
 Create the training corpus, train the `NLModel`, and bundle the compiled `.mlmodel` with the app.
 
@@ -355,7 +355,7 @@ Create the training corpus, train the `NLModel`, and bundle the compiled `.mlmod
 
 ---
 
-### T-0305g — Add classifier accuracy gate to CI pipeline
+### T-1807 — Add classifier accuracy gate to CI pipeline
 
 Add a build step that loads the `NLModel` and runs inference against the validation set, failing the build if accuracy drops below 85%.
 
@@ -366,7 +366,7 @@ Add a build step that loads the `NLModel` and runs inference against the validat
 
 ---
 
-### T-0305h — Unit tests for TwoStageFallbackParser
+### T-1808 — Unit tests for TwoStageFallbackParser
 
 Write unit tests covering all Stage 1 patterns and Stage 2 classification. These tests run without Apple Intelligence hardware.
 
@@ -379,7 +379,7 @@ Write unit tests covering all Stage 1 patterns and Stage 2 classification. These
 
 ---
 
-### T-0305i — Integration tests for FoundationModelParser
+### T-1809 — Integration tests for FoundationModelParser
 
 Write integration tests that exercise `FoundationModelParser` on a device or simulator with Apple Intelligence enabled.
 
@@ -391,7 +391,7 @@ Write integration tests that exercise `FoundationModelParser` on a device or sim
 
 ---
 
-### T-0305j — Verify voice recognition pauses during AVSpeechSynthesizer output
+### T-1810 — Verify voice recognition pauses during AVSpeechSynthesizer output
 
 Ensure the parsing pipeline is not triggered by the app's own spoken confirmations.
 
@@ -436,9 +436,9 @@ This leaves substantial headroom. Even with 50 favorites, the budget remains wel
 
 | Risk | Likelihood | Mitigation |
 |---|---|---|
-| Foundation Models cold-start latency exceeds 3 s budget | Medium | Pre-warm session on app launch (T-0305b); first user command is never the first model call |
+| Foundation Models cold-start latency exceeds 3 s budget | Medium | Pre-warm session on app launch (T-1802); first user command is never the first model call |
 | On-device model misclassifies ambiguous commands | Low–Medium | Confirmation step before every action catches misclassification before it causes an effect |
-| NLModel accuracy degrades as command vocabulary grows | Low | CI accuracy gate (T-0305g) catches regressions; corpus is versioned and can be extended |
+| NLModel accuracy degrades as command vocabulary grows | Low | CI accuracy gate (T-1807) catches regressions; corpus is versioned and can be extended |
 | User's device does not support Apple Intelligence | Medium | `TwoStageFallbackParser` covers all supported devices down to iOS 25 |
 | Favorites list grows large enough to exceed context budget | Low | Truncation to 40 most-recently-played items; documented limit |
 
