@@ -1,5 +1,5 @@
 # Epics & Tasks: Bang & Olufsen Voice Controller
-**Version:** 1.2  
+**Version:** 1.3  
 **Status:** Draft  
 **Date:** 2026-04-29  
 **References:** functional-spec-bo-voice-control v1.3, design-spec-bo-voice-control v1.0, spec-command-parser-bo-voice-control v1.1  
@@ -35,6 +35,7 @@ This document breaks the functional and design specifications into epics and the
 | E-16 | Gen AI Service Authentication | — |
 | E-17 | Danish & Multilingual Support | All US |
 | E-18 | Robust Command Parsing (Foundation Models + NLModel) | US-00 through US-08 |
+| E-19 | Usability Enhancements | US-09 through US-12 |
 
 ---
 
@@ -395,6 +396,60 @@ T-1804 (Router) + T-0403 ──► T-1805 (pipeline integration) ──► T-181
 
 ---
 
+## E-19 — Usability Enhancements
+
+Close four first-launch and day-to-day usability gaps: explicit language selection at startup with persistent choice, spoken feedback when a command is not understood, a dismissible getting-started hint card using real speaker names, and consistent auto-clearing of the voice transcript. None of these tasks change the existing command grammar, Mozart API integration, or design system.
+
+**References:** functional-spec-usability-enhancements v1.1 (US-09–US-12)  
+**Depends on:** E-03 (T-0303 silence detection), E-08 (T-0801 `ConfirmationCoordinator`), E-09 (T-0901 `AppError`, T-0902 `ErrorResponseService`), E-17 (T-1701 `LanguageService`, T-1702 `AVService.setLocale`), E-18 (T-1801 `ParsedCommand`/`CommandIntent`)
+
+### Task dependency chain
+
+```
+T-1901 (LanguageService flag)
+  └── T-1902 (LanguagePickerSheet UI)
+        └── T-1903 (HomeView wiring — defer mic until chosen)
+
+T-1904 (voiceNotRecognised on .unknown) ── no dependencies within E-19
+
+T-1905 (HintCardView)
+  └── T-1906 (? button in statusBar)
+
+T-1907 (clearTranscriptAfterDelay on all paths)
+  └── T-1908 (suppress clear while confirmation pending)
+
+T-1909 (unit tests) ── depends on T-1901–T-1908
+```
+
+- [ ] **T-1901** Add `hasExplicitlyChosen: Bool` to `LanguageService` — persisted under key `com.voxio.activeLanguage.hasExplicitlyChosen` in `UserDefaults`; set to `true` inside `setLanguage(_:)` after persisting; defaults to `false` when the key is absent. No other `LanguageService` behaviour changes.
+  *No E-19 dependencies. Prerequisite for T-1902, T-1903.*
+
+- [ ] **T-1902** Build `LanguagePickerSheet` — a SwiftUI `View` presented as a `.sheet` with `interactiveDismissDisabled(true)` and `presentationDetents([.height(280)])`; matches `ConfirmationSheet` Liquid Glass material and design tokens; contains two full-width tappable rows: "English" and "Dansk"; each row calls `LanguageService.shared.setLanguage(_:)` then dismisses the sheet; VoiceOver announcement on appear: "Choose your command language." (EN) / "Vælg dit kommandosprog." (DA); both rows are at least 44 × 44 pt; Dynamic Type text scales correctly at all sizes.
+  *Depends on: T-1901. Prerequisite for T-1903.*
+
+- [ ] **T-1903** Wire `LanguagePickerSheet` into `HomeView` — present the sheet on `HomeView.onAppear` when `!languageService.hasExplicitlyChosen`; do not call `voiceToText.start()` or begin the mDNS scan until the sheet has been dismissed (sheet dismissal is the trigger for mic and discovery initialisation); the picker must appear within 500 ms of `onAppear`; on every subsequent launch the sheet is not presented and the existing startup flow is unchanged.
+  *Depends on: T-1902.*
+
+- [ ] **T-1904** Announce `voiceNotRecognised` on `.unknown` command intent — in the E-18 dispatch path in `HomeView` (the `switch parsed.intent` block), add `coordinator.announce(errorService.spoken(.voiceNotRecognised))` to the `.unknown` case; the existing `clearTranscriptAfterDelay()` call in that branch remains; spoken feedback must begin within 500 ms of the final transcript delivering `.unknown`; voice recognition is paused while speaking (existing `onSpeechWillStart` / `onSpeechDidEnd` hooks are authoritative and require no changes).
+  *No E-19 dependencies.*
+
+- [ ] **T-1905** Build `HintCardView` — a SwiftUI `View` rendered inside the `voiceFeedback` `VStack` (`HomeView.swift:155–177`); shows three example command phrases in the active language using `speakers.first?.friendlyName` (or a placeholder if no speaker has been discovered yet); EN copy: "Try saying:" + `"<Name>, play"` + `"<Name>, pause"` + `"<Name>, volume 50"`; DA copy: "Prøv at sige:" + `"<Navn>, afspil"` + `"<Navn>, pause"` + `"<Navn>, lydstyrke 50"`; placeholder copy when no speaker is discovered yet: "Looking for speakers… Once one is found you can say e.g. 'Beolab, play'" / "Leder efter højttalere… Når en er fundet kan du f.eks. sige 'Beolab, afspil'"; a "Got it" / "OK" button sets `@AppStorage("hasSeenHint") = true` and hides the card; auto-hides (without setting `hasSeenHint`) when `transcript` becomes non-empty; must not appear while `coordinator.isPending == true` or while `AVSpeechSynthesizer.isSpeaking`; Reduce Motion: entry/exit uses `.opacity` cross-fade only; Dynamic Type: all text scales to the user's preferred size; dismiss control `accessibilityLabel`: "Dismiss hint" / "Afvis tip".
+  *No E-19 dependencies. Prerequisite for T-1906.*
+
+- [ ] **T-1906** Add "?" button to `statusBar` — place a `Button` on the leading edge of the `statusBar` HStack in `HomeView`, 20 pt horizontal and 8 pt top inset (mirroring `ConnectionStatusChip` alignment at the trailing edge); tapping toggles a `@State var showHintManually: Bool`; `HintCardView` is visible when `showHintManually == true` OR when `hasSeenHint == false && speakers.isNotEmpty`; tapping "?" while the card is visible hides it (sets `showHintManually = false`); `accessibilityLabel`: "Show getting-started hint" / "Vis kom-godt-i-gang-tip"; button uses SF Symbol `questionmark.circle` at the same point size as `ConnectionStatusChip`'s icon.
+  *Depends on: T-1905.*
+
+- [ ] **T-1907** Call `clearTranscriptAfterDelay()` on all remaining final-transcript paths in `HomeView` — audit every branch reached after `onFinalTranscript` fires and confirm `clearTranscriptAfterDelay()` is called on: successful command (confirmed and dispatched), cancelled command (user said "no", tapped Cancel, or confirmation timed out), and API error paths (`.speakerUnreachable`, `.favoriteNotFound`, `.nothingPlaying`, etc.) and `.noSpeakerSpoken`; the `.unknown` path already calls it and must not be changed; the timer starts from the moment each branch's handler returns; if a new transcription arrives before any timer fires, the new transcription replaces the old one and its own 5-second timer supersedes the previous one (cancel the old `Task` before scheduling the new one).
+  *No E-19 dependencies. Prerequisite for T-1908.*
+
+- [ ] **T-1908** Suppress `clearTranscriptAfterDelay()` while confirmation is pending — inside the existing `clearTranscriptAfterDelay()` method (`HomeView.swift:368`), after the `Task.sleep` wakes, check `coordinator.isPending`; if `true`, reschedule the same 5-second sleep instead of writing `transcript = ""`; repeat until `coordinator.isPending == false`; this requires no new timer primitive and no changes to `ConfirmationCoordinator`.
+  *Depends on: T-1907.*
+
+- [ ] **T-1909** Write unit tests — (a) `LanguageService.hasExplicitlyChosen` is `false` when the UserDefaults key is absent and `true` after `setLanguage(_:)` is called; (b) `LanguagePickerSheet` is presented on first launch and absent on subsequent launches; (c) `voiceNotRecognised` is announced when `parsed.intent == .unknown` and not announced for any other intent; (d) `clearTranscriptAfterDelay()` does not clear `transcript` while `coordinator.isPending == true` and does clear it after `isPending` becomes `false`; (e) `HintCardView` renders with a real speaker name when one is discovered and with placeholder copy when none is; (f) `hasSeenHint` is set to `true` only on explicit dismissal, not on auto-hide.
+  *Depends on: T-1901–T-1908.*
+
+---
+
 ## Task Summary
 
 | Epic | Tasks | Notes |
@@ -417,4 +472,5 @@ T-1804 (Router) + T-0403 ──► T-1805 (pipeline integration) ──► T-181
 | E-16 Gen AI Service Authentication | 10 | Prerequisite for E-15 |
 | E-17 Danish & Multilingual Support | 12 | Depends on E-03, E-08, E-09, E-11 |
 | E-18 Robust Command Parsing | 10 | Depends on E-03, E-04, E-05; supersedes E-03 T-0305–T-0311 |
-| **Total** | **170** | |
+| E-19 Usability Enhancements | 9 | Depends on E-03, E-08, E-09, E-17, E-18; US-09–US-12 |
+| **Total** | **179** | |
