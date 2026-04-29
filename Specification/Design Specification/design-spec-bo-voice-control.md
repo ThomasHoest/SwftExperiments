@@ -1,7 +1,7 @@
 # Design Specification: Bang & Olufsen Voice Controller
-**Version:** 1.0  
+**Version:** 1.1  
 **Status:** Draft  
-**Date:** 2026-04-28  
+**Date:** 2026-04-29  
 **Platform:** iOS 26  
 **Design Language:** Liquid Glass
 
@@ -13,11 +13,13 @@ The B&O Voice Controller should feel like a natural extension of Bang & Olufsen'
 
 The interface must always feel calm and in control. There is no clutter. When the user speaks, the app responds with quiet confidence. The UI should suggest that the speaker is listening — not that it is waiting.
 
+The fixed dark background (`AppBackground.png`) anchors the visual identity: deep navy with large translucent blue/teal/green orbs. All glass surfaces, buttons, and cards float on top of this image. The result is a consistent, cinematic canvas that does not depend on the user's system wallpaper or light/dark mode setting.
+
 ---
 
 ## Design Principles
 
-1. **Recede, don't shout** — Glass surfaces let the background breathe. The UI floats over wallpaper and ambient content, never obscuring it unnecessarily.
+1. **Recede, don't shout** — Glass surfaces let the background breathe. Dark glass pills and frosted cards float over the orb background without competing with it.
 2. **One thing at a time** — Each interaction state occupies the full screen. There is no multi-panel complexity in v1.
 3. **Voice is the primary control** — Visual elements confirm and guide; they do not replace voice.
 4. **Feedback is immediate and exact** — The app always speaks back before acting. The UI reflects this with animated confirmation states.
@@ -46,15 +48,47 @@ Liquid Glass surfaces must:
 - Use `UIBlurEffect` with `.systemUltraThinMaterial` for lightweight panels and `.systemMaterial` for primary cards
 - Transition with the iOS 26 materialisation animation (gradual modulation of light bending, not a simple fade)
 
+### Button Style
+
+Buttons use a **dark Liquid Glass pill** pattern throughout the app, matching the reference in `ButtonLookAndFeel.png`.
+
+| Property | Value |
+|---|---|
+| Shape | Fully rounded pill (`radiusPill: 100`) |
+| Surface | Dark Liquid Glass — near-black semi-transparent fill (~12% white over black) |
+| Border | 0.5 pt hairline, `white.opacity(0.15)` specular highlight |
+| Text | SF Pro Text Medium, white, 15 pt |
+| Icon | SF Symbol, white, placed leading the label with 6 pt gap |
+| Padding | 10 pt vertical, 16 pt horizontal |
+| Icon-only variant | Circular pill, 36 × 36 pt, same dark glass surface |
+
+**Button states:**
+
+| State | Treatment |
+|---|---|
+| Default | Dark glass surface as above |
+| Pressed | `scaleEffect(0.95)`, surface brightens ~8% |
+| Disabled | Surface opacity 0.4, no interaction |
+| Destructive (Cancel) | Same dark pill; label and icon in system red |
+| Confirm / Primary | Dark pill with accent gold (`#C8A97E`) icon tint only — label remains white |
+
+Dark glass buttons must:
+- Use `.ultraThinMaterial` with a `Color.black.opacity(0.45)` overlay to achieve the near-black frosted look
+- Clip to a `Capsule()` shape
+- Apply a 0.5 pt `Capsule()` stroke overlay for the specular edge
+- Animate press with a spring response 0.3 s, damping 0.7
+
+---
+
 ### Layering Model
 
 The interface uses four depth layers, consistent with iOS 26's visual layer model:
 
 ```
 Layer 4 — Dynamic overlay    Confirmation sheet, error toasts
-Layer 3 — Glass controls     Cards, pills, volume track, buttons
-Layer 2 — Background blur    Wallpaper / ambient content blurred via Liquid Glass
-Layer 1 — Content (wallpaper / photo background chosen by user)
+Layer 3 — Glass controls     Cards, pills, volume track, dark glass buttons
+Layer 2 — Glass refraction   Liquid Glass surfaces refracting the orb background
+Layer 1 — AppBackground.png  Fixed dark navy / blue-teal orb image, full-bleed
 ```
 
 Controls float on Layer 3 and never touch the edges of the screen without appropriate safe-area padding.
@@ -77,24 +111,39 @@ Controls float on Layer 3 and never touch the edges of the screen without approp
 
 ---
 
+## Background
+
+The app uses a fixed custom background image (`AppBackground.png`). It features large translucent orbs in deep blue, teal, and green over a near-black navy base — establishing a dark, premium feel that lets Liquid Glass surfaces read clearly on top. The app does **not** use the user's wallpaper or adapt to system light/dark mode at the background layer.
+
+![App Background](AppBackground.png)
+
+- Use as a full-bleed `Image` behind all content layers
+- Asset dimensions: 642 × 1077 px, portrait iPhone, no tiling
+- The dark base ensures white button labels and icon-tinted elements remain legible without an additional scrim
+- In code: `ZStack` bottom layer, `.ignoresSafeArea()`, `.resizable().scaledToFill()`
+- The image is dark enough that `.ultraThinMaterial` glass surfaces appear visibly frosted rather than transparent
+
+---
+
 ## Colour
 
-The app uses a **near-neutral palette** with a single warm accent, respecting B&O's design vocabulary of black, white, and aluminium tones.
+The app uses a **near-neutral, dark-first palette** with a single warm accent, respecting B&O's design vocabulary of black, white, and aluminium tones. The background is always `AppBackground.png`; there is no `--bg-primary` colour token — the image handles that layer.
 
-| Token | Light Mode | Dark Mode | Usage |
-|---|---|---|---|
-| `--bg-primary` | `#F2F0ED` (warm off-white) | `#0D0D0D` (deep black) | App background |
-| `--surface-glass` | System `.systemMaterial` | System `.systemMaterial` | Glass card surfaces |
-| `--accent` | `#C8A97E` (warm gold) | `#C8A97E` | Active state, waveform, confirm button |
-| `--accent-secondary` | `#8C8278` | `#A09488` | Muted state, inactive icons |
-| `--label-primary` | `#1C1917` | `#F5F3F0` | Primary text |
-| `--label-secondary` | `#6B6560` | `#A09488` | Secondary text, captions |
-| `--destructive` | System red | System red | Cancel / stop states |
-| `--success` | System green | System green | Confirmed / playing state |
+| Token | Value | Usage |
+|---|---|---|
+| `--surface-glass` | System `.ultraThinMaterial` + `black.opacity(0.45)` | Dark glass pill surfaces |
+| `--surface-card` | System `.systemMaterial` | Speaker card, confirmation sheet |
+| `--accent` | `#C8A97E` (warm gold) | Active waveform, confirm icon tint, selected speaker pill |
+| `--accent-secondary` | `#A09488` | Muted state, inactive icons |
+| `--label-primary` | `#F5F3F0` (near-white) | All primary text — always on dark background |
+| `--label-secondary` | `#A09488` | Secondary text, captions, sheet sub-labels |
+| `--destructive` | System red | Cancel button label and icon |
+| `--success` | System green | Confirmed / playing state chips |
+| `--button-border` | `white.opacity(0.15)` | Specular edge on all dark glass pills |
 
-The warm gold accent (`#C8A97E`) is used sparingly: the active waveform animation, the confirm button fill, and the currently-selected speaker pill. Everywhere else is neutral.
+The warm gold accent (`#C8A97E`) is used sparingly: the active waveform animation, the confirm button icon tint, and the currently-selected speaker pill. Everywhere else is neutral white on dark glass.
 
-Both light and dark modes are fully supported. The Liquid Glass material automatically adapts; only the background and label colours require explicit mode switching.
+The app is **dark-mode only** at the visual layer. The fixed background image is inherently dark; light-mode system settings do not change the background or button surfaces. Liquid Glass materials may adapt their refraction slightly in light mode but the overall experience remains dark.
 
 ---
 
@@ -105,7 +154,7 @@ Both light and dark modes are fully supported. The Liquid Glass material automat
 The primary screen when the app is open and listening but no command is in progress.
 
 **Layout:**
-- Full-bleed background: user's iOS wallpaper visible through glass layers, or a default deep-charcoal gradient
+- Full-bleed background: `AppBackground.png` — dark navy orbs visible through glass layers
 - Centre: Large Liquid Glass card (speaker card) — rounded rect, 16 pt corner radius, `systemMaterial` blur
   - Speaker name in SF Pro Display Semibold 34 pt
   - Subtitle: current playback status (e.g. "Playing Jazz Radio" or "Idle")
@@ -147,9 +196,9 @@ Appears after the app has parsed the command and is ready to read back the actio
 - Content:
   - Small label "About to:" in `--label-secondary`
   - Action read-back in SF Pro Display Regular 22 pt — the exact spoken string (e.g. *"Playing Jazz Radio on Beosound"*)
-  - Two buttons, full-width, stacked vertically:
-    - **Confirm** — filled Liquid Glass button, accent gold tint, label "Yes"
-    - **Cancel** — outlined Liquid Glass button, label "No"
+  - Two buttons, full-width, stacked vertically, using the dark Liquid Glass pill style:
+    - **Confirm** — dark glass pill; `checkmark` SF Symbol in accent gold (`#C8A97E`) leading the label "Yes" in white
+    - **Cancel** — dark glass pill; `xmark` SF Symbol in system red leading the label "No" in system red
   - Mic indicator: small pill at sheet top — "or say Yes / No"
 
 **Motion:**
@@ -279,7 +328,7 @@ The app speaks all confirmation and error strings using `AVSpeechSynthesizer` wi
 
 - Onboarding / first-launch flow (speaker pairing is handled by the B&O app)
 - Settings screen
-- Dark/light mode toggle — follows system setting automatically
+- Light mode variant — the app is intentionally dark-only; system light/dark setting does not alter the background or button surfaces
 - iPad layout
 - Landscape orientation — portrait only in v1
 
@@ -288,24 +337,43 @@ The app speaks all confirmation and error strings using `AVSpeechSynthesizer` wi
 ## Design Tokens Reference
 
 ```swift
+// Background
+let appBackground = "AppBackground"   // Image asset name
+
 // Spacing (8-point grid)
-let spacing4: CGFloat = 4
-let spacing8: CGFloat = 8
+let spacing4: CGFloat  = 4
+let spacing8: CGFloat  = 8
 let spacing12: CGFloat = 12
 let spacing16: CGFloat = 16
 let spacing20: CGFloat = 20
 let spacing24: CGFloat = 24
 
 // Corner radii
-let radiusCard: CGFloat = 20
-let radiusPill: CGFloat = 100 // fully rounded
-let radiusSheet: CGFloat = 16 // system default
+let radiusCard: CGFloat  = 20
+let radiusPill: CGFloat  = 100  // fully rounded — used for all buttons and chips
+let radiusSheet: CGFloat = 16   // system sheet default
 
 // Animation
-let springDamping: CGFloat = 0.75
+let springDamping: CGFloat  = 0.75
 let springResponse: CGFloat = 0.45
 
-// Blur materials (UIKit)
-let materialPrimary = UIBlurEffect(style: .systemMaterial)
+// Materials — card / sheet surfaces
+let materialCard = UIBlurEffect(style: .systemMaterial)
 let materialThin = UIBlurEffect(style: .systemUltraThinMaterial)
+
+// Button — dark Liquid Glass pill (v1.1)
+// Surface = .ultraThinMaterial clipped to Capsule + black overlay
+let buttonOverlayColor  = Color.black.opacity(0.45)
+let buttonBorderColor   = Color.white.opacity(0.15)
+let buttonBorderWidth: CGFloat = 0.5
+let buttonPaddingV: CGFloat    = 10
+let buttonPaddingH: CGFloat    = 16
+let buttonIconGap: CGFloat     = 6
+let buttonIconOnlySize: CGFloat = 36
+
+// Colour tokens (dark-only)
+let accent          = Color(hex: "#C8A97E")  // warm gold — used sparingly
+let accentSecondary = Color(hex: "#A09488")
+let labelPrimary    = Color(hex: "#F5F3F0")
+let labelSecondary  = Color(hex: "#A09488")
 ```
