@@ -6,6 +6,7 @@ struct HomeView: View {
     @StateObject private var motionManager = MotionManager()
     @ObservedObject private var langService = LanguageService.shared
     @State private var voiceToText    = VoiceToText()
+    @State private var commandRouter  = CommandParserRouter()
     @State private var transcript     = ""
     @State private var micStatus      = "Initialising microphone…"
     @State private var audioLevel:    Float   = 0
@@ -184,6 +185,7 @@ struct HomeView: View {
 
         registry.start()
         motionManager.start()
+        Task { await commandRouter.warmUp() }
 
         // Wire TTS pause/resume — prevents synthesizer output feeding back into recognition
         coordinator.onSpeechWillStart = { [self] in voiceToText.pauseRecognition() }
@@ -223,22 +225,29 @@ struct HomeView: View {
                     return
                 }
                 selectedSpeaker = speaker
-                let commandText = remaining.isEmpty ? text : remaining.joined(separator: " ")
-                let command = CommandParser(language: langService.activeLanguage).parse(commandText)
+
+                let commandText   = remaining.isEmpty ? text : remaining.joined(separator: " ")
+                let favoriteNames = await registry.favorites.listFavorites(for: speaker)
+                let command = await commandRouter.parse(
+                    commandText,
+                    addressedSpeaker: speaker,
+                    allSpeakers:      registry.speakers.map(\.name),
+                    favoriteNames:    favoriteNames
+                )
                 Log.info("[HomeView] → \(speaker.name): \(command)")
 
                 // Commands that need no confirmation (list, confirm, cancel, unknown)
-                guard let confirmMsg = confirmationMessage(for: command, speaker: speaker) else {
-                    await dispatch(command: command, to: speaker)
+                guard let confirmMsg = confirmationMessage(forParsed: command, speaker: speaker) else {
+                    await dispatchParsed(command: command, to: speaker)
                     return
                 }
 
                 let confirmed = await coordinator.request(message: confirmMsg)
                 if confirmed {
-                    let succeeded = await dispatch(command: command, to: speaker)
+                    let succeeded = await dispatchParsed(command: command, to: speaker)
                     if succeeded {
                         showSuccess("Done")
-                        if let completion = completionMessage(for: command, speaker: speaker) {
+                        if let completion = completionMessage(forParsed: command, speaker: speaker) {
                             coordinator.announce(completion)
                         }
                     }
@@ -360,6 +369,116 @@ struct HomeView: View {
         Task {
             try? await Task.sleep(for: .seconds(1.5))
             successMessage = ""
+        }
+    }
+
+    // ── E-18: ParsedCommand confirmation / completion / dispatch ──────────────
+
+    private func confirmationMessage(forParsed command: ParsedCommand, speaker: Speaker) -> String? {
+        let step = command.volumeDelta ?? 10
+        switch command.intent {
+        case .playNamed:     return cs.playDefault(speaker.name)   // resolved name shown post-confirm
+        case .playDefault:   return cs.playDefault(speaker.name)
+        case .stop:          return cs.stop(speaker.name)
+        case .pause:         return cs.pause(speaker.name)
+        case .resume:        return cs.resume(speaker.name)
+        case .setVolume:     return cs.setVolume(speaker.name, command.volumeValue ?? 50)
+        case .volumeUp:      return cs.adjustVolumeUp(speaker.name, step)
+        case .volumeDown:    return cs.adjustVolumeDown(speaker.name, step)
+        case .mute:          return cs.mute(speaker.name, speaker.volume)
+        case .unmute:        return cs.unmute(speaker.name)
+        case .listFavorites, .confirm, .cancel, .unknown:
+            return nil
+        }
+    }
+
+    private func completionMessage(forParsed command: ParsedCommand, speaker: Speaker) -> String? {
+        switch command.intent {
+        case .stop:       return cs.stopped(speaker.name)
+        case .pause:      return cs.paused(speaker.name)
+        case .resume:     return cs.resumed(speaker.name)
+        case .setVolume:  return cs.volumeSet(speaker.name, command.volumeValue ?? 0)
+        case .volumeUp, .volumeDown: return cs.volumeAdjusted(speaker.name)
+        case .mute:       return cs.muted(speaker.name)
+        case .unmute:     return cs.unmuted(speaker.name)
+        default:          return nil
+        }
+    }
+
+    @MainActor
+    @discardableResult
+    private func dispatchParsed(command: ParsedCommand, to speaker: Speaker) async -> Bool {
+        let step = command.volumeDelta ?? 10
+        switch command.intent {
+
+        case .playNamed:
+            let name = command.favoriteName ?? ""
+            guard !name.isEmpty else {
+                coordinator.announce(errorService.spoken(.voiceNotRecognised))
+                return false
+            }
+            let found = await registry.favorites.playNamed(name, on: speaker)
+            if !found {
+                let available = await registry.favorites.listFavorites(for: speaker)
+                coordinator.announce(errorService.spoken(.favoriteNotFound(
+                    name: name, speaker: speaker.name, available: available)))
+            }
+            return found
+
+        case .playDefault:
+            await registry.favorites.playDefault(on: speaker)
+            return true
+
+        case .listFavorites:
+            let names = await registry.favorites.listFavorites(for: speaker)
+            let list  = names.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: ", ")
+            coordinator.announce(cs.listFavoritesResult(speaker.name, list))
+            return true
+
+        case .stop:
+            guard speaker.isPlaying else {
+                coordinator.announce(errorService.spoken(.nothingPlaying(speaker: speaker.name)))
+                return false
+            }
+            return await perform(speaker: speaker) { try await speaker.stop() }
+
+        case .pause:
+            guard speaker.isPlaying else {
+                coordinator.announce(errorService.spoken(.nothingPlaying(speaker: speaker.name)))
+                return false
+            }
+            return await perform(speaker: speaker) { try await speaker.pause() }
+
+        case .resume:
+            return await perform(speaker: speaker) { try await speaker.play() }
+
+        case .setVolume:
+            let level = max(0, min(100, command.volumeValue ?? 50))
+            return await perform(speaker: speaker) { try await speaker.setVolume(level) }
+
+        case .volumeUp:
+            if let vol = speaker.volume, vol >= 100 {
+                coordinator.announce(errorService.spoken(.volumeAtLimit(speaker: speaker.name, atMax: true)))
+                return false
+            }
+            return await perform(speaker: speaker) { try await speaker.adjustVolume(+step) }
+
+        case .volumeDown:
+            if let vol = speaker.volume, vol <= 0 {
+                coordinator.announce(errorService.spoken(.volumeAtLimit(speaker: speaker.name, atMax: false)))
+                return false
+            }
+            return await perform(speaker: speaker) { try await speaker.adjustVolume(-step) }
+
+        case .mute:
+            return await perform(speaker: speaker) { try await speaker.mute() }
+
+        case .unmute:
+            return await perform(speaker: speaker) { try await speaker.unmute() }
+
+        case .confirm, .cancel, .unknown:
+            Log.info("[HomeView] unhandled parsed command: \(command)")
+            return false
         }
     }
 }

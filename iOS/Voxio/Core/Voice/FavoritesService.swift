@@ -44,6 +44,32 @@ class FavoritesService {
         await fetch(for: speaker).map { $0.displayName }
     }
 
+    /// Resolves a spoken favorite name to the best-matching `Favorite`.
+    /// Tries exact match first, then substring containment, then returns nil.
+    func resolve(favoriteNamed name: String, for speaker: Speaker) async -> Favorite? {
+        let list  = await fetch(for: speaker)
+        let lower = name.lowercased()
+        if let exact = list.first(where: { $0.displayName.lowercased() == lower }) {
+            return exact
+        }
+        return list.first(where: {
+            $0.displayName.lowercased().contains(lower) ||
+            lower.contains($0.displayName.lowercased())
+        })
+    }
+
+    /// Plays a favorite identified by spoken name. Returns `true` on success.
+    @discardableResult
+    func playNamed(_ name: String, on speaker: Speaker) async -> Bool {
+        guard let fav = await resolve(favoriteNamed: name, for: speaker) else {
+            Log.info("[Favorites] '\(name)' not found on \(speaker.name)")
+            return false
+        }
+        Log.info("[Favorites] playNamed '\(fav.displayName)' on \(speaker.name)")
+        try? await speaker.playFavorite(id: fav.id)
+        return true
+    }
+
     func invalidate(for speaker: Speaker) {
         cache.removeValue(forKey: speaker.host)
     }
