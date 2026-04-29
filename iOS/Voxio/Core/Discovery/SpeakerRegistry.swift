@@ -34,20 +34,30 @@ class SpeakerRegistry: ObservableObject {
     /// - Returns: The matched speaker and the remaining words (command portion), or `nil` if
     ///   no speaker can be inferred.
     func resolve(words: [String]) -> (Speaker, remainingWords: [String])? {
+        Log.verbose("[SpeakerRegistry] resolve words=\(words) registry=\(speakers.map(\.name))")
+
         // Tier 1: explicit name in transcript
         if let (speaker, consumed) = matcher.match(words: words, in: speakers) {
+            let remaining = Array(words.dropFirst(consumed))
+            Log.info("[SpeakerRegistry] tier-1 (name match) → \(speaker.name), remaining=\(remaining)")
             activeSpeaker = speaker
-            return (speaker, Array(words.dropFirst(consumed)))
+            return (speaker, remaining)
         }
         // Tier 2: exactly one speaker is playing → implicit session
         let playing = speakers.filter { $0.isPlaying }
         if playing.count == 1 {
+            Log.info("[SpeakerRegistry] tier-2 (single playing) → \(playing[0].name)")
             return (playing[0], words)
+        }
+        if playing.count > 1 {
+            Log.verbose("[SpeakerRegistry] tier-2 skipped — \(playing.count) speakers playing: \(playing.map(\.name))")
         }
         // Tier 3: last explicitly addressed speaker
         if let active = activeSpeaker {
+            Log.info("[SpeakerRegistry] tier-3 (last active) → \(active.name)")
             return (active, words)
         }
+        Log.info("[SpeakerRegistry] no speaker resolved (words=\(words), playing=\(playing.count))")
         return nil
     }
 }

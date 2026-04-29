@@ -5,10 +5,17 @@ class FavoritesService {
     private var cache: [String: [Favorite]] = [:]
 
     private func fetch(for speaker: Speaker) async -> [Favorite] {
-        if let cached = cache[speaker.host] { return cached }
-        guard let list = try? await speaker.getFavorites() else { return [] }
+        if let cached = cache[speaker.host] {
+            Log.verbose("[Favorites] cache hit for \(speaker.name) (\(cached.count) favorites)")
+            return cached
+        }
+        Log.verbose("[Favorites] fetching favorites from API for \(speaker.name)")
+        guard let list = try? await speaker.getFavorites() else {
+            Log.info("[Favorites] fetch failed for \(speaker.name)")
+            return []
+        }
         cache[speaker.host] = list
-        Log.info("[Favorites] cached \(list.count) favorites for \(speaker.name)")
+        Log.info("[Favorites] cached \(list.count) favorites for \(speaker.name): \(list.map(\.displayName))")
         return list
     }
 

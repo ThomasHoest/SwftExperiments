@@ -2,15 +2,23 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject private var registry      = SpeakerRegistry()
+    @StateObject private var coordinator   = ConfirmationCoordinator()
     @StateObject private var motionManager = MotionManager()
-    @State private var voiceToText   = VoiceToText()
-    @State private var transcript    = ""
-    @State private var micStatus     = "Initialising microphone…"
-    @State private var audioLevel:   Float   = 0
-    @State private var isListening   = false
-    @State private var isCommandActive = false
+    @ObservedObject private var langService = LanguageService.shared
+    @State private var voiceToText    = VoiceToText()
+    @State private var transcript     = ""
+    @State private var micStatus      = "Initialising microphone…"
+    @State private var audioLevel:    Float   = 0
+    @State private var isListening    = false
+    @State private var isCommandActive  = false
     @State private var selectedSpeaker: Speaker?
-    @State private var hasAppeared   = false
+    @State private var hasAppeared    = false
+    @State private var successMessage = ""
+
+    private let errorService = ErrorResponseService()
+
+    private var cs: CommandStrings { CommandStrings.forLanguage(langService.activeLanguage) }
+    private var ui: UIStrings      { UIStrings.forLanguage(langService.activeLanguage) }
 
     private var displayedSpeaker: Speaker? {
         selectedSpeaker ?? registry.speakers.first
@@ -42,13 +50,44 @@ struct HomeView: View {
                 }
             }
             .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 0) }
+
+            // Success toast (E-09 T-0904)
+            if !successMessage.isEmpty {
+                VStack {
+                    Spacer()
+                    Text(successMessage)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .glassEffect(in: Capsule())
+                        .padding(.bottom, 48)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: successMessage)
         .onAppear(perform: onAppear)
         .onChange(of: registry.speakers.map(\.id)) { _, ids in
             if let sel = selectedSpeaker, !ids.contains(sel.id) {
                 selectedSpeaker = registry.speakers.first
             } else if selectedSpeaker == nil {
                 selectedSpeaker = registry.speakers.first
+            }
+        }
+        .onChange(of: langService.activeLanguage) { _, language in
+            voiceToText.setLanguage(language)
+        }
+        .sheet(isPresented: Binding(
+            get: { coordinator.isPending },
+            set: { if !$0 { coordinator.cancel() } }
+        )) {
+            if case .pending(let message) = coordinator.state {
+                ConfirmationSheet(
+                    message: message,
+                    onConfirm: { coordinator.confirm() },
+                    onCancel:  { coordinator.cancel() }
+                )
             }
         }
     }
@@ -99,7 +138,7 @@ struct HomeView: View {
             Image(systemName: "speaker.slash")
                 .font(.system(size: 40))
                 .foregroundStyle(.secondary)
-            Text("Looking for speakers…")
+            Text(ui.lookingForSpeakers)
                 .font(BeoType.body)
                 .foregroundStyle(.secondary)
         }
@@ -146,6 +185,10 @@ struct HomeView: View {
         registry.start()
         motionManager.start()
 
+        // Wire TTS pause/resume — prevents synthesizer output feeding back into recognition
+        coordinator.onSpeechWillStart = { [self] in voiceToText.pauseRecognition() }
+        coordinator.onSpeechDidEnd    = { [self] in voiceToText.resumeRecognition() }
+
         voiceToText.onTranscript = { text in
             DispatchQueue.main.async {
                 transcript = text
@@ -161,18 +204,45 @@ struct HomeView: View {
         voiceToText.onFinalTranscript = { text in
             Task { @MainActor in
                 isCommandActive = false
+
+                // While waiting for confirmation, only accept confirm/cancel
+                if coordinator.isPending {
+                    let cmd = CommandParser(language: langService.activeLanguage).parse(text)
+                    if cmd == .confirm { coordinator.confirm() }
+                    else if cmd == .cancel { coordinator.cancel() }
+                    return
+                }
+
                 let words = text.lowercased()
                     .components(separatedBy: .whitespaces)
                     .filter { !$0.isEmpty }
                 guard let (speaker, remaining) = registry.resolve(words: words) else {
                     Log.info("[HomeView] no speaker resolved for: \(text)")
+                    let available = registry.speakers.map(\.name)
+                    coordinator.announce(errorService.spoken(.noSpeakerSpoken(available: available)))
                     return
                 }
                 selectedSpeaker = speaker
                 let commandText = remaining.isEmpty ? text : remaining.joined(separator: " ")
-                let command = CommandParser().parse(commandText)
+                let command = CommandParser(language: langService.activeLanguage).parse(commandText)
                 Log.info("[HomeView] → \(speaker.name): \(command)")
-                await dispatch(command: command, to: speaker)
+
+                // Commands that need no confirmation (list, confirm, cancel, unknown)
+                guard let confirmMsg = confirmationMessage(for: command, speaker: speaker) else {
+                    await dispatch(command: command, to: speaker)
+                    return
+                }
+
+                let confirmed = await coordinator.request(message: confirmMsg)
+                if confirmed {
+                    let succeeded = await dispatch(command: command, to: speaker)
+                    if succeeded {
+                        showSuccess("Done")
+                        if let completion = completionMessage(for: command, speaker: speaker) {
+                            coordinator.announce(completion)
+                        }
+                    }
+                }
             }
         }
         voiceToText.start { status in
@@ -180,34 +250,116 @@ struct HomeView: View {
         }
     }
 
+    // ── Confirmation messages ─────────────────────────────────────────────────
+
+    private func confirmationMessage(for command: VoiceCommand, speaker: Speaker) -> String? {
+        switch command {
+        case .playFavorite(let i):  return cs.playFavorite(i, speaker.name)
+        case .playDefault:          return cs.playDefault(speaker.name)
+        case .stop:                 return cs.stop(speaker.name)
+        case .pause:                return cs.pause(speaker.name)
+        case .resume:               return cs.resume(speaker.name)
+        case .setVolume(let level): return cs.setVolume(speaker.name, level)
+        case .adjustVolume(let d):  return d > 0
+            ? cs.adjustVolumeUp(speaker.name, abs(d))
+            : cs.adjustVolumeDown(speaker.name, abs(d))
+        case .mute:                 return cs.mute(speaker.name, speaker.volume)
+        case .unmute:               return cs.unmute(speaker.name)
+        case .listFavorites, .confirm, .cancel, .unknown:
+            return nil
+        }
+    }
+
+    private func completionMessage(for command: VoiceCommand, speaker: Speaker) -> String? {
+        switch command {
+        case .stop:                 return cs.stopped(speaker.name)
+        case .pause:                return cs.paused(speaker.name)
+        case .resume:               return cs.resumed(speaker.name)
+        case .setVolume(let level): return cs.volumeSet(speaker.name, level)
+        case .adjustVolume:         return cs.volumeAdjusted(speaker.name)
+        case .mute:                 return cs.muted(speaker.name)
+        case .unmute:               return cs.unmuted(speaker.name)
+        default:                    return nil
+        }
+    }
+
     // ── Command dispatch ──────────────────────────────────────────────────────
 
     @MainActor
-    private func dispatch(command: VoiceCommand, to speaker: Speaker) async {
+    @discardableResult
+    private func dispatch(command: VoiceCommand, to speaker: Speaker) async -> Bool {
         switch command {
         case .playFavorite(let index):
             await registry.favorites.play(index: index, on: speaker)
+            return true
         case .playDefault:
             await registry.favorites.playDefault(on: speaker)
+            return true
         case .listFavorites:
             let names = await registry.favorites.listFavorites(for: speaker)
-            Log.info("[Favorites] \(speaker.name): \(names.joined(separator: ", "))")
+            let list  = names.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: ", ")
+            coordinator.announce(cs.listFavoritesResult(speaker.name, list))
+            return true
         case .stop:
-            try? await speaker.stop()
+            guard speaker.isPlaying else {
+                coordinator.announce(errorService.spoken(.nothingPlaying(speaker: speaker.name)))
+                return false
+            }
+            return await perform(speaker: speaker) { try await speaker.stop() }
         case .pause:
-            try? await speaker.pause()
+            guard speaker.isPlaying else {
+                coordinator.announce(errorService.spoken(.nothingPlaying(speaker: speaker.name)))
+                return false
+            }
+            return await perform(speaker: speaker) { try await speaker.pause() }
         case .resume:
-            try? await speaker.play()
+            return await perform(speaker: speaker) { try await speaker.play() }
         case .setVolume(let level):
-            try? await speaker.setVolume(level)
+            return await perform(speaker: speaker) { try await speaker.setVolume(level) }
         case .adjustVolume(let delta):
-            try? await speaker.adjustVolume(delta)
+            if delta > 0, let vol = speaker.volume, vol >= 100 {
+                coordinator.announce(errorService.spoken(.volumeAtLimit(speaker: speaker.name, atMax: true)))
+                return false
+            }
+            if delta < 0, let vol = speaker.volume, vol <= 0 {
+                coordinator.announce(errorService.spoken(.volumeAtLimit(speaker: speaker.name, atMax: false)))
+                return false
+            }
+            return await perform(speaker: speaker) { try await speaker.adjustVolume(delta) }
         case .mute:
-            try? await speaker.mute()
+            return await perform(speaker: speaker) { try await speaker.mute() }
         case .unmute:
-            try? await speaker.unmute()
+            return await perform(speaker: speaker) { try await speaker.unmute() }
         case .confirm, .cancel, .unknown:
             Log.info("[HomeView] unhandled: \(command)")
+            return false
+        }
+    }
+
+    /// Executes a throwing speaker action; announces the appropriate error string on failure.
+    @MainActor
+    @discardableResult
+    private func perform(speaker: Speaker, _ action: () async throws -> Void) async -> Bool {
+        do {
+            try await action()
+            return true
+        } catch let error as MozartError {
+            let appError: AppError
+            if case .timeout = error { appError = .apiTimeout }
+            else { appError = .speakerUnreachable(speaker: speaker.name) }
+            coordinator.announce(errorService.spoken(appError))
+            return false
+        } catch {
+            coordinator.announce(errorService.spoken(.speakerUnreachable(speaker: speaker.name)))
+            return false
+        }
+    }
+
+    private func showSuccess(_ message: String) {
+        successMessage = message
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            successMessage = ""
         }
     }
 }

@@ -1,8 +1,9 @@
 # Epics & Tasks: Bang & Olufsen Voice Controller
-**Version:** 1.0  
+**Version:** 1.1  
 **Status:** Draft  
 **Date:** 2026-04-28  
-**References:** functional-spec-bo-voice-control v1.2, design-spec-bo-voice-control v1.0
+**References:** functional-spec-bo-voice-control v1.2, design-spec-bo-voice-control v1.0  
+**Languages:** English (`en-US`) and Danish (`da-DK`) — both fully supported
 
 ---
 
@@ -32,6 +33,7 @@ This document breaks the functional and design specifications into epics and the
 | E-14 | Polish — Animation & Haptics | Design spec §Interaction |
 | E-15 | AI-Powered Command Recognition | US-00 through US-08 |
 | E-16 | Gen AI Service Authentication | — |
+| E-17 | Danish & Multilingual Support | All US |
 
 ---
 
@@ -75,17 +77,17 @@ Build the networking layer that communicates with the Bang & Olufsen Mozart API 
 
 ## E-03 — Voice Recognition & Command Parsing
 
-Implement the full pipeline from microphone input to a structured `VoiceCommand` value that other features can act on.
+Implement the full pipeline from microphone input to a structured `VoiceCommand` value that other features can act on. The recogniser locale is determined by `LanguageService` (E-17); both `en-US` and `da-DK` are supported.
 
 - [x] **T-0301** Integrate `SFSpeechRecognizer` with the `en-US` locale; request microphone and speech recognition permissions on first launch
 - [x] **T-0302** Build `VoiceInputManager` — starts and stops a live `SFSpeechAudioBufferRecognitionRequest`; publishes real-time transcription strings
 - [x] **T-0303** Implement silence detection — finalise a recognition request after ~1.5 s of silence following speech
 - [x] **T-0304** Define `VoiceCommand` enum covering all intents: `.playNamed`, `.playDefault`, `.listFavorites`, `.stop`, `.pause`, `.resume`, `.setVolume`, `.adjustVolume`, `.mute`, `.unmute`, `.confirm`, `.cancel`, `.unknown`
 - [x] **T-0305** Build `CommandParser` — takes a raw transcription string, strips the leading speaker name token, and returns a `VoiceCommand`
-- [x] **T-0306** Implement intent matching for play-favorite commands: recognise the phrase "play favorite [one|two|three|four]" (spoken number words only, no digits) and resolve to a 1-based index 1–4. Each speaker exposes exactly 4 favorites; if the resolved index exceeds the speaker's favorite count, treat as not-found. No fuzzy matching required.
-- [x] **T-0307** Implement intent matching for volume commands: parse absolute values ("set volume to 42") and relative values ("up 20", "louder")
-- [x] **T-0308** Implement intent matching for stop / pause / resume / mute / unmute commands
-- [x] **T-0309** Implement `.confirm` and `.cancel` recognition ("Yes", "No", "Cancel") for the confirmation step
+- [x] **T-0306** Implement intent matching for play-favorite commands: recognise the phrase "play favorite [one|two|three|four]" / "afspil favorit [en|to|tre|fire]" (spoken number words only, no digits) and resolve to a 1-based index 1–4. Each speaker exposes exactly 4 favorites; if the resolved index exceeds the speaker's favorite count, treat as not-found. No fuzzy matching required.
+- [x] **T-0307** Implement intent matching for volume commands: parse absolute values ("set volume to 42") and relative values ("up 20", "louder" / "skru op", "højere")
+- [x] **T-0308** Implement intent matching for stop / pause / resume / mute / unmute commands (English and Danish keywords)
+- [x] **T-0309** Implement `.confirm` and `.cancel` recognition — English: "Yes", "No", "Cancel"; Danish: "Ja", "Jo", "Nej", "Annuller"
 - [x] **T-0310** Handle `.unknown` — any transcription that does not match a known pattern returns `.unknown` with the raw string for error feedback
 - [ ] **T-0311** Write unit tests for `CommandParser` covering all intents, edge cases, and partial matches
 - [x] **T-0312** Ensure voice recognition is fully stopped and deallocated when the app moves to background
@@ -101,7 +103,7 @@ Discover speakers on the local network via mDNS, maintain a live `SpeakerRegistr
 - [x] **T-0403** Build `SpeakerNameMatcher` — given the first token(s) of a transcription, returns the best-matching `Speaker` from the registry or `nil`; uses case-insensitive prefix and fuzzy matching (Levenshtein distance ≤ 2) against each speaker's `friendlyName`
 - [x] **T-0404** Implement implicit active-session addressing — if no speaker name token is found at the head of the transcript AND exactly one speaker in the registry has `isPlaying == true`, route the command to that speaker and set it as `activeSpeaker`; if zero or more than one speaker is playing, fall through to the explicit-name-required error path
 - [x] **T-0405** Integrate speaker resolution as the first step in the command dispatch pipeline — after resolving the speaker, strip the name token (if present) from the transcript before passing the remainder to `CommandParser`
-- [ ] **T-0406** When no speaker can be resolved (no name match and no unambiguous active speaker), speak *"Please start your command with a speaker name"* and list discovered speaker names; do not dispatch the command
+- [x] **T-0406** When no speaker can be resolved (no name match and no unambiguous active speaker), speak *"Please start your command with a speaker name"* and list discovered speaker names; do not dispatch the command
 - [x] **T-0407** Expose `SpeakerRegistry.activeSpeaker: Speaker?` — set to the last successfully addressed speaker; used by the implicit active-session path as a secondary fallback when no speaker is playing but one was recently addressed (within the current app session)
 - [ ] **T-0408** Write unit tests for `SpeakerNameMatcher` covering exact match, case variants, minor mispronunciation (distance ≤ 2), distance > 2 (no match), and empty registry
 - [ ] **T-0409** Write unit tests for the implicit active-session path covering: one playing speaker (routes correctly), zero playing speakers (falls through), two playing speakers (falls through), and recently-addressed fallback
@@ -156,12 +158,12 @@ Implement absolute volume, relative volume adjustment, mute, and unmute.
 
 Implement the cross-cutting confirmation pattern shared by all commands — read-back, voice confirmation, and spoken completion.
 
-- [ ] **T-0801** Build `ConfirmationCoordinator` — receives a confirmation string from any use case; speaks it aloud via `AVSpeechSynthesizer`; publishes `.pending` state to the UI; listens for `.confirm` or `.cancel` from `VoiceInputManager`
-- [ ] **T-0802** Configure `AVSpeechSynthesizer` with `com.apple.voice.compact.en-US.Samantha` voice, speech rate 0.5; fall back to system default English if voice is unavailable
-- [ ] **T-0803** Ensure voice recognition is paused while `AVSpeechSynthesizer` is speaking to prevent feedback loops; resume recognition immediately after speech ends
-- [ ] **T-0804** Implement tap-to-confirm fallback — "Yes" and "No" buttons in the confirmation sheet trigger the same `.confirm` / `.cancel` path as voice
-- [ ] **T-0805** Implement confirmation timeout — if neither voice nor tap confirmation is received within 10 seconds, auto-cancel and speak *"Action cancelled"*
-- [ ] **T-0806** Implement post-action spoken completion feedback (e.g. *"[Speaker name] volume is now [value]"*) for use cases that specify it
+- [x] **T-0801** Build `ConfirmationCoordinator` — receives a confirmation string from any use case; speaks it aloud via `AVSpeechSynthesizer`; publishes `.pending` state to the UI; listens for `.confirm` or `.cancel` from `VoiceInputManager`
+- [x] **T-0802** Configure `AVSpeechSynthesizer` with `com.apple.voice.compact.en-US.Samantha` voice (English) or the best available `da-DK` system voice (Danish), speech rate 0.5; fall back to the system default voice for the active language if the preferred identifier is unavailable
+- [x] **T-0803** Ensure voice recognition is paused while `AVSpeechSynthesizer` is speaking to prevent feedback loops; resume recognition immediately after speech ends
+- [x] **T-0804** Implement tap-to-confirm fallback — "Yes" and "No" buttons in the confirmation sheet trigger the same `.confirm` / `.cancel` path as voice
+- [x] **T-0805** Implement confirmation timeout — if neither voice nor tap confirmation is received within 10 seconds, auto-cancel and speak *"Action cancelled"*
+- [x] **T-0806** Implement post-action spoken completion feedback (e.g. *"[Speaker name] volume is now [value]"*) for use cases that specify it
 - [ ] **T-0807** Write unit tests for `ConfirmationCoordinator`; cover confirm-by-voice, cancel-by-voice, confirm-by-tap, cancel-by-tap, and timeout paths
 
 ---
@@ -170,10 +172,10 @@ Implement the cross-cutting confirmation pattern shared by all commands — read
 
 Centralise all error states and ensure every failure surfaces a clear, spoken, and visual response.
 
-- [ ] **T-0901** Define `AppError` enum covering all error cases from the functional spec: `.noSpeakerSpoken`, `.speakerNotFound`, `.favoriteNotFound`, `.speakerUnreachable`, `.nothingPlaying`, `.volumeAtLimit`, `.pauseNotSupported`, `.alreadyMuted`, `.voiceNotRecognised`, `.apiTimeout`
-- [ ] **T-0902** Build `ErrorResponseService` — maps each `AppError` to its exact spoken and display string from the functional spec
-- [ ] **T-0903** Ensure all use cases surface errors through `ErrorResponseService` rather than ad-hoc strings
-- [ ] **T-0904** Implement graceful API degradation — when `MozartError.timeout` or `MozartError.unreachable` is received, surface the appropriate `AppError` without crashing
+- [x] **T-0901** Define `AppError` enum covering all error cases from the functional spec: `.noSpeakerSpoken`, `.speakerNotFound`, `.favoriteNotFound`, `.speakerUnreachable`, `.nothingPlaying`, `.volumeAtLimit`, `.pauseNotSupported`, `.alreadyMuted`, `.voiceNotRecognised`, `.apiTimeout`
+- [x] **T-0902** Build `ErrorResponseService` — maps each `AppError` to its exact spoken and display string from the functional spec; returns the string in the active language (English or Danish)
+- [x] **T-0903** Ensure all use cases surface errors through `ErrorResponseService` rather than ad-hoc strings
+- [x] **T-0904** Implement graceful API degradation — when `MozartError.timeout` or `MozartError.unreachable` is received, surface the appropriate `AppError` without crashing
 - [ ] **T-0905** Ensure the app never crashes on network loss; write a test that simulates network unavailability mid-command
 - [ ] **T-0906** Write unit tests for `ErrorResponseService`; verify every `AppError` maps to the correct string from the functional spec
 
@@ -202,16 +204,16 @@ Build the primary screen: idle state, command recognition state, and now-playing
 
 Build the bottom sheet that appears for every confirmation step.
 
-- [ ] **T-1101** Implement `ConfirmationSheet` as a SwiftUI `.sheet` with `presentationDetents([.height(280)])`; no drag handle; drag-to-dismiss disabled
-- [ ] **T-1102** Apply Liquid Glass material to the sheet surface with medium blur radius
-- [ ] **T-1103** Implement sheet content layout: "About to:" label in `--label-secondary` (SF Pro Text 12 pt), action read-back text in SF Pro Display Regular 22 pt, "Yes" and "No" buttons full-width stacked
-- [ ] **T-1104** Implement "Yes" button — filled Liquid Glass button with accent gold tint; triggers `ConfirmationCoordinator.confirm()`
-- [ ] **T-1105** Implement "No" button — outlined Liquid Glass button; triggers `ConfirmationCoordinator.cancel()`
-- [ ] **T-1106** Implement "or say Yes / No" mic indicator pill at the top of the sheet
-- [ ] **T-1107** Implement sheet entry animation — slide up from below with spring (damping 0.75, response 0.5 s)
-- [ ] **T-1108** Trigger `.medium` haptic impact when the sheet appears
-- [ ] **T-1109** Trigger `.success` notification haptic on confirmation; dismiss the sheet and show a brief success toast
-- [ ] **T-1110** Ensure all elements in the sheet respect bottom safe area insets
+- [x] **T-1101** Implement `ConfirmationSheet` as a SwiftUI `.sheet` with `presentationDetents([.height(280)])`; no drag handle; drag-to-dismiss disabled
+- [x] **T-1102** Apply Liquid Glass material to the sheet surface with medium blur radius
+- [x] **T-1103** Implement sheet content layout: "About to:" label in `--label-secondary` (SF Pro Text 12 pt), action read-back text in SF Pro Display Regular 22 pt, "Yes" and "No" buttons full-width stacked
+- [x] **T-1104** Implement "Yes" button — filled Liquid Glass button with accent gold tint; triggers `ConfirmationCoordinator.confirm()`
+- [x] **T-1105** Implement "No" button — outlined Liquid Glass button; triggers `ConfirmationCoordinator.cancel()`
+- [x] **T-1106** Implement mic indicator pill at the top of the sheet — "or say Yes / No" in English, "eller sig Ja / Nej" in Danish
+- [x] **T-1107** Implement sheet entry animation — slide up from below with spring (damping 0.75, response 0.5 s)
+- [x] **T-1108** Trigger `.medium` haptic impact when the sheet appears
+- [x] **T-1109** Trigger `.success` notification haptic on confirmation; dismiss the sheet and show a brief success toast
+- [x] **T-1110** Ensure all elements in the sheet respect bottom safe area insets
 
 ---
 
@@ -295,6 +297,51 @@ Provide UI and account management for the online gen AI backend. Users must auth
 
 ---
 
+## E-17 — Danish & Multilingual Support
+
+Add full Danish (`da-DK`) support alongside English (`en-US`) across the entire voice pipeline — recognition, command parsing, TTS feedback, error strings, and UI labels. Language selection follows the device's primary language by default with a user-accessible override.
+
+Danish command keywords:
+- **Play:** *afspil*, *spil*
+- **Play favorite N:** *afspil favorit [en|to|tre|fire]*, *spil favorit [en|to|tre|fire]*
+- **Stop:** *stop* (same)
+- **Pause:** *pause* (same)
+- **Resume:** *fortsæt*, *genoptag*
+- **Volume up:** *skru op*, *højere*
+- **Volume down:** *skru ned*, *lavere*
+- **Mute:** *slå lyden fra*, *tavs*
+- **Unmute:** *slå lyden til*
+- **List favorites:** *list favoritter*, *vis favoritter*
+- **Confirm:** *ja*, *jo*
+- **Cancel:** *nej*, *annuller*
+
+Danish error strings (spoken and display):
+- `noSpeakerSpoken` → *"Start din kommando med et højttalernavn. Tilgængelige højttalere er: [liste]"*
+- `speakerNotFound` → *"[navn] blev ikke fundet. Tilgængelige højttalere er: [liste]"*
+- `favoriteNotFound` → *"[navn] blev ikke fundet på [højttaler]. Tilgængelige favoritter er: [liste]"*
+- `speakerUnreachable` → *"[højttaler] kunne ikke nås. Kontroller at højttaleren er tændt og forbundet til netværket"*
+- `nothingPlaying` → *"[højttaler] afspiller ikke noget i øjeblikket"*
+- `volumeAtLimit` → *"[højttaler] er allerede ved [maksimal|minimal] lydstyrke"*
+- `pauseNotSupported` → *"[højttaler] understøtter ikke pause for denne kilde. Sig [højttaler], stop for at stoppe i stedet"*
+- `alreadyMuted` → *"[højttaler] er allerede slået fra"*
+- `voiceNotRecognised` → *"Undskyld, jeg forstod ikke det. Gentag venligst din kommando"*
+- `apiTimeout` → *"Kunne ikke nå Bang & Olufsen servicen. Prøv venligst igen"*
+
+- [ ] **T-1701** Build `LanguageService` — exposes `activeLanguage: Language` (`.english` / `.danish`); determines the default from `Locale.preferredLanguages` (first `da` or `da-DK` entry activates Danish); persists user override to `UserDefaults`
+- [ ] **T-1702** Update `AVService` to instantiate `SFSpeechRecognizer` with the locale from `LanguageService`; reinitialise the recogniser (stop current request, create new instance, restart) when `activeLanguage` changes
+- [ ] **T-1703** Extend `CommandParser` to accept a `Language` parameter; add Danish keyword mappings for all command intents using the keyword table above
+- [ ] **T-1704** Add Danish spoken-number words (`en`, `to`, `tre`, `fire`) to the play-favorite number map in `CommandParser`
+- [ ] **T-1705** Update `ConfirmationCoordinator` to select the `da-DK` system TTS voice when Danish is active (`AVSpeechSynthesisVoice(language: "da-DK")`); fall back to any available Danish voice; apply the same speech rate (0.5)
+- [ ] **T-1706** Extend `ErrorResponseService` to return Danish strings for all `AppError` cases when `LanguageService.activeLanguage == .danish`; use the Danish strings listed above
+- [ ] **T-1707** Translate all confirmation and completion message strings in `HomeView` (`confirmationMessage(for:speaker:)`, `completionMessage(for:speaker:)`) to Danish; select the correct language via `LanguageService`
+- [ ] **T-1708** Translate all static UI strings to Danish via `String(localized:)`: ConfirmationSheet labels ("About to:" → "Er ved at:", "eller sig Ja / Nej"), `HomeView` status messages ("Listening…" → "Lytter…", "Looking for speakers…" → "Leder efter højttalere…", "Microphone access denied" → "Mikrofonadgang nægtet")
+- [ ] **T-1709** Add `da` to `Info.plist` `CFBundleLocalizations`; add Danish variants to `NSMicrophoneUsageDescription` and `NSSpeechRecognitionUsageDescription` in `Localizable.strings`
+- [ ] **T-1710** Expose language toggle in app settings (long-press on the connection status chip or a dedicated settings screen row); switching language restarts the recogniser and updates all spoken feedback immediately without requiring an app restart
+- [ ] **T-1711** Write unit tests for `CommandParser` in Danish mode: cover all intents, spoken number words, confirm/cancel keywords, and mixed Danish/English edge cases
+- [ ] **T-1712** Write unit tests for `ErrorResponseService` in Danish mode: verify every `AppError` maps to the correct Danish string
+
+---
+
 ## Task Summary
 
 | Epic | Tasks | Notes |
@@ -315,4 +362,5 @@ Provide UI and account management for the online gen AI backend. Users must auth
 | E-14 Animation & Haptics | 10 | Depends on E-10, E-11, E-12 |
 | E-15 AI-Powered Command Recognition | 10 | Depends on E-03, E-16; enhances E-05 through E-08 |
 | E-16 Gen AI Service Authentication | 10 | Prerequisite for E-15 |
-| **Total** | **148** | |
+| E-17 Danish & Multilingual Support | 12 | Depends on E-03, E-08, E-09, E-11 |
+| **Total** | **160** | |
