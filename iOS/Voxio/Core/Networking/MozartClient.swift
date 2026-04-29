@@ -43,7 +43,7 @@ class MozartClient {
 
     private func send(_ path: String, method: String, body: Data? = nil) async throws -> Data {
         guard let url = URL(string: baseUrl + path) else { throw MozartError.invalidResponse }
-        Log.info("[\(host)] \(method) \(path)")
+        Log.verbose("[\(host)] \(method) \(path)")
         var req = URLRequest(url: url)
         req.httpMethod = method
         if let body {
@@ -58,7 +58,7 @@ class MozartClient {
                 Log.error("[\(host)] \(method) \(path) → \(status)")
                 throw MozartError.httpError(status)
             }
-            Log.info("[\(host)] \(method) \(path) → \(status)")
+            Log.verbose("[\(host)] \(method) \(path) → \(status)")
             return data
         } catch let error as MozartError {
             throw error

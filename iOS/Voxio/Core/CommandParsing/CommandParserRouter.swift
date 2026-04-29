@@ -7,26 +7,18 @@ import Foundation
 ///
 /// On Apple Intelligence-capable devices (iOS 26+) `FoundationModelParser`
 /// is used. On all other devices — or if Apple Intelligence is unavailable —
-/// `TwoStageFallbackParser` handles the request. Errors from
-/// `FoundationModelParser` are NOT caught and re-routed; they propagate to
-/// the call site, which surfaces a `.voiceNotRecognised` error.
+/// `TwoStageFallbackParser` handles the request.
 final class CommandParserRouter {
 
-    private let fallback = TwoStageFallbackParser()
-
+    // Internal so extensions in sibling files can access them.
+    let fallback = TwoStageFallbackParser()
     // Stored as Any to avoid @available restriction on stored properties.
-    private var foundationParser: Any?
+    var foundationParser: Any?
 
     init() {
 #if canImport(FoundationModels)
         if #available(iOS 26, *) {
-            let model = SystemLanguageModel.default
-            if model.availability == .available {
-                foundationParser = FoundationModelParser()
-                Log.info("[CommandParserRouter] Apple Intelligence available — FoundationModelParser active")
-            } else {
-                Log.info("[CommandParserRouter] Apple Intelligence unavailable — using TwoStageFallbackParser")
-            }
+            foundationParser = makeFoundationParser()
         }
 #else
         Log.info("[CommandParserRouter] FoundationModels not available — using TwoStageFallbackParser")
@@ -36,11 +28,6 @@ final class CommandParserRouter {
     // ── Public API ────────────────────────────────────────────────────────────
 
     /// Parses a speaker-stripped remainder string into a `ParsedCommand`.
-    /// - Parameters:
-    ///   - remainder: Transcript with the speaker name token already removed.
-    ///   - addressedSpeaker: The resolved target speaker.
-    ///   - allSpeakers: All discovered speaker names (LLM context).
-    ///   - favoriteNames: Display names of the addressed speaker's favorites (LLM context).
     func parse(
         _ remainder: String,
         addressedSpeaker: Speaker,
@@ -48,34 +35,21 @@ final class CommandParserRouter {
         favoriteNames: [String] = []
     ) async -> ParsedCommand {
         Log.info("[CommandParserRouter] parsing: \"\(remainder)\" for speaker: \(addressedSpeaker.name)")
-
 #if canImport(FoundationModels)
-        if #available(iOS 26, *), let fp = foundationParser as? FoundationModelParser {
-            Log.info("[CommandParserRouter] path: FoundationModelParser")
-            fp.updateContext(
-                speakers:      allSpeakers,
-                activeSpeaker: addressedSpeaker.name,
-                favorites:     favoriteNames
-            )
-            if let result = try? await fp.parse(remainder, speaker: addressedSpeaker) {
-                Log.info("[CommandParserRouter] result: \(result) (FoundationModel)")
-                return result
-            }
-            Log.info("[CommandParserRouter] FoundationModel failed — falling back to TwoStageFallbackParser")
+        if #available(iOS 26, *) {
+            if let result = await tryFoundationModel(
+                remainder, speaker: addressedSpeaker,
+                allSpeakers: allSpeakers, favoriteNames: favoriteNames
+            ) { return result }
         }
 #endif
-        Log.info("[CommandParserRouter] path: TwoStageFallbackParser")
-        let result = fallback.parse(remainder)
-        Log.info("[CommandParserRouter] result: \(result) (Fallback)")
-        return result
+        return parseFallback(remainder)
     }
 
     /// Pre-warms the Foundation Models session on launch. No-op on unsupported devices.
     func warmUp() async {
 #if canImport(FoundationModels)
-        if #available(iOS 26, *), let fp = foundationParser as? FoundationModelParser {
-            await fp.warmUp()
-        }
+        if #available(iOS 26, *) { await warmUpFoundationModel() }
 #endif
     }
 }

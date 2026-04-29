@@ -239,6 +239,7 @@ struct HomeView: View {
                 // Commands that need no confirmation (list, confirm, cancel, unknown)
                 guard let confirmMsg = confirmationMessage(forParsed: command, speaker: speaker) else {
                     await dispatchParsed(command: command, to: speaker)
+                    if command.intent == .unknown { clearTranscriptAfterDelay() }
                     return
                 }
 
@@ -361,6 +362,13 @@ struct HomeView: View {
         } catch {
             coordinator.announce(errorService.spoken(.speakerUnreachable(speaker: speaker.name)))
             return false
+        }
+    }
+
+    private func clearTranscriptAfterDelay() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5))
+            transcript = ""
         }
     }
 
