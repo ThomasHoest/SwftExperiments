@@ -107,8 +107,24 @@ struct TwoStageFallbackParser {
             return ParsedCommand(intent: .volumeDown)
         }
 
-        // play default (bare "play" / "afspil" / "spil")
-        if text.matches(of: /^(play|afspil|spil)(?: music| noget)?$/).count > 0 {
+        // play favorite by number — "play favorite one" / "afspil favorit en" / "start favorit et"
+        let playTriggers      = Set(["play", "afspil", "spil", "start"])
+        let favoriteTriggers  = Set(["favorite", "favourite", "favorit", "favorites", "favourites"])
+        let numberWordMap: [String: Int] = [
+            "one": 1, "two": 2, "three": 3, "four": 4,
+            "en": 1,  "et": 1,  "to": 2,    "tre": 3,  "fire": 4
+        ]
+        let words = text.split(separator: " ").map(String.init)
+        Log.verbose("[TwoStageFallbackParser] words: \(words)")
+        if words.count >= 3,
+           playTriggers.contains(words[0]),
+           favoriteTriggers.contains(words[1]),
+           let index = numberWordMap[words[2]] {
+            return ParsedCommand(intent: .playFavoriteByNumber, favoriteIndex: index)
+        }
+
+        // play default (bare "play" / "afspil" / "spil" / "start")
+        if text.matches(of: /^(play|afspil|spil|start)(?: music| noget)?$/).count > 0 {
             return ParsedCommand(intent: .playDefault)
         }
 

@@ -3,10 +3,11 @@ import Foundation
 /// Language-keyed spoken and display strings for every `AppError` case.
 /// Strings match the exact wording in functional-spec-bo-voice-control v1.3.
 struct ErrorStrings {
-    var noSpeakerSpoken:    (_ available: [String]) -> String
-    var speakerNotFound:    (_ spoken: String, _ available: [String]) -> String
-    var favoriteNotFound:   (_ name: String, _ speaker: String, _ available: [String]) -> String
-    var speakerUnreachable: (_ speaker: String) -> String
+    var noSpeakerSpoken:         (_ available: [String]) -> String
+    var speakerNotFound:         (_ spoken: String, _ available: [String]) -> String
+    var favoriteNotFound:        (_ name: String, _ speaker: String, _ available: [String]) -> String
+    var favoriteIndexOutOfRange: (_ index: Int, _ speaker: String, _ available: [String]) -> String
+    var speakerUnreachable:      (_ speaker: String) -> String
     var nothingPlaying:     (_ speaker: String) -> String
     var volumeAtLimit:      (_ speaker: String, _ atMax: Bool) -> String
     var pauseNotSupported:  (_ speaker: String) -> String
@@ -25,6 +26,10 @@ struct ErrorStrings {
         favoriteNotFound: { name, speaker, available in
             let list = available.isEmpty ? "none" : available.joined(separator: ", ")
             return "\(name) was not found on \(speaker). Available favorites are: \(list)"
+        },
+        favoriteIndexOutOfRange: { index, speaker, available in
+            let list = available.isEmpty ? "none" : available.joined(separator: ", ")
+            return "\(speaker) does not have a favorite \(index). Available favorites are: \(list)"
         },
         speakerUnreachable: { speaker in
             "\(speaker) could not be reached. Please check the speaker is powered on and connected to the network"
@@ -56,6 +61,10 @@ struct ErrorStrings {
         favoriteNotFound: { name, speaker, available in
             let list = available.isEmpty ? "ingen" : available.joined(separator: ", ")
             return "\(name) blev ikke fundet på \(speaker). Tilgængelige favoritter er: \(list)"
+        },
+        favoriteIndexOutOfRange: { index, speaker, available in
+            let list = available.isEmpty ? "ingen" : available.joined(separator: ", ")
+            return "\(speaker) har ikke favorit \(index). Tilgængelige favoritter er: \(list)"
         },
         speakerUnreachable: { speaker in
             "\(speaker) kunne ikke nås. Kontroller at højttaleren er tændt og forbundet til netværket"

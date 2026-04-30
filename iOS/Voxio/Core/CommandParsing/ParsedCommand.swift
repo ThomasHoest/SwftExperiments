@@ -4,24 +4,27 @@ import Foundation
 /// Produced by both `FoundationModelParser` and `TwoStageFallbackParser`;
 /// consumed by the HomeView dispatch layer.
 struct ParsedCommand: Codable, Equatable {
-    let intent:       CommandIntent
-    let favoriteName: String?   // spoken favorite name for .playNamed
-    let volumeValue:  Int?      // absolute target 0–100 for .setVolume
-    let volumeDelta:  Int?      // relative step for .volumeUp/.volumeDown; nil = default
-    let rawText:      String?   // preserved for .unknown
+    let intent:        CommandIntent
+    let favoriteName:  String?   // spoken favorite name for .playNamed
+    let favoriteIndex: Int?      // 1-based position for .playFavoriteByNumber
+    let volumeValue:   Int?      // absolute target 0–100 for .setVolume
+    let volumeDelta:   Int?      // relative step for .volumeUp/.volumeDown; nil = default
+    let rawText:       String?   // preserved for .unknown
 
     init(
-        intent:       CommandIntent,
-        favoriteName: String? = nil,
-        volumeValue:  Int?    = nil,
-        volumeDelta:  Int?    = nil,
-        rawText:      String? = nil
+        intent:        CommandIntent,
+        favoriteName:  String? = nil,
+        favoriteIndex: Int?    = nil,
+        volumeValue:   Int?    = nil,
+        volumeDelta:   Int?    = nil,
+        rawText:       String? = nil
     ) {
-        self.intent       = intent
-        self.favoriteName = favoriteName
-        self.volumeValue  = volumeValue
-        self.volumeDelta  = volumeDelta
-        self.rawText      = rawText
+        self.intent        = intent
+        self.favoriteName  = favoriteName
+        self.favoriteIndex = favoriteIndex
+        self.volumeValue   = volumeValue
+        self.volumeDelta   = volumeDelta
+        self.rawText       = rawText
     }
 
     static func unknown(_ text: String) -> ParsedCommand {
@@ -30,9 +33,10 @@ struct ParsedCommand: Codable, Equatable {
 }
 
 enum CommandIntent: String, CaseIterable, Codable, Equatable {
-    case playNamed      // "play Jazz Radio"
-    case playDefault    // "play music" / "afspil musik"
-    case listFavorites  // "what are my favorites?"
+    case playNamed              // "play Jazz Radio"
+    case playFavoriteByNumber   // "play favorite one"
+    case playDefault            // "play music" / "afspil musik"
+    case listFavorites          // "what are my favorites?"
     case stop
     case pause
     case resume
@@ -49,8 +53,9 @@ enum CommandIntent: String, CaseIterable, Codable, Equatable {
 extension ParsedCommand: CustomStringConvertible {
     var description: String {
         switch intent {
-        case .playNamed:     return "playNamed(\"\(favoriteName ?? "")\")"
-        case .playDefault:   return "playDefault"
+        case .playNamed:            return "playNamed(\"\(favoriteName ?? "")\")"
+        case .playFavoriteByNumber: return "playFavoriteByNumber(\(favoriteIndex ?? 0))"
+        case .playDefault:          return "playDefault"
         case .listFavorites: return "listFavorites"
         case .stop:          return "stop"
         case .pause:         return "pause"

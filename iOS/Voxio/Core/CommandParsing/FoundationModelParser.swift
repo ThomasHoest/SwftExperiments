@@ -16,6 +16,8 @@ final class FoundationModelParser {
         var intent: String
         /// Spoken favorite name when intent is playNamed.
         var favoriteName: String?
+        /// 1-based favorite position (1–4) when intent is playFavoriteByNumber.
+        var favoriteIndex: Int?
         /// Absolute volume level 0–100 when intent is setVolume.
         var volumeValue: Int?
         /// Relative volume step when intent is volumeUp or volumeDown.
@@ -67,11 +69,12 @@ final class FoundationModelParser {
         let intent = CommandIntent(rawValue: cmd.intent) ?? .unknown
 
         let result = ParsedCommand(
-            intent:       intent,
-            favoriteName: cmd.favoriteName,
-            volumeValue:  cmd.volumeValue.map { max(0, min(100, $0)) },
-            volumeDelta:  cmd.volumeDelta,
-            rawText:      remainder
+            intent:        intent,
+            favoriteName:  cmd.favoriteName,
+            favoriteIndex: cmd.favoriteIndex,
+            volumeValue:   cmd.volumeValue.map { max(0, min(100, $0)) },
+            volumeDelta:   cmd.volumeDelta,
+            rawText:       remainder
         )
         Log.info("[FoundationModelParser] \"\(remainder)\" → \(result)")
         return result
@@ -97,6 +100,7 @@ final class FoundationModelParser {
             Rules:
             - Set intent to the closest match from the valid intents list.
             - For playNamed, set favoriteName to the closest match from the favorites list.
+            - For playFavoriteByNumber, set favoriteIndex to the spoken ordinal (1 for "one"/"en"/"et", 2 for "two"/"to", 3 for "three"/"tre", 4 for "four"/"fire"). Danish trigger words include "start" in addition to "afspil"/"spil".
             - For setVolume, extract volumeValue (0–100). For volumeUp/volumeDown, extract
               volumeDelta if a number is spoken; omit it if no number is given.
             - "Yes", "yeah", "correct", "ja", "jo" → confirm.

@@ -28,7 +28,8 @@ class MozartClient {
     private func get<T: Decodable>(_ path: String) async throws -> T {
         let data = try await send(path, method: "GET")
         do { return try decoder.decode(T.self, from: data) } catch {
-            Log.error("[\(host)] GET \(path) decode error: \(error)")
+            let raw = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+            Log.error("[\(host)] GET \(path) decode error: \(error) | raw: \(raw)")
             throw MozartError.invalidResponse
         }
     }
@@ -180,18 +181,27 @@ class MozartClient {
         try await postVoid("/playback/queue/clear")
     }
 
-    // ── Favorites ─────────────────────────────────────────────────────────────
+    // ── Favorites / Presets ───────────────────────────────────────────────────
 
-    /// Returns the list of favorites (presets) stored on this speaker.
+    /// Returns the list of scenes (favorites) stored on this speaker, sorted alphabetically.
+    /// `GET /scenes` returns a `[String: SceneResponse]` dictionary keyed by UUID.
+    /// Each `Favorite.presetIndex` is its 0-based position in the sorted list.
+    /// Display name falls back to "Favorite N" when the scene has no label.
     func getFavorites() async throws -> [Favorite] {
-        try await get("/content/favorites")
+        let scenes: [String: SceneResponse] = try await get("/scenes")
+        let sorted = scenes
+            .map { id, scene in (id: id, label: scene.label?.trimmingCharacters(in: .whitespaces)) }
+            .sorted { ($0.label ?? "").localizedCompare($1.label ?? "") == .orderedAscending }
+        return sorted.enumerated().map { offset, entry in
+            let name = entry.label.flatMap { $0.isEmpty ? nil : $0 } ?? "Favorite \(offset + 1)"
+            return Favorite(id: entry.id, displayName: name, presetIndex: offset + 1)
+        }
     }
 
-    /// Activates a favorite by its ID, starting playback immediately.
-    /// - Parameter id: Favorite ID as returned by ``getFavorites()``.
-    func playFavorite(id: String) async throws {
-        let encoded = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
-        try await postVoid("/content/favorites/\(encoded)")
+    /// Triggers a preset by its 0-based index (favorite 1 = index 0, favorite 2 = index 1, …).
+    /// - Parameter presetIndex: 0-based position as stored in `Favorite.presetIndex`.
+    func playFavorite(presetIndex: Int) async throws {
+        try await postVoid("/playback/preset/\(presetIndex)/trigger")
     }
 
     // ── Volume ────────────────────────────────────────────────────────────────

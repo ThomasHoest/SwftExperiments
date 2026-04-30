@@ -10,7 +10,8 @@ struct ErrorResponseService {
         switch error {
         case .noSpeakerSpoken(let available):               return s.noSpeakerSpoken(available)
         case .speakerNotFound(let spoken, let available):   return s.speakerNotFound(spoken, available)
-        case .favoriteNotFound(let n, let sp, let avail):   return s.favoriteNotFound(n, sp, avail)
+        case .favoriteNotFound(let n, let sp, let avail):          return s.favoriteNotFound(n, sp, avail)
+        case .favoriteIndexOutOfRange(let i, let sp, let avail):   return s.favoriteIndexOutOfRange(i, sp, avail)
         case .speakerUnreachable(let speaker):              return s.speakerUnreachable(speaker)
         case .nothingPlaying(let speaker):                  return s.nothingPlaying(speaker)
         case .volumeAtLimit(let speaker, let atMax):        return s.volumeAtLimit(speaker, atMax)

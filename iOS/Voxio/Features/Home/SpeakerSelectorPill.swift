@@ -10,16 +10,17 @@ struct SpeakerSelectorPill: View {
                 HStack(spacing: 10) {
                     ForEach(speakers) { speaker in
                         let isActive = selectedSpeaker?.id == speaker.id
-                        pillButton(name: speaker.name, isActive: isActive)
-                            .onTapGesture {
-                                withAnimation(BeoAnimation.spring) {
-                                    selectedSpeaker = speaker
-                                }
-                                withAnimation(BeoAnimation.spring) {
-                                    proxy.scrollTo(speaker.id, anchor: .center)
-                                }
-                            }
-                            .id(speaker.id)
+                        Button {
+                            withAnimation(BeoAnimation.spring) { selectedSpeaker = speaker }
+                            withAnimation(BeoAnimation.spring) { proxy.scrollTo(speaker.id, anchor: .center) }
+                        } label: {
+                            pillButton(name: speaker.name, isActive: isActive)
+                                .frame(minWidth: 44, minHeight: 44)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(isActive ? "\(speaker.name), selected" : speaker.name)
+                        .accessibilityHint(isActive ? "" : "Select this speaker")
+                        .id(speaker.id)
                     }
                 }
                 .padding(.horizontal, 20)

@@ -10,13 +10,19 @@ class FavoritesService {
             return cached
         }
         Log.verbose("[Favorites] fetching favorites from API for \(speaker.name)")
-        guard let list = try? await speaker.getFavorites() else {
-            Log.info("[Favorites] fetch failed for \(speaker.name)")
+        do {
+            let list = try await speaker.getFavorites()
+            cache[speaker.host] = list
+            Log.info("[Favorites] cached \(list.count) favorites for \(speaker.name): \(list.map(\.displayName))")
+            return list
+        } catch MozartError.notFound {
+            cache[speaker.host] = []
+            Log.info("[Favorites] \(speaker.name) has no favorites stored (404)")
+            return []
+        } catch {
+            Log.error("[Favorites] fetch failed for \(speaker.name): \(error)")
             return []
         }
-        cache[speaker.host] = list
-        Log.info("[Favorites] cached \(list.count) favorites for \(speaker.name): \(list.map(\.displayName))")
-        return list
     }
 
     func play(index: Int, on speaker: Speaker) async {
@@ -27,7 +33,7 @@ class FavoritesService {
         }
         let fav = list[index - 1]
         Log.info("[Favorites] playing #\(index) '\(fav.displayName)' on \(speaker.name)")
-        try? await speaker.playFavorite(id: fav.id)
+        try? await speaker.playFavorite(presetIndex: fav.presetIndex)
     }
 
     func playDefault(on speaker: Speaker) async {
@@ -37,7 +43,7 @@ class FavoritesService {
             return
         }
         Log.info("[Favorites] playing default '\(first.displayName)' on \(speaker.name)")
-        try? await speaker.playFavorite(id: first.id)
+        try? await speaker.playFavorite(presetIndex: first.presetIndex)
     }
 
     func listFavorites(for speaker: Speaker) async -> [String] {
@@ -66,8 +72,17 @@ class FavoritesService {
             return false
         }
         Log.info("[Favorites] playNamed '\(fav.displayName)' on \(speaker.name)")
-        try? await speaker.playFavorite(id: fav.id)
+        try? await speaker.playFavorite(presetIndex: fav.presetIndex)
         return true
+    }
+
+    func favorite(at index: Int, for speaker: Speaker) async -> Favorite? {
+        let list = await fetch(for: speaker)
+        guard index >= 1, index <= list.count else {
+            Log.info("[Favorites] index \(index) out of range (have \(list.count)) on \(speaker.name)")
+            return nil
+        }
+        return list[index - 1]
     }
 
     func invalidate(for speaker: Speaker) {
