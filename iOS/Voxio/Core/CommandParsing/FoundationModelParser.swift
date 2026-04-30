@@ -56,9 +56,9 @@ final class FoundationModelParser {
         Log.info("[FoundationModelParser] warmed up")
     }
 
-    /// Parses a speaker-stripped remainder string into a `ParsedCommand`.
-    func parse(_ remainder: String, speaker: Speaker) async throws -> ParsedCommand {
-        Log.info("[FoundationModelParser] parsing: \"\(remainder)\" for speaker: \(speaker.name)")
+    /// Parses a transcript string into a `ParsedCommand` (speaker context not required).
+    func parse(_ remainder: String) async throws -> ParsedCommand {
+        Log.info("[FoundationModelParser] parsing: \"\(remainder)\"")
         guard let session else {
             Log.info("[FoundationModelParser] no session — returning unknown")
             return .unknown(remainder)

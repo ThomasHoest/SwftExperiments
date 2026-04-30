@@ -3,14 +3,14 @@ import FoundationModels
 #endif
 import Foundation
 
-/// Routes a speaker-stripped transcript to the appropriate parser.
+/// Routes a speaker-stripped transcript through a three-tier parsing pipeline,
+/// returning a `VoiceCommand`.
 ///
-/// On Apple Intelligence-capable devices (iOS 26+) `FoundationModelParser`
-/// is used. On all other devices — or if Apple Intelligence is unavailable —
-/// `TwoStageFallbackParser` handles the request.
+/// Tier 1: Foundation Models (A17 Pro+, Apple Intelligence required).
+/// Tier 2: NLModel intent classifier (all devices — primary floor).
+/// Tier 3: Keyword/regex `CommandParser` (deterministic safety net).
 final class CommandParserRouter {
 
-    // Internal so extensions in sibling files can access them.
     let fallback = TwoStageFallbackParser()
     // Stored as Any to avoid @available restriction on stored properties.
     var foundationParser: Any?
@@ -27,23 +27,16 @@ final class CommandParserRouter {
 
     // ── Public API ────────────────────────────────────────────────────────────
 
-    /// Parses a speaker-stripped remainder string into a `ParsedCommand`.
-    func parse(
-        _ remainder: String,
-        addressedSpeaker: Speaker,
-        allSpeakers:   [String] = [],
-        favoriteNames: [String] = []
-    ) async -> ParsedCommand {
-        Log.info("[CommandParserRouter] parsing: \"\(remainder)\" for speaker: \(addressedSpeaker.name)")
+    /// Parses a transcript string into a `VoiceCommand`.
+    /// Tries Tier 1 → Tier 2 → Tier 3 in order, returning the first confident result.
+    func parse(_ transcript: String) async -> VoiceCommand {
+        Log.info("[CommandParserRouter] parsing: \"\(transcript)\"")
 #if canImport(FoundationModels)
         if #available(iOS 26, *) {
-            if let result = await tryFoundationModel(
-                remainder, speaker: addressedSpeaker,
-                allSpeakers: allSpeakers, favoriteNames: favoriteNames
-            ) { return result }
+            if let result = await tryFoundationModel(transcript) { return result }
         }
 #endif
-        return parseFallback(remainder)
+        return parseFallback(transcript)
     }
 
     /// Pre-warms the Foundation Models session on launch. No-op on unsupported devices.
@@ -51,5 +44,27 @@ final class CommandParserRouter {
 #if canImport(FoundationModels)
         if #available(iOS 26, *) { await warmUpFoundationModel() }
 #endif
+    }
+
+    // ── ParsedCommand → VoiceCommand ─────────────────────────────────────────
+
+    func toVoiceCommand(_ parsed: ParsedCommand) -> VoiceCommand {
+        switch parsed.intent {
+        case .playFavoriteByNumber: return .playFavorite(index: parsed.favoriteIndex ?? 1)
+        case .playNamed:            return .playDefault
+        case .playDefault:          return .playDefault
+        case .listFavorites:        return .listFavorites
+        case .stop:                 return .stop
+        case .pause:                return .pause
+        case .resume:               return .resume
+        case .setVolume:            return .setVolume(parsed.volumeValue ?? 50)
+        case .volumeUp:             return .adjustVolume(+(parsed.volumeDelta ?? 10))
+        case .volumeDown:           return .adjustVolume(-(parsed.volumeDelta ?? 10))
+        case .mute:                 return .mute
+        case .unmute:               return .unmute
+        case .confirm:              return .confirm
+        case .cancel:               return .cancel
+        case .unknown:              return .unknown(parsed.rawText ?? "")
+        }
     }
 }

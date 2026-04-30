@@ -16,21 +16,15 @@ extension CommandParserRouter {
     }
 
     @available(iOS 26, *)
-    func tryFoundationModel(
-        _ remainder: String,
-        speaker: Speaker,
-        allSpeakers: [String],
-        favoriteNames: [String]
-    ) async -> ParsedCommand? {
+    func tryFoundationModel(_ transcript: String) async -> VoiceCommand? {
         guard let fp = foundationParser as? FoundationModelParser else { return nil }
-        fp.updateContext(speakers: allSpeakers, activeSpeaker: speaker.name, favorites: favoriteNames)
         Log.info("[CommandParserRouter] path: FoundationModelParser")
-        guard let result = try? await fp.parse(remainder, speaker: speaker) else {
+        guard let result = try? await fp.parse(transcript) else {
             Log.info("[CommandParserRouter] FoundationModel failed — falling back to TwoStageFallbackParser")
             return nil
         }
-        Log.info("[CommandParserRouter] result: \(result) (FoundationModel)")
-        return result
+        Log.info("[CommandParserRouter] result: \(toVoiceCommand(result)) (FoundationModel)")
+        return toVoiceCommand(result)
     }
 
     @available(iOS 26, *)

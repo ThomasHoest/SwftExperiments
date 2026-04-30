@@ -1,0 +1,742 @@
+{"text": "stop", "label": "stop"}
+{"text": "stop music", "label": "stop"}
+{"text": "stop playing", "label": "stop"}
+{"text": "stop the music", "label": "stop"}
+{"text": "stop it", "label": "stop"}
+{"text": "stop that", "label": "stop"}
+{"text": "halt", "label": "stop"}
+{"text": "halt playback", "label": "stop"}
+{"text": "halt the music", "label": "stop"}
+{"text": "cut it", "label": "stop"}
+{"text": "cut the music", "label": "stop"}
+{"text": "cut it out", "label": "stop"}
+{"text": "kill the music", "label": "stop"}
+{"text": "kill playback", "label": "stop"}
+{"text": "kill the audio", "label": "stop"}
+{"text": "end playback", "label": "stop"}
+{"text": "end the music", "label": "stop"}
+{"text": "end it", "label": "stop"}
+{"text": "turn it off", "label": "stop"}
+{"text": "turn off the music", "label": "stop"}
+{"text": "switch it off", "label": "stop"}
+{"text": "no more music", "label": "stop"}
+{"text": "enough music", "label": "stop"}
+{"text": "that's enough", "label": "stop"}
+{"text": "stop the song", "label": "stop"}
+{"text": "stop the audio", "label": "stop"}
+{"text": "stop the track", "label": "stop"}
+{"text": "make it stop", "label": "stop"}
+{"text": "please stop", "label": "stop"}
+{"text": "please stop the music", "label": "stop"}
+{"text": "please turn it off", "label": "stop"}
+{"text": "could you stop that", "label": "stop"}
+{"text": "can you stop the music", "label": "stop"}
+{"text": "would you stop playing", "label": "stop"}
+{"text": "I want it to stop", "label": "stop"}
+{"text": "stop what's playing", "label": "stop"}
+{"text": "stop now", "label": "stop"}
+{"text": "stop for now", "label": "stop"}
+{"text": "stop playing music", "label": "stop"}
+{"text": "cut off the music", "label": "stop"}
+{"text": "shut off the music", "label": "stop"}
+{"text": "shut it down", "label": "stop"}
+{"text": "turn music off", "label": "stop"}
+{"text": "done playing", "label": "stop"}
+{"text": "stop the playback", "label": "stop"}
+{"text": "terminate playback", "label": "stop"}
+{"text": "abort playback", "label": "stop"}
+{"text": "finish playing", "label": "stop"}
+{"text": "um stop the music please", "label": "stop"}
+{"text": "could you just stop", "label": "stop"}
+{"text": "I'd like you to stop the music", "label": "stop"}
+{"text": "let's stop the music", "label": "stop"}
+{"text": "stop everything", "label": "stop"}
+{"text": "stop the sound", "label": "stop"}
+{"text": "cut the sound", "label": "stop"}
+{"text": "please just stop it", "label": "stop"}
+{"text": "would you please stop that", "label": "stop"}
+{"text": "stop the speaker", "label": "stop"}
+{"text": "hey stop the music", "label": "stop"}
+{"text": "can you just stop", "label": "stop"}
+{"text": "stop it please", "label": "stop"}
+{"text": "I'd like the music stopped", "label": "stop"}
+{"text": "turn off music please", "label": "stop"}
+{"text": "just stop", "label": "stop"}
+{"text": "stop the bloody music", "label": "stop"}
+{"text": "turn the music off", "label": "stop"}
+{"text": "please end the music", "label": "stop"}
+{"text": "cut off the sound", "label": "stop"}
+{"text": "stop playing now", "label": "stop"}
+{"text": "hold on stop the music", "label": "stop"}
+{"text": "stop it all", "label": "stop"}
+{"text": "cease playback", "label": "stop"}
+{"text": "stop music please", "label": "stop"}
+{"text": "pause", "label": "pause"}
+{"text": "pause music", "label": "pause"}
+{"text": "pause it", "label": "pause"}
+{"text": "pause that", "label": "pause"}
+{"text": "pause the music", "label": "pause"}
+{"text": "pause the song", "label": "pause"}
+{"text": "pause the track", "label": "pause"}
+{"text": "pause the audio", "label": "pause"}
+{"text": "pause the playback", "label": "pause"}
+{"text": "pause what's playing", "label": "pause"}
+{"text": "pause this", "label": "pause"}
+{"text": "pause please", "label": "pause"}
+{"text": "pause for a second", "label": "pause"}
+{"text": "pause for a moment", "label": "pause"}
+{"text": "pause for now", "label": "pause"}
+{"text": "pause right here", "label": "pause"}
+{"text": "pause right now", "label": "pause"}
+{"text": "hold on", "label": "pause"}
+{"text": "hold the music", "label": "pause"}
+{"text": "hold it", "label": "pause"}
+{"text": "put it on pause", "label": "pause"}
+{"text": "put it on hold", "label": "pause"}
+{"text": "pause momentarily", "label": "pause"}
+{"text": "can you pause", "label": "pause"}
+{"text": "can you pause the music", "label": "pause"}
+{"text": "could you pause", "label": "pause"}
+{"text": "could you pause that", "label": "pause"}
+{"text": "would you pause", "label": "pause"}
+{"text": "please pause", "label": "pause"}
+{"text": "please pause the music", "label": "pause"}
+{"text": "just pause it", "label": "pause"}
+{"text": "I need you to pause", "label": "pause"}
+{"text": "I'd like to pause", "label": "pause"}
+{"text": "pause it for a second", "label": "pause"}
+{"text": "pause it for a bit", "label": "pause"}
+{"text": "take a break from playing", "label": "pause"}
+{"text": "freeze the music", "label": "pause"}
+{"text": "halt it for a bit", "label": "pause"}
+{"text": "um can you pause", "label": "pause"}
+{"text": "hey pause the music", "label": "pause"}
+{"text": "let's pause", "label": "pause"}
+{"text": "pause music please", "label": "pause"}
+{"text": "pause that song", "label": "pause"}
+{"text": "let's take a pause", "label": "pause"}
+{"text": "wait pause the music", "label": "pause"}
+{"text": "actually pause it", "label": "pause"}
+{"text": "stop for a sec", "label": "pause"}
+{"text": "hold up", "label": "pause"}
+{"text": "could you hold the music", "label": "pause"}
+{"text": "would you pause that please", "label": "pause"}
+{"text": "can you just pause for a second", "label": "pause"}
+{"text": "pause please just for a moment", "label": "pause"}
+{"text": "freeze that", "label": "pause"}
+{"text": "stop it for a moment", "label": "pause"}
+{"text": "pause here", "label": "pause"}
+{"text": "wait a moment pause it", "label": "pause"}
+{"text": "resume", "label": "resume"}
+{"text": "continue", "label": "resume"}
+{"text": "continue playing", "label": "resume"}
+{"text": "unpause", "label": "resume"}
+{"text": "play again", "label": "resume"}
+{"text": "start again", "label": "resume"}
+{"text": "keep going", "label": "resume"}
+{"text": "go on", "label": "resume"}
+{"text": "resume music", "label": "resume"}
+{"text": "resume playback", "label": "resume"}
+{"text": "resume playing", "label": "resume"}
+{"text": "continue the music", "label": "resume"}
+{"text": "continue playback", "label": "resume"}
+{"text": "keep playing", "label": "resume"}
+{"text": "keep the music going", "label": "resume"}
+{"text": "keep it going", "label": "resume"}
+{"text": "carry on", "label": "resume"}
+{"text": "carry on playing", "label": "resume"}
+{"text": "pick it up again", "label": "resume"}
+{"text": "pick up where we left off", "label": "resume"}
+{"text": "let's continue", "label": "resume"}
+{"text": "let's continue playing", "label": "resume"}
+{"text": "start playing again", "label": "resume"}
+{"text": "get it going again", "label": "resume"}
+{"text": "bring it back", "label": "resume"}
+{"text": "get it back", "label": "resume"}
+{"text": "start it back up", "label": "resume"}
+{"text": "turn it back on", "label": "resume"}
+{"text": "play on", "label": "resume"}
+{"text": "play it again", "label": "resume"}
+{"text": "restart playing", "label": "resume"}
+{"text": "continue what was playing", "label": "resume"}
+{"text": "resume where we left off", "label": "resume"}
+{"text": "go ahead and play", "label": "resume"}
+{"text": "please resume", "label": "resume"}
+{"text": "could you resume", "label": "resume"}
+{"text": "can you resume", "label": "resume"}
+{"text": "can you continue", "label": "resume"}
+{"text": "I'd like you to resume", "label": "resume"}
+{"text": "um continue the music please", "label": "resume"}
+{"text": "let it play again", "label": "resume"}
+{"text": "keep it playing", "label": "resume"}
+{"text": "don't stop playing", "label": "resume"}
+{"text": "go back to playing", "label": "resume"}
+{"text": "ok you can continue now", "label": "resume"}
+{"text": "play again please", "label": "resume"}
+{"text": "can we continue", "label": "resume"}
+{"text": "continue please", "label": "resume"}
+{"text": "unpause it", "label": "resume"}
+{"text": "unpause please", "label": "resume"}
+{"text": "hit play", "label": "resume"}
+{"text": "press play", "label": "resume"}
+{"text": "start again please", "label": "resume"}
+{"text": "let's get back to the music", "label": "resume"}
+{"text": "play", "label": "playDefault"}
+{"text": "play music", "label": "playDefault"}
+{"text": "start playing", "label": "playDefault"}
+{"text": "play something", "label": "playDefault"}
+{"text": "start music", "label": "playDefault"}
+{"text": "play some music", "label": "playDefault"}
+{"text": "start the music", "label": "playDefault"}
+{"text": "begin playing", "label": "playDefault"}
+{"text": "begin music", "label": "playDefault"}
+{"text": "play anything", "label": "playDefault"}
+{"text": "get the music going", "label": "playDefault"}
+{"text": "put some music on", "label": "playDefault"}
+{"text": "put on some music", "label": "playDefault"}
+{"text": "fire it up", "label": "playDefault"}
+{"text": "let's have some music", "label": "playDefault"}
+{"text": "start it up", "label": "playDefault"}
+{"text": "get it going", "label": "playDefault"}
+{"text": "play what you have", "label": "playDefault"}
+{"text": "give me some music", "label": "playDefault"}
+{"text": "I want music", "label": "playDefault"}
+{"text": "play something good", "label": "playDefault"}
+{"text": "could you play something", "label": "playDefault"}
+{"text": "start playing something", "label": "playDefault"}
+{"text": "please play", "label": "playDefault"}
+{"text": "please play some music", "label": "playDefault"}
+{"text": "play music now", "label": "playDefault"}
+{"text": "get some music going", "label": "playDefault"}
+{"text": "turn on the music", "label": "playDefault"}
+{"text": "music please", "label": "playDefault"}
+{"text": "play it", "label": "playDefault"}
+{"text": "can you play something", "label": "playDefault"}
+{"text": "would you play some music", "label": "playDefault"}
+{"text": "I'd like some music", "label": "playDefault"}
+{"text": "can we have some music", "label": "playDefault"}
+{"text": "let's play some music", "label": "playDefault"}
+{"text": "put music on", "label": "playDefault"}
+{"text": "go ahead and play something", "label": "playDefault"}
+{"text": "let's get some music going", "label": "playDefault"}
+{"text": "um play something please", "label": "playDefault"}
+{"text": "hey play some music", "label": "playDefault"}
+{"text": "play music please", "label": "playDefault"}
+{"text": "play something for me", "label": "playDefault"}
+{"text": "start the playback", "label": "playDefault"}
+{"text": "play the default", "label": "playDefault"}
+{"text": "play what's saved", "label": "playDefault"}
+{"text": "play whatever", "label": "playDefault"}
+{"text": "play anything you have", "label": "playDefault"}
+{"text": "let's listen to some music", "label": "playDefault"}
+{"text": "I want to listen to music", "label": "playDefault"}
+{"text": "could we have some music please", "label": "playDefault"}
+{"text": "kick off the music", "label": "playDefault"}
+{"text": "play now", "label": "playDefault"}
+{"text": "play favorite one", "label": "playFavoriteByNumber"}
+{"text": "play favorite two", "label": "playFavoriteByNumber"}
+{"text": "play favorite three", "label": "playFavoriteByNumber"}
+{"text": "play favorite four", "label": "playFavoriteByNumber"}
+{"text": "play favourite one", "label": "playFavoriteByNumber"}
+{"text": "play favourite two", "label": "playFavoriteByNumber"}
+{"text": "play favourite three", "label": "playFavoriteByNumber"}
+{"text": "play favourite four", "label": "playFavoriteByNumber"}
+{"text": "play my first favorite", "label": "playFavoriteByNumber"}
+{"text": "play my second favorite", "label": "playFavoriteByNumber"}
+{"text": "play my third favorite", "label": "playFavoriteByNumber"}
+{"text": "play my fourth favorite", "label": "playFavoriteByNumber"}
+{"text": "play the first favorite", "label": "playFavoriteByNumber"}
+{"text": "play the second favorite", "label": "playFavoriteByNumber"}
+{"text": "play the third favorite", "label": "playFavoriteByNumber"}
+{"text": "play the fourth favorite", "label": "playFavoriteByNumber"}
+{"text": "play my first favourite", "label": "playFavoriteByNumber"}
+{"text": "play my second favourite", "label": "playFavoriteByNumber"}
+{"text": "play my third favourite", "label": "playFavoriteByNumber"}
+{"text": "play my fourth favourite", "label": "playFavoriteByNumber"}
+{"text": "play favorite number one", "label": "playFavoriteByNumber"}
+{"text": "play favorite number two", "label": "playFavoriteByNumber"}
+{"text": "play favorite number three", "label": "playFavoriteByNumber"}
+{"text": "play favorite number four", "label": "playFavoriteByNumber"}
+{"text": "put on favorite one", "label": "playFavoriteByNumber"}
+{"text": "put on favorite two", "label": "playFavoriteByNumber"}
+{"text": "put on favorite three", "label": "playFavoriteByNumber"}
+{"text": "put on favorite four", "label": "playFavoriteByNumber"}
+{"text": "start favorite one", "label": "playFavoriteByNumber"}
+{"text": "start favorite two", "label": "playFavoriteByNumber"}
+{"text": "start favorite three", "label": "playFavoriteByNumber"}
+{"text": "start favorite four", "label": "playFavoriteByNumber"}
+{"text": "play number one", "label": "playFavoriteByNumber"}
+{"text": "play number two", "label": "playFavoriteByNumber"}
+{"text": "play number three", "label": "playFavoriteByNumber"}
+{"text": "play number four", "label": "playFavoriteByNumber"}
+{"text": "play the first one", "label": "playFavoriteByNumber"}
+{"text": "play the second one", "label": "playFavoriteByNumber"}
+{"text": "play the third one", "label": "playFavoriteByNumber"}
+{"text": "play the fourth one", "label": "playFavoriteByNumber"}
+{"text": "play preset one", "label": "playFavoriteByNumber"}
+{"text": "play preset two", "label": "playFavoriteByNumber"}
+{"text": "play preset three", "label": "playFavoriteByNumber"}
+{"text": "play preset four", "label": "playFavoriteByNumber"}
+{"text": "put on my first favorite", "label": "playFavoriteByNumber"}
+{"text": "put on my second favorite", "label": "playFavoriteByNumber"}
+{"text": "put on my third favorite", "label": "playFavoriteByNumber"}
+{"text": "put on my fourth favorite", "label": "playFavoriteByNumber"}
+{"text": "start my first favorite", "label": "playFavoriteByNumber"}
+{"text": "start my second favorite", "label": "playFavoriteByNumber"}
+{"text": "could you play my first favorite", "label": "playFavoriteByNumber"}
+{"text": "could you play my second favorite", "label": "playFavoriteByNumber"}
+{"text": "please play favorite number one", "label": "playFavoriteByNumber"}
+{"text": "please play favorite number two", "label": "playFavoriteByNumber"}
+{"text": "I want my first favorite", "label": "playFavoriteByNumber"}
+{"text": "I want my second favorite", "label": "playFavoriteByNumber"}
+{"text": "let's play the first favorite", "label": "playFavoriteByNumber"}
+{"text": "let's play the second favorite", "label": "playFavoriteByNumber"}
+{"text": "hey play favorite one", "label": "playFavoriteByNumber"}
+{"text": "um play my first favorite please", "label": "playFavoriteByNumber"}
+{"text": "can you play favorite two", "label": "playFavoriteByNumber"}
+{"text": "play the first saved favorite", "label": "playFavoriteByNumber"}
+{"text": "play the second saved favorite", "label": "playFavoriteByNumber"}
+{"text": "start the first favorite please", "label": "playFavoriteByNumber"}
+{"text": "what are my favorites", "label": "listFavorites"}
+{"text": "what are my favourite stations", "label": "listFavorites"}
+{"text": "list my favorites", "label": "listFavorites"}
+{"text": "list my favourites", "label": "listFavorites"}
+{"text": "show favorites", "label": "listFavorites"}
+{"text": "show my favorites", "label": "listFavorites"}
+{"text": "show my favourites", "label": "listFavorites"}
+{"text": "show me my favorites", "label": "listFavorites"}
+{"text": "what favorites do I have", "label": "listFavorites"}
+{"text": "what favourites do I have", "label": "listFavorites"}
+{"text": "which favorites do I have", "label": "listFavorites"}
+{"text": "which favourites do I have", "label": "listFavorites"}
+{"text": "what favorites are available", "label": "listFavorites"}
+{"text": "list all favorites", "label": "listFavorites"}
+{"text": "show all my favorites", "label": "listFavorites"}
+{"text": "list favorites", "label": "listFavorites"}
+{"text": "tell me my favorites", "label": "listFavorites"}
+{"text": "tell me what favorites I have", "label": "listFavorites"}
+{"text": "what are my saved favorites", "label": "listFavorites"}
+{"text": "what do I have saved", "label": "listFavorites"}
+{"text": "what presets do I have", "label": "listFavorites"}
+{"text": "list my presets", "label": "listFavorites"}
+{"text": "show my presets", "label": "listFavorites"}
+{"text": "what are my presets", "label": "listFavorites"}
+{"text": "what presets are available", "label": "listFavorites"}
+{"text": "which presets do I have", "label": "listFavorites"}
+{"text": "tell me my presets", "label": "listFavorites"}
+{"text": "what options do I have", "label": "listFavorites"}
+{"text": "what can I play", "label": "listFavorites"}
+{"text": "what's available", "label": "listFavorites"}
+{"text": "show me what I can play", "label": "listFavorites"}
+{"text": "tell me what's saved", "label": "listFavorites"}
+{"text": "what playlists do I have", "label": "listFavorites"}
+{"text": "list my playlists", "label": "listFavorites"}
+{"text": "show me my playlists", "label": "listFavorites"}
+{"text": "could you list my favorites", "label": "listFavorites"}
+{"text": "can you show my favorites", "label": "listFavorites"}
+{"text": "please show me my favorites", "label": "listFavorites"}
+{"text": "what stations have I saved", "label": "listFavorites"}
+{"text": "which stations are saved", "label": "listFavorites"}
+{"text": "show me the saved stations", "label": "listFavorites"}
+{"text": "what are my saved options", "label": "listFavorites"}
+{"text": "tell me what I can choose from", "label": "listFavorites"}
+{"text": "what do I have to choose from", "label": "listFavorites"}
+{"text": "um what favorites do I have", "label": "listFavorites"}
+{"text": "hey list my favorites", "label": "listFavorites"}
+{"text": "what music do I have saved", "label": "listFavorites"}
+{"text": "show all saved options", "label": "listFavorites"}
+{"text": "set volume to 10", "label": "setVolume"}
+{"text": "set volume to 20", "label": "setVolume"}
+{"text": "set volume to 30", "label": "setVolume"}
+{"text": "set volume to 40", "label": "setVolume"}
+{"text": "set volume to 50", "label": "setVolume"}
+{"text": "set volume to 60", "label": "setVolume"}
+{"text": "set volume to 70", "label": "setVolume"}
+{"text": "set volume to 80", "label": "setVolume"}
+{"text": "set volume to 90", "label": "setVolume"}
+{"text": "set the volume to 50", "label": "setVolume"}
+{"text": "set the volume to 30", "label": "setVolume"}
+{"text": "set the volume to 70", "label": "setVolume"}
+{"text": "volume 50", "label": "setVolume"}
+{"text": "volume 30", "label": "setVolume"}
+{"text": "volume 70", "label": "setVolume"}
+{"text": "volume 20", "label": "setVolume"}
+{"text": "volume 80", "label": "setVolume"}
+{"text": "set it to 50", "label": "setVolume"}
+{"text": "set it to 30", "label": "setVolume"}
+{"text": "set it to 70", "label": "setVolume"}
+{"text": "make the volume 50", "label": "setVolume"}
+{"text": "make the volume 30", "label": "setVolume"}
+{"text": "change volume to 50", "label": "setVolume"}
+{"text": "change the volume to 50", "label": "setVolume"}
+{"text": "change the volume to 40", "label": "setVolume"}
+{"text": "turn volume to 50", "label": "setVolume"}
+{"text": "put the volume at 50", "label": "setVolume"}
+{"text": "put the volume at 30", "label": "setVolume"}
+{"text": "set audio to 50", "label": "setVolume"}
+{"text": "set sound to 50", "label": "setVolume"}
+{"text": "I want volume at 50", "label": "setVolume"}
+{"text": "I want it at 50", "label": "setVolume"}
+{"text": "make it 50", "label": "setVolume"}
+{"text": "make it 30", "label": "setVolume"}
+{"text": "put volume to 50", "label": "setVolume"}
+{"text": "adjust volume to 50", "label": "setVolume"}
+{"text": "adjust to 50", "label": "setVolume"}
+{"text": "could you set the volume to 50", "label": "setVolume"}
+{"text": "can you set the volume to 50", "label": "setVolume"}
+{"text": "please set volume to 50", "label": "setVolume"}
+{"text": "please set the volume to 40", "label": "setVolume"}
+{"text": "I'd like the volume at 60", "label": "setVolume"}
+{"text": "I'd like it at 40", "label": "setVolume"}
+{"text": "turn it to 50", "label": "setVolume"}
+{"text": "change it to 50", "label": "setVolume"}
+{"text": "change it to 60", "label": "setVolume"}
+{"text": "um set volume to 50 please", "label": "setVolume"}
+{"text": "hey set the volume to 30", "label": "setVolume"}
+{"text": "volume level 50", "label": "setVolume"}
+{"text": "volume level 30", "label": "setVolume"}
+{"text": "set the level to 50", "label": "setVolume"}
+{"text": "volume at 50", "label": "setVolume"}
+{"text": "volume at 30", "label": "setVolume"}
+{"text": "volume should be 50", "label": "setVolume"}
+{"text": "I need the volume at 50", "label": "setVolume"}
+{"text": "set loudness to 50", "label": "setVolume"}
+{"text": "exactly 50 volume", "label": "setVolume"}
+{"text": "fifty percent volume", "label": "setVolume"}
+{"text": "volume up", "label": "volumeUp"}
+{"text": "louder", "label": "volumeUp"}
+{"text": "turn it up", "label": "volumeUp"}
+{"text": "increase volume", "label": "volumeUp"}
+{"text": "make it louder", "label": "volumeUp"}
+{"text": "crank it up", "label": "volumeUp"}
+{"text": "increase the volume", "label": "volumeUp"}
+{"text": "turn up the volume", "label": "volumeUp"}
+{"text": "louder please", "label": "volumeUp"}
+{"text": "bump it up", "label": "volumeUp"}
+{"text": "raise the volume", "label": "volumeUp"}
+{"text": "raise it up", "label": "volumeUp"}
+{"text": "a bit louder", "label": "volumeUp"}
+{"text": "a little louder", "label": "volumeUp"}
+{"text": "more volume", "label": "volumeUp"}
+{"text": "more sound", "label": "volumeUp"}
+{"text": "turn it up a bit", "label": "volumeUp"}
+{"text": "turn it up a little", "label": "volumeUp"}
+{"text": "can you turn it up", "label": "volumeUp"}
+{"text": "could you turn it up", "label": "volumeUp"}
+{"text": "could you make it louder", "label": "volumeUp"}
+{"text": "please make it louder", "label": "volumeUp"}
+{"text": "a bit more volume", "label": "volumeUp"}
+{"text": "turn up", "label": "volumeUp"}
+{"text": "bump up the volume", "label": "volumeUp"}
+{"text": "raise the sound", "label": "volumeUp"}
+{"text": "push it up", "label": "volumeUp"}
+{"text": "turn up the music", "label": "volumeUp"}
+{"text": "increase sound", "label": "volumeUp"}
+{"text": "boost the volume", "label": "volumeUp"}
+{"text": "pump it up", "label": "volumeUp"}
+{"text": "volume up please", "label": "volumeUp"}
+{"text": "volume up a bit", "label": "volumeUp"}
+{"text": "volume up 10", "label": "volumeUp"}
+{"text": "volume up 20", "label": "volumeUp"}
+{"text": "turn it up 10", "label": "volumeUp"}
+{"text": "turn it up by 10", "label": "volumeUp"}
+{"text": "louder by 10", "label": "volumeUp"}
+{"text": "louder by 20", "label": "volumeUp"}
+{"text": "give me more volume", "label": "volumeUp"}
+{"text": "I can't hear it very well louder please", "label": "volumeUp"}
+{"text": "I need it louder", "label": "volumeUp"}
+{"text": "I want it louder", "label": "volumeUp"}
+{"text": "up the volume", "label": "volumeUp"}
+{"text": "up the sound", "label": "volumeUp"}
+{"text": "turn the volume up", "label": "volumeUp"}
+{"text": "can you raise the volume", "label": "volumeUp"}
+{"text": "could you raise the volume", "label": "volumeUp"}
+{"text": "please raise the volume", "label": "volumeUp"}
+{"text": "just a little louder", "label": "volumeUp"}
+{"text": "just a tad louder", "label": "volumeUp"}
+{"text": "um can you make it a bit louder", "label": "volumeUp"}
+{"text": "hey turn it up", "label": "volumeUp"}
+{"text": "let's turn it up", "label": "volumeUp"}
+{"text": "max the volume", "label": "volumeUp"}
+{"text": "blast it", "label": "volumeUp"}
+{"text": "turn the music up", "label": "volumeUp"}
+{"text": "could you turn it up a bit", "label": "volumeUp"}
+{"text": "can you turn the volume up", "label": "volumeUp"}
+{"text": "let's hear it louder", "label": "volumeUp"}
+{"text": "volume down", "label": "volumeDown"}
+{"text": "quieter", "label": "volumeDown"}
+{"text": "turn it down", "label": "volumeDown"}
+{"text": "decrease volume", "label": "volumeDown"}
+{"text": "softer", "label": "volumeDown"}
+{"text": "lower the volume", "label": "volumeDown"}
+{"text": "lower it", "label": "volumeDown"}
+{"text": "a bit quieter", "label": "volumeDown"}
+{"text": "a little quieter", "label": "volumeDown"}
+{"text": "turn down the volume", "label": "volumeDown"}
+{"text": "turn it down a bit", "label": "volumeDown"}
+{"text": "turn it down a little", "label": "volumeDown"}
+{"text": "can you turn it down", "label": "volumeDown"}
+{"text": "could you turn it down", "label": "volumeDown"}
+{"text": "could you make it quieter", "label": "volumeDown"}
+{"text": "please make it softer", "label": "volumeDown"}
+{"text": "please make it quieter", "label": "volumeDown"}
+{"text": "less volume", "label": "volumeDown"}
+{"text": "reduce volume", "label": "volumeDown"}
+{"text": "decrease the volume", "label": "volumeDown"}
+{"text": "make it softer", "label": "volumeDown"}
+{"text": "lower the sound", "label": "volumeDown"}
+{"text": "a bit less volume", "label": "volumeDown"}
+{"text": "turn down", "label": "volumeDown"}
+{"text": "reduce sound", "label": "volumeDown"}
+{"text": "push it down", "label": "volumeDown"}
+{"text": "bring it down", "label": "volumeDown"}
+{"text": "quieter please", "label": "volumeDown"}
+{"text": "volume down please", "label": "volumeDown"}
+{"text": "volume down 10", "label": "volumeDown"}
+{"text": "volume down 20", "label": "volumeDown"}
+{"text": "turn it down 10", "label": "volumeDown"}
+{"text": "turn it down by 10", "label": "volumeDown"}
+{"text": "quieter by 10", "label": "volumeDown"}
+{"text": "quieter by 20", "label": "volumeDown"}
+{"text": "down the volume", "label": "volumeDown"}
+{"text": "down the sound", "label": "volumeDown"}
+{"text": "turn the volume down", "label": "volumeDown"}
+{"text": "can you lower the volume", "label": "volumeDown"}
+{"text": "could you lower the volume", "label": "volumeDown"}
+{"text": "please lower the volume", "label": "volumeDown"}
+{"text": "just a little quieter", "label": "volumeDown"}
+{"text": "just a tad quieter", "label": "volumeDown"}
+{"text": "um can you make it a bit quieter", "label": "volumeDown"}
+{"text": "hey turn it down", "label": "volumeDown"}
+{"text": "let's turn it down", "label": "volumeDown"}
+{"text": "I need it softer", "label": "volumeDown"}
+{"text": "I want it quieter", "label": "volumeDown"}
+{"text": "it's too loud turn it down", "label": "volumeDown"}
+{"text": "too loud", "label": "volumeDown"}
+{"text": "that's too loud", "label": "volumeDown"}
+{"text": "way too loud", "label": "volumeDown"}
+{"text": "turn the music down", "label": "volumeDown"}
+{"text": "could you turn it down a bit", "label": "volumeDown"}
+{"text": "can you turn the volume down", "label": "volumeDown"}
+{"text": "mute", "label": "mute"}
+{"text": "mute it", "label": "mute"}
+{"text": "mute please", "label": "mute"}
+{"text": "mute the speaker", "label": "mute"}
+{"text": "mute the audio", "label": "mute"}
+{"text": "mute the music", "label": "mute"}
+{"text": "mute everything", "label": "mute"}
+{"text": "silence", "label": "mute"}
+{"text": "silence it", "label": "mute"}
+{"text": "silence please", "label": "mute"}
+{"text": "silence the speaker", "label": "mute"}
+{"text": "be quiet", "label": "mute"}
+{"text": "go quiet", "label": "mute"}
+{"text": "quiet please", "label": "mute"}
+{"text": "turn off sound", "label": "mute"}
+{"text": "turn off the sound", "label": "mute"}
+{"text": "disable sound", "label": "mute"}
+{"text": "kill the sound", "label": "mute"}
+{"text": "no sound", "label": "mute"}
+{"text": "can you mute", "label": "mute"}
+{"text": "can you mute it", "label": "mute"}
+{"text": "could you mute it", "label": "mute"}
+{"text": "please mute", "label": "mute"}
+{"text": "please mute it", "label": "mute"}
+{"text": "please silence it", "label": "mute"}
+{"text": "I need it silent", "label": "mute"}
+{"text": "make it silent", "label": "mute"}
+{"text": "make it quiet", "label": "mute"}
+{"text": "shut it up", "label": "mute"}
+{"text": "turn the sound off", "label": "mute"}
+{"text": "cut the sound", "label": "mute"}
+{"text": "cut the audio", "label": "mute"}
+{"text": "switch sound off", "label": "mute"}
+{"text": "sound off", "label": "mute"}
+{"text": "um can you silence it please", "label": "mute"}
+{"text": "hey mute it", "label": "mute"}
+{"text": "just mute it", "label": "mute"}
+{"text": "would you mute that", "label": "mute"}
+{"text": "shhh mute it", "label": "mute"}
+{"text": "volume zero", "label": "mute"}
+{"text": "zero volume", "label": "mute"}
+{"text": "I want it muted", "label": "mute"}
+{"text": "unmute", "label": "unmute"}
+{"text": "unmute it", "label": "unmute"}
+{"text": "unmute please", "label": "unmute"}
+{"text": "un-mute", "label": "unmute"}
+{"text": "turn the sound back on", "label": "unmute"}
+{"text": "turn the sound on", "label": "unmute"}
+{"text": "bring back the sound", "label": "unmute"}
+{"text": "restore the sound", "label": "unmute"}
+{"text": "restore audio", "label": "unmute"}
+{"text": "bring audio back", "label": "unmute"}
+{"text": "get the sound back", "label": "unmute"}
+{"text": "give me the sound back", "label": "unmute"}
+{"text": "sound on", "label": "unmute"}
+{"text": "sound back on", "label": "unmute"}
+{"text": "turn sound on", "label": "unmute"}
+{"text": "un-silence it", "label": "unmute"}
+{"text": "can you unmute", "label": "unmute"}
+{"text": "can you unmute it", "label": "unmute"}
+{"text": "could you unmute it", "label": "unmute"}
+{"text": "please unmute", "label": "unmute"}
+{"text": "please unmute it", "label": "unmute"}
+{"text": "turn the audio back on", "label": "unmute"}
+{"text": "bring back the audio", "label": "unmute"}
+{"text": "I want sound again", "label": "unmute"}
+{"text": "let me hear it again", "label": "unmute"}
+{"text": "sound please", "label": "unmute"}
+{"text": "get it back to normal", "label": "unmute"}
+{"text": "restore the volume", "label": "unmute"}
+{"text": "bring it back to volume", "label": "unmute"}
+{"text": "um unmute please", "label": "unmute"}
+{"text": "hey unmute it", "label": "unmute"}
+{"text": "take it off mute", "label": "unmute"}
+{"text": "off mute", "label": "unmute"}
+{"text": "come off mute", "label": "unmute"}
+{"text": "ok you can unmute now", "label": "unmute"}
+{"text": "put the sound back on", "label": "unmute"}
+{"text": "turn back on the sound", "label": "unmute"}
+{"text": "I'd like the sound back", "label": "unmute"}
+{"text": "yes", "label": "confirm"}
+{"text": "yeah", "label": "confirm"}
+{"text": "yep", "label": "confirm"}
+{"text": "yup", "label": "confirm"}
+{"text": "sure", "label": "confirm"}
+{"text": "correct", "label": "confirm"}
+{"text": "do it", "label": "confirm"}
+{"text": "confirm", "label": "confirm"}
+{"text": "go ahead", "label": "confirm"}
+{"text": "absolutely", "label": "confirm"}
+{"text": "definitely", "label": "confirm"}
+{"text": "proceed", "label": "confirm"}
+{"text": "of course", "label": "confirm"}
+{"text": "alright", "label": "confirm"}
+{"text": "ok", "label": "confirm"}
+{"text": "okay", "label": "confirm"}
+{"text": "please do", "label": "confirm"}
+{"text": "yes please", "label": "confirm"}
+{"text": "yes go ahead", "label": "confirm"}
+{"text": "that's right", "label": "confirm"}
+{"text": "right", "label": "confirm"}
+{"text": "indeed", "label": "confirm"}
+{"text": "perfect", "label": "confirm"}
+{"text": "exactly", "label": "confirm"}
+{"text": "affirmative", "label": "confirm"}
+{"text": "yes that's correct", "label": "confirm"}
+{"text": "yes do it", "label": "confirm"}
+{"text": "yeah go ahead", "label": "confirm"}
+{"text": "yeah sure", "label": "confirm"}
+{"text": "yeah that's right", "label": "confirm"}
+{"text": "sounds good", "label": "confirm"}
+{"text": "that's fine", "label": "confirm"}
+{"text": "I'm sure", "label": "confirm"}
+{"text": "I'm certain", "label": "confirm"}
+{"text": "do it please", "label": "confirm"}
+{"text": "go for it", "label": "confirm"}
+{"text": "let's do it", "label": "confirm"}
+{"text": "make it so", "label": "confirm"}
+{"text": "roger", "label": "confirm"}
+{"text": "acknowledged", "label": "confirm"}
+{"text": "yes I confirm", "label": "confirm"}
+{"text": "I confirm", "label": "confirm"}
+{"text": "confirmed", "label": "confirm"}
+{"text": "no", "label": "cancel"}
+{"text": "cancel", "label": "cancel"}
+{"text": "stop that", "label": "cancel"}
+{"text": "never mind", "label": "cancel"}
+{"text": "nope", "label": "cancel"}
+{"text": "forget it", "label": "cancel"}
+{"text": "don't do it", "label": "cancel"}
+{"text": "actually no", "label": "cancel"}
+{"text": "on second thought no", "label": "cancel"}
+{"text": "cancel that", "label": "cancel"}
+{"text": "no thanks", "label": "cancel"}
+{"text": "don't bother", "label": "cancel"}
+{"text": "forget about it", "label": "cancel"}
+{"text": "abort", "label": "cancel"}
+{"text": "disregard", "label": "cancel"}
+{"text": "disregard that", "label": "cancel"}
+{"text": "scratch that", "label": "cancel"}
+{"text": "ignore that", "label": "cancel"}
+{"text": "no way", "label": "cancel"}
+{"text": "I changed my mind", "label": "cancel"}
+{"text": "actually forget it", "label": "cancel"}
+{"text": "no don't", "label": "cancel"}
+{"text": "please don't", "label": "cancel"}
+{"text": "stop no", "label": "cancel"}
+{"text": "not now", "label": "cancel"}
+{"text": "wait no", "label": "cancel"}
+{"text": "no I don't want that", "label": "cancel"}
+{"text": "I don't want that", "label": "cancel"}
+{"text": "negative", "label": "cancel"}
+{"text": "no please don't", "label": "cancel"}
+{"text": "I'd rather not", "label": "cancel"}
+{"text": "let's not", "label": "cancel"}
+{"text": "actually cancel that", "label": "cancel"}
+{"text": "undo that", "label": "cancel"}
+{"text": "abort that", "label": "cancel"}
+{"text": "reject", "label": "cancel"}
+{"text": "I reject that", "label": "cancel"}
+{"text": "no I said no", "label": "cancel"}
+{"text": "play jazz radio", "label": "playNamed"}
+{"text": "play the jazz radio", "label": "playNamed"}
+{"text": "play classical music", "label": "playNamed"}
+{"text": "play my jazz playlist", "label": "playNamed"}
+{"text": "play rock station", "label": "playNamed"}
+{"text": "play the rock station", "label": "playNamed"}
+{"text": "play my playlist", "label": "playNamed"}
+{"text": "play smooth jazz", "label": "playNamed"}
+{"text": "start jazz radio", "label": "playNamed"}
+{"text": "start classical", "label": "playNamed"}
+{"text": "start the jazz station", "label": "playNamed"}
+{"text": "put on jazz radio", "label": "playNamed"}
+{"text": "put on the jazz", "label": "playNamed"}
+{"text": "put on classical music", "label": "playNamed"}
+{"text": "play something called jazz radio", "label": "playNamed"}
+{"text": "play that jazz station", "label": "playNamed"}
+{"text": "can you play jazz radio", "label": "playNamed"}
+{"text": "play my jazz radio", "label": "playNamed"}
+{"text": "I want to hear jazz radio", "label": "playNamed"}
+{"text": "put jazz radio on", "label": "playNamed"}
+{"text": "let's hear jazz radio", "label": "playNamed"}
+{"text": "play bebop", "label": "playNamed"}
+{"text": "play lounge music", "label": "playNamed"}
+{"text": "play chill out", "label": "playNamed"}
+{"text": "start lofi", "label": "playNamed"}
+{"text": "please play jazz radio", "label": "playNamed"}
+{"text": "play that station", "label": "playNamed"}
+{"text": "play that playlist", "label": "playNamed"}
+{"text": "play the playlist", "label": "playNamed"}
+{"text": "start the playlist", "label": "playNamed"}
+{"text": "start my playlist", "label": "playNamed"}
+{"text": "what time is it", "label": "unknown"}
+{"text": "how's the weather", "label": "unknown"}
+{"text": "tell me a joke", "label": "unknown"}
+{"text": "hello", "label": "unknown"}
+{"text": "how are you", "label": "unknown"}
+{"text": "who are you", "label": "unknown"}
+{"text": "what can you do", "label": "unknown"}
+{"text": "open the window", "label": "unknown"}
+{"text": "turn on the lights", "label": "unknown"}
+{"text": "set a timer for five minutes", "label": "unknown"}
+{"text": "add milk to my shopping list", "label": "unknown"}
+{"text": "call mom", "label": "unknown"}
+{"text": "send a message", "label": "unknown"}
+{"text": "navigate home", "label": "unknown"}
+{"text": "what's the news", "label": "unknown"}
+{"text": "search for jazz on spotify", "label": "unknown"}
+{"text": "blah blah blah", "label": "unknown"}
+{"text": "xyzzy frobble", "label": "unknown"}
+{"text": "I want to order pizza", "label": "unknown"}
+{"text": "turn off the lights", "label": "unknown"}
+{"text": "what is the capital of France", "label": "unknown"}
+{"text": "set an alarm", "label": "unknown"}
+{"text": "how do I make pasta", "label": "unknown"}
+{"text": "open spotify", "label": "unknown"}
+{"text": "hey there", "label": "unknown"}
+{"text": "good morning", "label": "unknown"}
+{"text": "good evening", "label": "unknown"}
+{"text": "I need help", "label": "unknown"}
+{"text": "can you help me", "label": "unknown"}
+{"text": "what's my schedule", "label": "unknown"}

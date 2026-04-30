@@ -46,11 +46,7 @@ class VoiceToText {
                     self.recorder.onTranscription = { [weak self] text, isFinal in
                         self?.onTranscript?(text)
                         if isFinal, !text.trimmingCharacters(in: .whitespaces).isEmpty {
-                            let lang = self?.currentLanguage ?? .english
-                            let command = CommandParser(language: lang).parse(text)
-                            Log.info("[Voice] \(command)")
                             self?.onFinalTranscript?(text)
-                            self?.onCommand?(command)
                         }
                     }
                     self.recorder.onAudioLevel = { [weak self] level in

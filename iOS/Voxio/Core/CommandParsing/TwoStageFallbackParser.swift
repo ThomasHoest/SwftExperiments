@@ -13,7 +13,7 @@ struct TwoStageFallbackParser {
     // ── NLModel (Stage 2) ─────────────────────────────────────────────────────
 
     private static let nlModel: NLModel? = {
-        guard let url = Bundle.main.url(forResource: "CommandClassifier", withExtension: "mlmodelc") else {
+        guard let url = Bundle.main.url(forResource: "VoxioCommandModel", withExtension: "mlmodelc") else {
             Log.info("[TwoStageFallbackParser] NLModel not found — Stage 2 disabled")
             return nil
         }

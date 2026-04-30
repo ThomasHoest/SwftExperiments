@@ -294,28 +294,20 @@ struct HomeView: View {
                 }
                 selectedSpeaker = speaker
 
-                let commandText   = remaining.isEmpty ? text : remaining.joined(separator: " ")
-                let favoriteNames = await registry.favorites.listFavorites(for: speaker)
-                let command = await commandRouter.parse(
-                    commandText,
-                    addressedSpeaker: speaker,
-                    allSpeakers:      registry.speakers.map(\.name),
-                    favoriteNames:    favoriteNames
-                )
+                let commandText = remaining.isEmpty ? text : remaining.joined(separator: " ")
+                let command = await commandRouter.parse(commandText)
                 Log.info("[HomeView] → \(speaker.name): \(command)")
-                if command.intent != .unknown { HapticEngine.shared.commandRecognised() }
+                if case .unknown = command { } else { HapticEngine.shared.commandRecognised() }
 
-                if command.intent == .playFavoriteByNumber {
-                    await handlePlayFavoriteByNumber(command: command, speaker: speaker)
+                if case .playFavorite(let index) = command {
+                    await handlePlayFavorite(index: index, speaker: speaker)
                     return
                 }
 
-                // Commands that need no confirmation (list, confirm, cancel, unknown)
-                guard let confirmMsg = confirmationMessage(forParsed: command, speaker: speaker) else {
-                    if command.intent == .unknown {
-                        handleError(.voiceNotRecognised)
-                    }
-                    await dispatchParsed(command: command, to: speaker)
+                // Commands that need no confirmation (listFavorites, confirm, cancel, unknown)
+                guard let confirmMsg = confirmationMessage(for: command, speaker: speaker) else {
+                    if case .unknown = command { handleError(.voiceNotRecognised) }
+                    await dispatch(command: command, to: speaker)
                     clearTranscriptAfterDelay()
                     return
                 }
@@ -326,11 +318,10 @@ struct HomeView: View {
                 }
 
                 coordinator.startCountdown(
-                    action: { [weak self] in
-                        guard let self else { return }
-                        let succeeded = await self.dispatchParsed(command: command, to: speaker)
-                        if succeeded { self.showSuccess("Done") }
-                        self.clearTranscriptAfterDelay()
+                    action: {
+                        let succeeded = await dispatch(command: command, to: speaker)
+                        if succeeded { showSuccess("Done") }
+                        clearTranscriptAfterDelay()
                     },
                     readBack: confirmMsg,
                     onResolved: { _ in }
@@ -449,11 +440,7 @@ struct HomeView: View {
     }
 
     @MainActor
-    private func handlePlayFavoriteByNumber(command: ParsedCommand, speaker: Speaker) async {
-        guard let index = command.favoriteIndex else {
-            handleError(.voiceNotRecognised)
-            return
-        }
+    private func handlePlayFavorite(index: Int, speaker: Speaker) async {
         guard let favorite = await registry.favorites.favorite(at: index, for: speaker) else {
             let available = await registry.favorites.listFavorites(for: speaker)
             handleError(.favoriteIndexOutOfRange(index: index, speaker: speaker.name, available: available))
@@ -461,24 +448,22 @@ struct HomeView: View {
         }
         let confirmMsg = cs.playFavoriteByName(favorite.displayName, speaker.name)
         coordinator.startCountdown(
-            action: { [weak self] in
-                guard let self else { return }
-                let succeeded = await self.perform(speaker: speaker) {
+            action: {
+                let succeeded = await perform(speaker: speaker) {
                     try await speaker.playFavorite(presetIndex: favorite.presetIndex)
                 }
-                if succeeded { self.showSuccess("Done") }
+                if succeeded { showSuccess("Done") }
             },
             readBack: confirmMsg,
             onResolved: { _ in }
         )
     }
 
-    /// Returns an error that should skip the confirmation sheet entirely (volume limits, already muted).
-    private func preflightError(for command: ParsedCommand, speaker: Speaker) -> AppError? {
-        switch command.intent {
-        case .volumeUp:
+    private func preflightError(for command: VoiceCommand, speaker: Speaker) -> AppError? {
+        switch command {
+        case .adjustVolume(let d) where d > 0:
             if let vol = speaker.volume, vol >= 100 { return .volumeAtLimit(speaker: speaker.name, atMax: true) }
-        case .volumeDown:
+        case .adjustVolume(let d) where d < 0:
             if let vol = speaker.volume, vol <= 0 { return .volumeAtLimit(speaker: speaker.name, atMax: false) }
         case .mute:
             if speaker.isMuted { return .alreadyMuted(speaker: speaker.name) }
@@ -537,130 +522,4 @@ struct HomeView: View {
         showToast(Toast(kind: .success(message: message)))
     }
 
-    // ── E-18: ParsedCommand confirmation / completion / dispatch ──────────────
-
-    private func confirmationMessage(forParsed command: ParsedCommand, speaker: Speaker) -> String? {
-        let step = command.volumeDelta ?? 10
-        switch command.intent {
-        case .playNamed:     return cs.playDefault(speaker.name)   // resolved name shown post-confirm
-        case .playDefault:   return cs.playDefault(speaker.name)
-        case .stop:          return cs.stop(speaker.name)
-        case .pause:         return cs.pause(speaker.name)
-        case .resume:        return cs.resume(speaker.name)
-        case .setVolume:     return cs.setVolume(speaker.name, command.volumeValue ?? 50)
-        case .volumeUp:      return cs.adjustVolumeUp(speaker.name, step)
-        case .volumeDown:    return cs.adjustVolumeDown(speaker.name, step)
-        case .mute:          return cs.mute(speaker.name, speaker.volume)
-        case .unmute:        return cs.unmute(speaker.name)
-        case .playFavoriteByNumber, .listFavorites, .confirm, .cancel, .unknown:
-            return nil
-        }
-    }
-
-    private func completionMessage(forParsed command: ParsedCommand, speaker: Speaker) -> String? {
-        switch command.intent {
-        case .stop:       return cs.stopped(speaker.name)
-        case .pause:      return cs.paused(speaker.name)
-        case .resume:     return cs.resumed(speaker.name)
-        case .setVolume:  return cs.volumeSet(speaker.name, command.volumeValue ?? 0)
-        case .volumeUp, .volumeDown: return cs.volumeAdjusted(speaker.name)
-        case .mute:       return cs.muted(speaker.name)
-        case .unmute:     return cs.unmuted(speaker.name)
-        default:          return nil
-        }
-    }
-
-    @MainActor
-    @discardableResult
-    private func dispatchParsed(command: ParsedCommand, to speaker: Speaker) async -> Bool {
-        let step = command.volumeDelta ?? 10
-        switch command.intent {
-
-        case .playNamed:
-            let name = command.favoriteName ?? ""
-            guard !name.isEmpty else {
-                handleError(.voiceNotRecognised)
-                return false
-            }
-            let found = await registry.favorites.playNamed(name, on: speaker)
-            if !found {
-                let available = await registry.favorites.listFavorites(for: speaker)
-                handleError(.favoriteNotFound(name: name, speaker: speaker.name, available: available))
-            }
-            return found
-
-        case .playDefault:
-            await registry.favorites.playDefault(on: speaker)
-            return true
-
-        case .listFavorites:
-            let names = await registry.favorites.listFavorites(for: speaker)
-            let list  = names.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "  ·  ")
-            transcript = cs.listFavoritesResult(speaker.name, list)
-            clearTranscriptAfterDelay()
-            return true
-
-        case .stop:
-            guard speaker.isPlaying else {
-                handleError(.nothingPlaying(speaker: speaker.name))
-                return false
-            }
-            return await perform(speaker: speaker) { try await speaker.stop() }
-
-        case .pause:
-            guard speaker.isPlaying else {
-                handleError(.nothingPlaying(speaker: speaker.name))
-                return false
-            }
-            do {
-                try await speaker.pause()
-                return true
-            } catch MozartError.httpError(let code) where code == 405 {
-                handleError(.pauseNotSupported(speaker: speaker.name))
-                return false
-            } catch MozartError.timeout {
-                handleError(.apiTimeout)
-                return false
-            } catch {
-                handleError(.speakerUnreachable(speaker: speaker.name))
-                return false
-            }
-
-        case .resume:
-            return await perform(speaker: speaker) { try await speaker.play() }
-
-        case .setVolume:
-            let level = max(0, min(100, command.volumeValue ?? 50))
-            return await perform(speaker: speaker) { try await speaker.setVolume(level) }
-
-        case .volumeUp:
-            if let vol = speaker.volume, vol >= 100 {
-                handleError(.volumeAtLimit(speaker: speaker.name, atMax: true))
-                return false
-            }
-            return await perform(speaker: speaker) { try await speaker.adjustVolume(+step) }
-
-        case .volumeDown:
-            if let vol = speaker.volume, vol <= 0 {
-                handleError(.volumeAtLimit(speaker: speaker.name, atMax: false))
-                return false
-            }
-            return await perform(speaker: speaker) { try await speaker.adjustVolume(-step) }
-
-        case .mute:
-            return await perform(speaker: speaker) { try await speaker.mute() }
-
-        case .unmute:
-            return await perform(speaker: speaker) { try await speaker.unmute() }
-
-        case .playFavoriteByNumber:
-            // handled before dispatch via handlePlayFavoriteByNumber
-            Log.info("[HomeView] playFavoriteByNumber reached dispatch unexpectedly")
-            return false
-
-        case .confirm, .cancel, .unknown:
-            Log.info("[HomeView] unhandled parsed command: \(command)")
-            return false
-        }
-    }
 }

@@ -1,0 +1,318 @@
+{"text": "stop", "label": "stop"}
+{"text": "stop musikken", "label": "stop"}
+{"text": "stop afspilningen", "label": "stop"}
+{"text": "stop det", "label": "stop"}
+{"text": "stop nu", "label": "stop"}
+{"text": "hold op", "label": "stop"}
+{"text": "hold op med at spille", "label": "stop"}
+{"text": "sluk musikken", "label": "stop"}
+{"text": "kan du stoppe musikken", "label": "stop"}
+{"text": "vil du stoppe afspilningen", "label": "stop"}
+{"text": "vær venlig at stoppe", "label": "stop"}
+{"text": "øh stop", "label": "stop"}
+{"text": "stop den musik", "label": "stop"}
+{"text": "luk for musikken", "label": "stop"}
+{"text": "sluk for det", "label": "stop"}
+{"text": "stop musikafspilningen", "label": "stop"}
+{"text": "vil du ikke nok stoppe", "label": "stop"}
+{"text": "stop højttaleren", "label": "stop"}
+{"text": "hold musikken", "label": "stop"}
+{"text": "afbryd afspilningen", "label": "stop"}
+{"text": "stop al musik", "label": "stop"}
+{"text": "kan du stoppe det", "label": "stop"}
+{"text": "stop venligst", "label": "stop"}
+{"text": "sluk for musikken nu", "label": "stop"}
+{"text": "det er nok stop", "label": "stop"}
+{"text": "pause", "label": "pause"}
+{"text": "sæt på pause", "label": "pause"}
+{"text": "pause musikken", "label": "pause"}
+{"text": "sæt musikken på pause", "label": "pause"}
+{"text": "hold pause", "label": "pause"}
+{"text": "kan du pause", "label": "pause"}
+{"text": "sæt den på pause", "label": "pause"}
+{"text": "pause afspilningen", "label": "pause"}
+{"text": "vær venlig at sætte på pause", "label": "pause"}
+{"text": "øh pause venligst", "label": "pause"}
+{"text": "kan du sætte musikken på pause", "label": "pause"}
+{"text": "vil du pause det", "label": "pause"}
+{"text": "sæt det på pause", "label": "pause"}
+{"text": "tag en pause", "label": "pause"}
+{"text": "pause nu", "label": "pause"}
+{"text": "sæt venligst på pause", "label": "pause"}
+{"text": "stop midlertidigt", "label": "pause"}
+{"text": "hmm pause musikken", "label": "pause"}
+{"text": "vil du ikke pause", "label": "pause"}
+{"text": "pause det her", "label": "pause"}
+{"text": "genoptag", "label": "resume"}
+{"text": "fortsæt", "label": "resume"}
+{"text": "spil videre", "label": "resume"}
+{"text": "fortsæt afspilningen", "label": "resume"}
+{"text": "genoptag musikken", "label": "resume"}
+{"text": "kan du fortsætte", "label": "resume"}
+{"text": "fortsæt musikken", "label": "resume"}
+{"text": "spil det igen", "label": "resume"}
+{"text": "start igen", "label": "resume"}
+{"text": "vær venlig at fortsætte", "label": "resume"}
+{"text": "øh fortsæt venligst", "label": "resume"}
+{"text": "vil du fortsætte afspilningen", "label": "resume"}
+{"text": "tag af pause", "label": "resume"}
+{"text": "afpause", "label": "resume"}
+{"text": "fortsæt nu", "label": "resume"}
+{"text": "spil videre tak", "label": "resume"}
+{"text": "kan du genoptage musikken", "label": "resume"}
+{"text": "lad den fortsætte", "label": "resume"}
+{"text": "kør videre", "label": "resume"}
+{"text": "hmm fortsæt", "label": "resume"}
+{"text": "spil", "label": "playDefault"}
+{"text": "afspil", "label": "playDefault"}
+{"text": "start musikken", "label": "playDefault"}
+{"text": "start afspilningen", "label": "playDefault"}
+{"text": "afspil musik", "label": "playDefault"}
+{"text": "spil noget musik", "label": "playDefault"}
+{"text": "kan du spille noget", "label": "playDefault"}
+{"text": "vil du afspille musik", "label": "playDefault"}
+{"text": "sæt musik på", "label": "playDefault"}
+{"text": "tænd musikken", "label": "playDefault"}
+{"text": "start musikken op", "label": "playDefault"}
+{"text": "vær venlig at afspille musik", "label": "playDefault"}
+{"text": "øh spil noget", "label": "playDefault"}
+{"text": "kan du starte afspilningen", "label": "playDefault"}
+{"text": "spil musik tak", "label": "playDefault"}
+{"text": "kom i gang med musikken", "label": "playDefault"}
+{"text": "sæt det i gang", "label": "playDefault"}
+{"text": "tænd for musikken", "label": "playDefault"}
+{"text": "afspil venligst", "label": "playDefault"}
+{"text": "hmm spil musik", "label": "playDefault"}
+{"text": "afspil min musik", "label": "playDefault"}
+{"text": "start musikafspilning", "label": "playDefault"}
+{"text": "spil noget fedt musik", "label": "playDefault"}
+{"text": "kør musikken", "label": "playDefault"}
+{"text": "afspil Daft Punk", "label": "playNamed"}
+{"text": "spil jazz", "label": "playNamed"}
+{"text": "afspil The Beatles", "label": "playNamed"}
+{"text": "spil klassisk musik", "label": "playNamed"}
+{"text": "afspil rock", "label": "playNamed"}
+{"text": "spil P4", "label": "playNamed"}
+{"text": "afspil Radio 24syv", "label": "playNamed"}
+{"text": "kan du spille jazz", "label": "playNamed"}
+{"text": "vil du afspille The Beatles", "label": "playNamed"}
+{"text": "spil noget jazz", "label": "playNamed"}
+{"text": "afspil klassisk", "label": "playNamed"}
+{"text": "sæt Daft Punk på", "label": "playNamed"}
+{"text": "start jazz afspilningen", "label": "playNamed"}
+{"text": "øh spil noget rock", "label": "playNamed"}
+{"text": "kan du afspille P4", "label": "playNamed"}
+{"text": "spil lounge musik", "label": "playNamed"}
+{"text": "afspil min jazz liste", "label": "playNamed"}
+{"text": "sæt The Beatles på", "label": "playNamed"}
+{"text": "spil noget beroligende", "label": "playNamed"}
+{"text": "afspil elektronisk musik", "label": "playNamed"}
+{"text": "afspil favorit et", "label": "playFavoriteByNumber"}
+{"text": "spil favorit nummer et", "label": "playFavoriteByNumber"}
+{"text": "afspil favorit to", "label": "playFavoriteByNumber"}
+{"text": "spil favorit to", "label": "playFavoriteByNumber"}
+{"text": "afspil favorit tre", "label": "playFavoriteByNumber"}
+{"text": "spil favorit nummer tre", "label": "playFavoriteByNumber"}
+{"text": "afspil favorit fire", "label": "playFavoriteByNumber"}
+{"text": "spil favorit fire", "label": "playFavoriteByNumber"}
+{"text": "start favorit et", "label": "playFavoriteByNumber"}
+{"text": "start favorit nummer to", "label": "playFavoriteByNumber"}
+{"text": "start favorit tre", "label": "playFavoriteByNumber"}
+{"text": "start favorit fire", "label": "playFavoriteByNumber"}
+{"text": "kan du afspille favorit et", "label": "playFavoriteByNumber"}
+{"text": "vil du spille favorit to", "label": "playFavoriteByNumber"}
+{"text": "afspil den første favorit", "label": "playFavoriteByNumber"}
+{"text": "spil den anden favorit", "label": "playFavoriteByNumber"}
+{"text": "afspil den tredje favorit", "label": "playFavoriteByNumber"}
+{"text": "spil den fjerde favorit", "label": "playFavoriteByNumber"}
+{"text": "øh favorit et", "label": "playFavoriteByNumber"}
+{"text": "sæt favorit to på", "label": "playFavoriteByNumber"}
+{"text": "kør favorit tre", "label": "playFavoriteByNumber"}
+{"text": "tænd favorit fire", "label": "playFavoriteByNumber"}
+{"text": "afspil min første favorit", "label": "playFavoriteByNumber"}
+{"text": "start den fjerde favorit", "label": "playFavoriteByNumber"}
+{"text": "vis mine favoritter", "label": "listFavorites"}
+{"text": "hvad er mine favoritter", "label": "listFavorites"}
+{"text": "list mine favoritter", "label": "listFavorites"}
+{"text": "vis favoritter", "label": "listFavorites"}
+{"text": "hvad har jeg som favoritter", "label": "listFavorites"}
+{"text": "kan du vise mine favoritter", "label": "listFavorites"}
+{"text": "vil du liste favoritterne", "label": "listFavorites"}
+{"text": "hvilke favoritter har jeg", "label": "listFavorites"}
+{"text": "vær venlig at vise favoritter", "label": "listFavorites"}
+{"text": "øh vis mine favoritter", "label": "listFavorites"}
+{"text": "hvad er mine gemt", "label": "listFavorites"}
+{"text": "vis gemte favoritter", "label": "listFavorites"}
+{"text": "favoritter liste", "label": "listFavorites"}
+{"text": "hvad kan jeg afspille", "label": "listFavorites"}
+{"text": "show mig mine favoritter", "label": "listFavorites"}
+{"text": "list favoritter", "label": "listFavorites"}
+{"text": "hvad er mine musikfavoritter", "label": "listFavorites"}
+{"text": "kan du vise alle favoritter", "label": "listFavorites"}
+{"text": "sæt lydstyrken til halvtreds", "label": "setVolume"}
+{"text": "lydstyrke fyrre", "label": "setVolume"}
+{"text": "sæt lydstyrken til 30", "label": "setVolume"}
+{"text": "lydstyrke til tres", "label": "setVolume"}
+{"text": "sæt volumen til halvtreds", "label": "setVolume"}
+{"text": "indstil lydstyrken til tyve", "label": "setVolume"}
+{"text": "kan du sætte lydstyrken til firs", "label": "setVolume"}
+{"text": "vil du sætte lydstyrken til ti", "label": "setVolume"}
+{"text": "lydstyrke halvtreds", "label": "setVolume"}
+{"text": "sæt den til tres", "label": "setVolume"}
+{"text": "sæt lydstyrken til 100", "label": "setVolume"}
+{"text": "indstil lydstyrken til nul", "label": "setVolume"}
+{"text": "lydstyrken skal være halvtreds", "label": "setVolume"}
+{"text": "sæt lydstyrken til fem og halvtreds", "label": "setVolume"}
+{"text": "vær venlig at sætte lydstyrken til fyrre", "label": "setVolume"}
+{"text": "øh lydstyrke til firs", "label": "setVolume"}
+{"text": "sæt musikken til tyve", "label": "setVolume"}
+{"text": "lydstyrken på tres", "label": "setVolume"}
+{"text": "kan du sætte det til halvtreds", "label": "setVolume"}
+{"text": "indstil volumen til syvogfyrre", "label": "setVolume"}
+{"text": "skru op", "label": "volumeUp"}
+{"text": "højere", "label": "volumeUp"}
+{"text": "skru lidt op", "label": "volumeUp"}
+{"text": "lidt højere", "label": "volumeUp"}
+{"text": "skru op for lyden", "label": "volumeUp"}
+{"text": "kan du skrue op", "label": "volumeUp"}
+{"text": "vil du skrue lidt op", "label": "volumeUp"}
+{"text": "gør det højere", "label": "volumeUp"}
+{"text": "mere lyd", "label": "volumeUp"}
+{"text": "gør musikken højere", "label": "volumeUp"}
+{"text": "skru op med ti", "label": "volumeUp"}
+{"text": "højere med tyve", "label": "volumeUp"}
+{"text": "øg lydstyrken", "label": "volumeUp"}
+{"text": "øg med femten", "label": "volumeUp"}
+{"text": "vær venlig at skrue op", "label": "volumeUp"}
+{"text": "øh skru op", "label": "volumeUp"}
+{"text": "lidt mere", "label": "volumeUp"}
+{"text": "kan du gøre det lidt højere", "label": "volumeUp"}
+{"text": "musikken er for stille skru op", "label": "volumeUp"}
+{"text": "forhøj lydstyrken", "label": "volumeUp"}
+{"text": "skru op med fem", "label": "volumeUp"}
+{"text": "skru højere", "label": "volumeUp"}
+{"text": "mere volumen", "label": "volumeUp"}
+{"text": "giv mig mere lyd", "label": "volumeUp"}
+{"text": "skru ned", "label": "volumeDown"}
+{"text": "lavere", "label": "volumeDown"}
+{"text": "skru lidt ned", "label": "volumeDown"}
+{"text": "lidt lavere", "label": "volumeDown"}
+{"text": "skru ned for lyden", "label": "volumeDown"}
+{"text": "kan du skrue ned", "label": "volumeDown"}
+{"text": "vil du skrue lidt ned", "label": "volumeDown"}
+{"text": "gør det lavere", "label": "volumeDown"}
+{"text": "mindre lyd", "label": "volumeDown"}
+{"text": "gør musikken lavere", "label": "volumeDown"}
+{"text": "skru ned med ti", "label": "volumeDown"}
+{"text": "lavere med tyve", "label": "volumeDown"}
+{"text": "sænk lydstyrken", "label": "volumeDown"}
+{"text": "sænk med femten", "label": "volumeDown"}
+{"text": "vær venlig at skrue ned", "label": "volumeDown"}
+{"text": "øh skru ned", "label": "volumeDown"}
+{"text": "lidt mere stille", "label": "volumeDown"}
+{"text": "kan du gøre det lidt lavere", "label": "volumeDown"}
+{"text": "musikken er for høj skru ned", "label": "volumeDown"}
+{"text": "reducer lydstyrken", "label": "volumeDown"}
+{"text": "skru ned med fem", "label": "volumeDown"}
+{"text": "stille ned", "label": "volumeDown"}
+{"text": "mindre volumen", "label": "volumeDown"}
+{"text": "dæmp lyden", "label": "volumeDown"}
+{"text": "slå lyden fra", "label": "mute"}
+{"text": "dæmp", "label": "mute"}
+{"text": "mute", "label": "mute"}
+{"text": "sæt på lydløs", "label": "mute"}
+{"text": "lydløs", "label": "mute"}
+{"text": "tavs", "label": "mute"}
+{"text": "sluk for lyden", "label": "mute"}
+{"text": "nul lyd", "label": "mute"}
+{"text": "kan du slå lyden fra", "label": "mute"}
+{"text": "vil du dæmpe musikken", "label": "mute"}
+{"text": "gør det lydløst", "label": "mute"}
+{"text": "vær venlig at sætte på lydløs", "label": "mute"}
+{"text": "øh slå lyden fra", "label": "mute"}
+{"text": "dæmp højttaleren", "label": "mute"}
+{"text": "slå musikken fra", "label": "mute"}
+{"text": "ingen lyd", "label": "mute"}
+{"text": "tavs musik", "label": "mute"}
+{"text": "kan du dæmpe", "label": "mute"}
+{"text": "sæt på stum", "label": "mute"}
+{"text": "hmm slå lyden fra", "label": "mute"}
+{"text": "tænd for lyden", "label": "unmute"}
+{"text": "fjern dæmpning", "label": "unmute"}
+{"text": "unmute", "label": "unmute"}
+{"text": "fjern lydløs", "label": "unmute"}
+{"text": "lyd til", "label": "unmute"}
+{"text": "tænd lyden", "label": "unmute"}
+{"text": "kan du tænde for lyden", "label": "unmute"}
+{"text": "vil du fjerne dæmpningen", "label": "unmute"}
+{"text": "slå lyden til", "label": "unmute"}
+{"text": "vær venlig at tænde for lyden", "label": "unmute"}
+{"text": "øh tænd lyden", "label": "unmute"}
+{"text": "fjern stumknappen", "label": "unmute"}
+{"text": "musik igen", "label": "unmute"}
+{"text": "aktiver lyd", "label": "unmute"}
+{"text": "kan du unmute", "label": "unmute"}
+{"text": "slå lydløs fra", "label": "unmute"}
+{"text": "hmm tænd lyden", "label": "unmute"}
+{"text": "ja", "label": "confirm"}
+{"text": "ja tak", "label": "confirm"}
+{"text": "jo", "label": "confirm"}
+{"text": "jeps", "label": "confirm"}
+{"text": "selvfølgelig", "label": "confirm"}
+{"text": "bestemt", "label": "confirm"}
+{"text": "præcis", "label": "confirm"}
+{"text": "rigtigt", "label": "confirm"}
+{"text": "det er korrekt", "label": "confirm"}
+{"text": "korrekt", "label": "confirm"}
+{"text": "yes", "label": "confirm"}
+{"text": "ok", "label": "confirm"}
+{"text": "okay", "label": "confirm"}
+{"text": "lad os gøre det", "label": "confirm"}
+{"text": "gå videre", "label": "confirm"}
+{"text": "gør det", "label": "confirm"}
+{"text": "jeg bekræfter", "label": "confirm"}
+{"text": "ja det er rigtigt", "label": "confirm"}
+{"text": "absolut", "label": "confirm"}
+{"text": "ja gerne", "label": "confirm"}
+{"text": "nej", "label": "cancel"}
+{"text": "nej tak", "label": "cancel"}
+{"text": "annuller", "label": "cancel"}
+{"text": "afbryd", "label": "cancel"}
+{"text": "nej det vil jeg ikke", "label": "cancel"}
+{"text": "glem det", "label": "cancel"}
+{"text": "fortryd", "label": "cancel"}
+{"text": "stop det der", "label": "cancel"}
+{"text": "ikke gør det", "label": "cancel"}
+{"text": "lad være", "label": "cancel"}
+{"text": "cancel", "label": "cancel"}
+{"text": "annuller det", "label": "cancel"}
+{"text": "nej glem det", "label": "cancel"}
+{"text": "hold op med det", "label": "cancel"}
+{"text": "afvis", "label": "cancel"}
+{"text": "nej ikke nu", "label": "cancel"}
+{"text": "det vil jeg ikke have", "label": "cancel"}
+{"text": "nej det er forkert", "label": "cancel"}
+{"text": "hvad er vejret i dag", "label": "unknown"}
+{"text": "hvad er klokken", "label": "unknown"}
+{"text": "hvor gammel er du", "label": "unknown"}
+{"text": "kan du hjælpe mig med min lektie", "label": "unknown"}
+{"text": "fortæl mig en vittighed", "label": "unknown"}
+{"text": "hvad kan du gøre", "label": "unknown"}
+{"text": "hvem er du", "label": "unknown"}
+{"text": "lav mad", "label": "unknown"}
+{"text": "ring til mor", "label": "unknown"}
+{"text": "åbn Netflix", "label": "unknown"}
+{"text": "sluk lyset", "label": "unknown"}
+{"text": "hvad er resultatet", "label": "unknown"}
+{"text": "sæt alarm til syv", "label": "unknown"}
+{"text": "oversæt hej til engelsk", "label": "unknown"}
+{"text": "hvad er to plus to", "label": "unknown"}
+{"text": "kald til Peter", "label": "unknown"}
+{"text": "bestil pizza", "label": "unknown"}
+{"text": "hvad sker der i weekenden", "label": "unknown"}
+{"text": "åbn kamera", "label": "unknown"}
+{"text": "sluk computeren", "label": "unknown"}
+{"text": "hvad er nyheder", "label": "unknown"}
+{"text": "find en film til i aften", "label": "unknown"}
+{"text": "naviger til centrum", "label": "unknown"}
+{"text": "send en besked til Lars", "label": "unknown"}
