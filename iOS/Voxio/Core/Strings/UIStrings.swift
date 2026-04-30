@@ -8,6 +8,15 @@ struct UIStrings {
     var confirmYes:            String   // affirmative button label
     var confirmNo:             String   // negative button label
 
+    // ── Countdown confirmation surface (E-25) ─────────────────────────────────
+    var cancelLabel: String             // cancel button label
+    private var _countdownTemplate: String  // e.g. "Cancelling in %d…"
+
+    /// Returns the localised countdown label with the remaining seconds substituted.
+    func countdownLabel(n: Int) -> String {
+        String(format: _countdownTemplate, n)
+    }
+
     // ── Microphone / recognition status ──────────────────────────────────────
     var initialisingMic:  String
     var listening:        String
@@ -23,6 +32,8 @@ struct UIStrings {
         confirmationVoiceHint: "or say Yes / No",
         confirmYes:            "Yes",
         confirmNo:             "No",
+        cancelLabel:           "Cancel",
+        _countdownTemplate:    "Cancelling in %d\u{2026}",
         initialisingMic:       "Initialising microphone…",
         listening:             "Listening…",
         micUnavailable:        "Microphone unavailable",
@@ -36,6 +47,8 @@ struct UIStrings {
         confirmationVoiceHint: "eller sig Ja / Nej",
         confirmYes:            "Ja",
         confirmNo:             "Nej",
+        cancelLabel:           "Annuller",
+        _countdownTemplate:    "Annullerer om %d\u{2026}",
         initialisingMic:       "Initialiserer mikrofon…",
         listening:             "Lytter…",
         micUnavailable:        "Mikrofon utilgængelig",

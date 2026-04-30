@@ -105,13 +105,13 @@ struct HomeView: View {
         }
         .sheet(isPresented: Binding(
             get: { coordinator.isPending },
-            set: { if !$0 { coordinator.cancel() } }
+            set: { if !$0 { coordinator.cancelCountdown(reason: .interruption) } }
         )) {
-            if case .pending(let message) = coordinator.state {
-                ConfirmationSheet(
-                    message: message,
-                    onConfirm: { coordinator.confirm() },
-                    onCancel:  { coordinator.cancel() }
+            if case .countdown(let readBack) = coordinator.state {
+                CountdownConfirmationSurface(
+                    readBackText: readBack,
+                    secondsRemaining: coordinator.secondsRemaining,
+                    onCancel: { coordinator.cancelCountdown(reason: .userTap) }
                 )
             }
         }
@@ -273,12 +273,12 @@ struct HomeView: View {
             Task { @MainActor in
                 isCommandActive = false
 
-                // While waiting for confirmation, only accept confirm/cancel
+                // While countdown is active, only a cancel utterance stops it;
+                // non-cancel utterances are silently ignored — countdown continues.
                 if coordinator.isPending {
-                    let cmd = CommandParser(language: langService.activeLanguage).parse(text)
-                    if cmd == .confirm { coordinator.confirm() }
-                    else if cmd == .cancel { coordinator.cancel() }
-                    else { handleError(.voiceNotRecognised) }
+                    if CancelGrammar.matches(text) {
+                        coordinator.cancelCountdown(reason: .userVoice)
+                    }
                     return
                 }
 
@@ -325,12 +325,16 @@ struct HomeView: View {
                     return
                 }
 
-                let confirmed = await coordinator.request(message: confirmMsg)
-                if confirmed {
-                    let succeeded = await dispatchParsed(command: command, to: speaker)
-                    if succeeded { showSuccess("Done") }
-                }
-                clearTranscriptAfterDelay()
+                coordinator.startCountdown(
+                    action: { [weak self] in
+                        guard let self else { return }
+                        let succeeded = await self.dispatchParsed(command: command, to: speaker)
+                        if succeeded { self.showSuccess("Done") }
+                        self.clearTranscriptAfterDelay()
+                    },
+                    readBack: confirmMsg,
+                    onResolved: { _ in }
+                )
             }
         }
         voiceToText.start { status in
@@ -456,13 +460,17 @@ struct HomeView: View {
             return
         }
         let confirmMsg = cs.playFavoriteByName(favorite.displayName, speaker.name)
-        let confirmed = await coordinator.request(message: confirmMsg)
-        if confirmed {
-            let succeeded = await perform(speaker: speaker) {
-                try await speaker.playFavorite(presetIndex: favorite.presetIndex)
-            }
-            if succeeded { showSuccess("Done") }
-        }
+        coordinator.startCountdown(
+            action: { [weak self] in
+                guard let self else { return }
+                let succeeded = await self.perform(speaker: speaker) {
+                    try await speaker.playFavorite(presetIndex: favorite.presetIndex)
+                }
+                if succeeded { self.showSuccess("Done") }
+            },
+            readBack: confirmMsg,
+            onResolved: { _ in }
+        )
     }
 
     /// Returns an error that should skip the confirmation sheet entirely (volume limits, already muted).
