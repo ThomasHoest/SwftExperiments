@@ -1,6 +1,10 @@
 import SwiftUI
 
-// Design tokens from design-spec-bo-voice-control v1.0
+// Design tokens from design-spec-bo-voice-control v1.1
+
+enum BeoAsset {
+    static let appBackground = "AppBackground"
+}
 
 enum Spacing {
     static let s4:  CGFloat = 4
@@ -32,6 +36,20 @@ enum BeoAnimation {
     static var toast: Animation {
         .spring(response: 0.4, dampingFraction: 0.8)
     }
+}
+
+// v1.1 dark Liquid Glass button tokens — design-spec-bo-voice-control §Design Tokens Reference
+enum DarkGlassButtonTokens {
+    static let overlayColor:       Color   = .black.opacity(0.45)
+    static let borderColor:        Color   = .white.opacity(0.15)
+    static let borderWidth:        CGFloat = 0.5
+    static let paddingV:           CGFloat = 10
+    static let paddingH:           CGFloat = 16
+    static let iconGap:            CGFloat = 6
+    static let iconOnlySize:       CGFloat = 36
+    static let pressedScale:       CGFloat = 0.95
+    static let pressSpringResponse: Double = 0.3
+    static let pressSpringDamping:  Double = 0.7
 }
 
 enum BeoType {

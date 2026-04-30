@@ -61,6 +61,7 @@ struct HomeView: View {
                     .padding(.bottom, 12)
                 }
             }
+            .frame(width: UIScreen.main.bounds.width - 40)
             .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 0) }
 
             // Toast overlay (errors, volume limit, success)
@@ -114,40 +115,46 @@ struct HomeView: View {
         }
     }
 
-    // ── Background ────────────────────────────────────────────────────────────
+    // ── Background — T-2002 / T-2006 ─────────────────────────────────────────
 
     private var background: some View {
-        LinearGradient(
-            colors: [Color(hex: "#0D0D14"), Color(hex: "#151520")],
-            startPoint: .top,
-            endPoint: .bottom
-        )
+        Group {
+            if UIImage(named: BeoAsset.appBackground) != nil {
+                Image(BeoAsset.appBackground)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
+            } else {
+                // T-2006 — asset-missing fallback (no crash, no silent gradient)
+                let _ = Log.error("AppBackground render failed")
+                Color(hex: "#0A0E1A")
+            }
+        }
         .ignoresSafeArea()
     }
 
-    // ── Status bar ────────────────────────────────────────────────────────────
+    // ── Status bar ── T-2108 ──────────────────────────────────────────────────
+
+    private var hintButtonAccessibilityLabel: String {
+        langService.activeLanguage == .danish
+            ? "Vis kom-godt-i-gang-tip"
+            : "Show getting-started hint"
+    }
 
     private var statusBar: some View {
         HStack {
-            Button {
+            DarkGlassIconButton(
+                systemImage: "questionmark.circle",
+                role: .default,
+                accessibilityLabel: hintButtonAccessibilityLabel
+            ) {
                 showHintManually.toggle()
-            } label: {
-                Image(systemName: "questionmark.circle")
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
             }
-            .accessibilityLabel(
-                langService.activeLanguage == .danish
-                    ? "Vis kom-godt-i-gang-tip"
-                    : "Show getting-started hint"
-            )
 
             Spacer()
             ConnectionStatusChip(speakerCount: registry.speakers.count)
         }
-        .padding(.horizontal, 20)
         .padding(.top, 8)
     }
 
@@ -162,7 +169,6 @@ struct HomeView: View {
                 roll: motionManager.roll,
                 pitch: motionManager.pitch
             )
-            .padding(.horizontal, 20)
             .opacity(hasAppeared ? 1 : 0)
             .scaleEffect(hasAppeared ? 1 : 0.96)
         } else {
@@ -182,7 +188,6 @@ struct HomeView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 60)
         .glassEffect(in: RoundedRectangle(cornerRadius: Radius.card))
-        .padding(.horizontal, 20)
         .opacity(hasAppeared ? 1 : 0)
     }
 
@@ -199,7 +204,7 @@ struct HomeView: View {
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
-                    .padding(.horizontal, 40)
+                    .padding(.horizontal, 20)
                     .padding(.top, 16)
                     .transition(.opacity)
                     .animation(.easeIn(duration: 0.15), value: transcript)
@@ -220,7 +225,6 @@ struct HomeView: View {
                     }
                 )
                 .transition(.opacity)
-                .padding(.horizontal, 20)
                 .padding(.top, 12)
             }
         }

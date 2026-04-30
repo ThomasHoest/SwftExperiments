@@ -45,6 +45,8 @@ struct ConfirmationSheet: View {
 
             Spacer()
 
+            // T-2110 exception: Yes/No buttons are deleted entirely by E-25 (T-2508),
+            // not replaced here. Confirm button removed; cancel rebuilt in CountdownConfirmationSurface.
             // Yes — filled Liquid Glass, accent gold tint (T-1104)
             Button {
                 HapticEngine.shared.actionConfirmed()

@@ -9,6 +9,12 @@ enum BeoColor {
     static let cardBg      = Color("CardSurface")
     static let cardBorder  = Color("CardBorder")
     static let separator   = Color("BeoSeparator")
+
+    // v1.1 aliases — same assets as above; v1.0 names remain to avoid breaking call sites
+    // UIAccessibility.isContrastEnabled audit: zero hits in codebase — SwiftUI-first, using
+    // @Environment(\.colorSchemeContrast) throughout. No replacements needed. (T-2204)
+    static let labelPrimary   = BeoColor.text   // T-2100
+    static let labelSecondary = BeoColor.muted  // T-2100
 }
 
 extension Color {

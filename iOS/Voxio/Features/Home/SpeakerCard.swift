@@ -15,9 +15,15 @@ struct SpeakerCard: View {
             if !reduceMotion { specularHighlight }
         }
         .glassEffect(in: RoundedRectangle(cornerRadius: Radius.card))
+        // Always-on hairline border so the card edge is visible on the dark background
+        .overlay(
+            RoundedRectangle(cornerRadius: Radius.card)
+                .stroke(Color.white.opacity(colorContrast == .increased ? 0.0 : 0.12), lineWidth: 0.5)
+        )
+        // T-2206 — Increase Contrast reactive border; BeoColor.muted (labelSecondary alias)
         .overlay(
             colorContrast == .increased
-                ? RoundedRectangle(cornerRadius: Radius.card).stroke(Color.secondary.opacity(0.6), lineWidth: 1)
+                ? RoundedRectangle(cornerRadius: Radius.card).stroke(BeoColor.muted, lineWidth: 1)
                 : nil
         )
         .scaleEffect(reduceMotion ? 1.0 : (isExpanded ? 1.02 : 1.0))

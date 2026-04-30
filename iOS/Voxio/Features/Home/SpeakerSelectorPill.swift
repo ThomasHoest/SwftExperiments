@@ -1,32 +1,48 @@
 import SwiftUI
+import UIKit
 
 struct SpeakerSelectorPill: View {
     var speakers: [Speaker]
     @Binding var selectedSpeaker: Speaker?
 
+    @State private var scrollPosition: Speaker.ID?
+
+    // SwiftUI's layout proposes an inflated width (~408pt on iPhone 14 Pro instead of 393pt)
+    // due to an iOS 26 ZStack geometry issue. Read the true screen width from UIKit directly.
+    private var scrollWidth: CGFloat {
+        let w = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.keyWindow?.bounds.width
+            ?? UIScreen.main.bounds.width
+        return w - 40
+    }
+
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(speakers) { speaker in
-                        let isActive = selectedSpeaker?.id == speaker.id
-                        Button {
-                            withAnimation(BeoAnimation.spring) { selectedSpeaker = speaker }
-                            withAnimation(BeoAnimation.spring) { proxy.scrollTo(speaker.id, anchor: .center) }
-                        } label: {
-                            pillButton(name: speaker.name, isActive: isActive)
-                                .frame(minWidth: 44, minHeight: 44)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(isActive ? "\(speaker.name), selected" : speaker.name)
-                        .accessibilityHint(isActive ? "" : "Select this speaker")
-                        .id(speaker.id)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(speakers) { speaker in
+                    let isActive = selectedSpeaker?.id == speaker.id
+                    // T-2110 exception (a): speaker selector pills retain existing pill style (T-1004)
+                    Button {
+                        withAnimation(BeoAnimation.spring) { selectedSpeaker = speaker }
+                    } label: {
+                        pillButton(name: speaker.name, isActive: isActive)
+                            .frame(minWidth: 44, minHeight: 44)
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(isActive ? "\(speaker.name), selected" : speaker.name)
+                    .accessibilityHint(isActive ? "" : "Select this speaker")
+                    .id(speaker.id)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 4)
             }
+            .padding(.vertical, 4)
         }
+        .scrollPosition(id: $scrollPosition, anchor: .center)
+        .onChange(of: selectedSpeaker?.id) { _, id in
+            withAnimation(BeoAnimation.spring) { scrollPosition = id }
+        }
+        .frame(width: scrollWidth)
+        .clipShape(Rectangle())
     }
 
     @ViewBuilder

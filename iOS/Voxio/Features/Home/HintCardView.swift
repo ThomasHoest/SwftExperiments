@@ -34,22 +34,12 @@ struct HintCardView: View {
                 .fixedSize(horizontal: false, vertical: true)
             }
 
-            // Dismiss button
-            Button(action: onDismiss) {
-                Text(language == .danish ? "OK" : "Got it")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.primary)
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: 44)
-                    .padding(.vertical, 8)
-                    .glassEffect(in: RoundedRectangle(cornerRadius: Radius.sheet))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Radius.sheet)
-                            .stroke(Color.white.opacity(0.22), lineWidth: 1)
-                    )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(language == .danish ? "Afvis tip" : "Dismiss hint")
+            // Dismiss button — T-2109: RoundedRectangle→Capsule deliberate per ADR-001 §Conflict 5
+            DarkGlassButton(
+                label: language == .danish ? "OK" : "Got it",
+                role: .default,
+                action: onDismiss
+            )
         }
         .padding(Spacing.s16)
         .frame(maxWidth: .infinity, alignment: .leading)
