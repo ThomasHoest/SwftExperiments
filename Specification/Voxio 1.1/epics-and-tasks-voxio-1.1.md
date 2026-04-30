@@ -2,7 +2,7 @@
 **Version:** 1.1  
 **Status:** Draft  
 **Date:** 2026-04-29  
-**References:** VoxioSpecification-1.1, epics-and-tasks-bo-voice-control v1.3 (E-01–E-19), ADR-001-v1.1-visual-layer, ADR-002-v1.1-parsing (pending)  
+**References:** VoxioSpecification-1.1, epics-and-tasks-bo-voice-control v1.3 (E-01–E-19), ADR-001-v1.1-visual-layer, ADR-002-v1.1-parsing-confirmation-trigger  
 **Languages:** English (`en-US`) and Danish (`da-DK`) — both fully supported
 
 ---
@@ -259,9 +259,13 @@ Replace the v1.0 keyword/regex-only parsing pipeline with a three-tier router th
   2. Else, call Tier 2 (`NLModel` for the active language) — apply slot extraction (T-2411). If the prediction confidence is ≥ threshold (T-2410) and slot extraction succeeded where required, return the resulting `VoiceCommand`.
   3. Else, call Tier 3 (existing `CommandParser`). Return whatever it returns (which may be `.unknown(transcript)`).
   Tier selection is computed once at router init based on `SystemLanguageModel.default.availability` and on whether the per-language `.mlmodel` is present in the bundle. Subsequent runtime degradations (Tier 1 timeout pattern, Tier 2 missing model) downgrade the active tier set for the remainder of the session. Source in `iOS/Voxio/Core/Voice/CommandParserRouter.swift`.
+
+  **Prerequisite step (per ADR-002 §Conflict 1 — critical):** Before wiring the new router into the home-screen flow, remove the legacy `ParsedCommand` dispatch path from `HomeView.swift`. Specifically, delete the `confirmationMessage(forParsed:speaker:)`, `completionMessage(forParsed:speaker:)`, and `dispatchParsed(command:to:)` trio at lines 454–559 and any call sites that referenced them. The `VoiceCommand` enum dispatch at lines 365–411 (`dispatch(command:to:)`, plus the parallel `confirmationMessage(for:speaker:)` and `completionMessage(for:speaker:)` at lines 330–359) is the sole remaining path after E-24, and the existing `await commandRouter.parse(...)` call at lines 292–297 must be re-bound to the extended router so that its `VoiceCommand` result feeds the `VoiceCommand` dispatch path. Audit `iOS/Voxio/` for any remaining `ParsedCommand` references and remove them in the same change set; the `ParsedCommand` type itself may be deleted if no other call sites remain after this audit.
   *Depends on: T-2407, T-2408, T-2410, T-2411, T-2413.*
 
-- [ ] **T-2416** Update `VoiceToText.swift:50` to call the async router. Replace the synchronous `CommandParser(language: lang).parse(text)` call with a `Task` that awaits `router.parse(text)` and delivers the result on the main actor before invoking `onCommand` and `onFinalTranscript`. Preserve ordering: `onFinalTranscript` fires before `onCommand` (matches v1.0 ordering). Preserve the existing `Log.info("[Voice] \(command)")` line.
+- [ ] **T-2416** Update the parse call site in `HomeView.swift` (the `await commandRouter.parse(...)` invocation at lines 292–297, inside the `voiceToText.onFinalTranscript` closure registered around line 265) to route through the extended three-tier `CommandParserRouter` from T-2415, binding its `VoiceCommand` result into the existing `VoiceCommand` dispatch path (`dispatch(command:to:)` at lines 365–411). Preserve ordering: `onFinalTranscript` is delivered before downstream parsing/dispatch (matches v1.0 ordering). Preserve the existing `Log.info("[HomeView] → \(speaker.name): \(command)")` line at line 298.
+
+  **Note (per ADR-002 §Conflict 2 — informational):** the `CommandParser(language:).parse(text)` call at `VoiceToText.swift:50` is **not** in the active dispatch path used by `HomeView` — `HomeView` does not consume `voiceToText.onCommand`; it routes parsing through `commandRouter.parse(...)` in the `onFinalTranscript` closure at lines 292–297. The `VoiceToText.swift:50` line is therefore dead code with respect to the home-screen flow and is addressed by the `ParsedCommand`/legacy-parser audit/cleanup in T-2415's prerequisite step rather than by a separate call-site replacement here.
   *Depends on: T-2415.*
 
 ### Verification
@@ -316,7 +320,20 @@ Replace the Yes/No two-button confirmation pattern with an auto-execute model. A
 - [ ] **T-2507** Update the parsed-command handler to call `coordinator.startCountdown(action:readBack:onResolved:)` instead of presenting the v1.0 Yes/No `ConfirmationSheet`. The TTS read-back continues to play first; the countdown starts on TTS completion (matches v1.0 read-back-then-confirm ordering). The bound action is the existing v1.0 use-case handler call (`Speaker.play()`, `Speaker.setVolume()` etc.) — unchanged. On `Resolution.fired`, the coordinator transitions the orb back to passive (E-26 `triggerWordController.returnToPassive()`); on `Resolution.cancelled`, same transition.
   *Depends on: T-2502, T-2506.*
 
-- [ ] **T-2508** Remove the v1.0 `ConfirmationSheet` view, the `.sheet(isPresented:)` modifier that presented it, the Yes-tap handler, the No-tap handler, and the 10-second `Task.sleep` from `ConfirmationCoordinator`. Audit `iOS/Voxio/` for any lingering references to `ConfirmationSheet` and remove them. Replace with the new countdown surface presentation path. Document in a code comment that the v1.0 IDs T-1104, T-1105, T-1108 (haptic wiring location), and T-0805 are superseded by E-25.
+- [ ] **T-2508** Remove the v1.0 `ConfirmationSheet` and every related call site identified by ADR-002 §Conflict 3, then wire the countdown-surface presentation path from T-2507 in their place. Specifically:
+  - **Delete the `.sheet(isPresented:)` confirmation block in `HomeView.swift` lines 101–112** — the entire `.sheet` modifier whose `isPresented` binding reads `coordinator.isPending` and whose dismissal setter calls `coordinator.cancel()`, and whose content branch unwraps `coordinator.state == .pending(let message)` and renders `ConfirmationSheet(message:onConfirm:onCancel:)`. The replacement presentation is the new countdown surface from T-2502 driven by `coordinator.startCountdown(...)` per T-2507.
+  - **Remove all four `coordinator.confirm()` / `coordinator.cancel()` call sites in `HomeView.swift`:**
+    - line 103 — the dismiss-binding `set` closure `if !$0 { coordinator.cancel() }` (removed with the `.sheet` block above)
+    - line 108 — the `onConfirm: { coordinator.confirm() }` handler inside the `ConfirmationSheet` initialiser (removed with the `.sheet` block above)
+    - line 109 — the `onCancel: { coordinator.cancel() }` handler inside the `ConfirmationSheet` initialiser (removed with the `.sheet` block above)
+    - line 272 — `coordinator.confirm()` from the voice-confirm path inside the `voiceToText.onFinalTranscript` closure (`if cmd == .confirm { coordinator.confirm() }`)
+    - line 273 — `coordinator.cancel()` from the voice-cancel path inside the same closure (`else if cmd == .cancel { coordinator.cancel() }`)
+
+    The voice-confirm path is removed entirely — confirmation by voice is no longer a v1.1 feature (the action auto-fires at countdown end). The voice-cancel path is replaced by the new cancel-grammar detector at T-2506, which calls `coordinator.cancelCountdown(reason: .userVoice)` rather than the legacy `coordinator.cancel()`. The surrounding "while waiting for confirmation, only accept confirm/cancel" branch at lines 269–276 is therefore deleted in full; its `coordinator.announce(errorService.spoken(.voiceNotRecognised))` fallback at line 274 is also removed (any non-cancel utterance during the countdown is simply ignored — the countdown continues).
+  - **Delete the `ConfirmationSheet` SwiftUI view file and its types**, including any preview providers and helper bindings unique to it. Audit `iOS/Voxio/` for any remaining references and remove them.
+  - **Delete the 10-second `Task.sleep` confirmation timeout from `ConfirmationCoordinator`** (originally introduced under v1.0 T-0805). The countdown timer in T-2501 fully replaces it.
+  - **Audit for any lingering references to `coordinator.confirm`, `coordinator.cancel`, `ConfirmationSheet`, or `pendingCommand`-confirm-style state in `iOS/Voxio/`.** Note: `coordinator.cancelCountdown(...)` introduced by T-2501 is the intended replacement for `coordinator.cancel()` and is **not** a residual reference.
+  Document in a code comment that the v1.0 IDs T-1104, T-1105, T-1108 (haptic wiring location), and T-0805 are superseded by E-25.
   *Depends on: T-2507.*
 
 ### Verification
@@ -342,6 +359,12 @@ Replace the always-listening model with a wake-word activation model. The app's 
   *No dependencies. Prerequisite for T-2602, T-2603.*
 
 - [ ] **T-2602** Build `TriggerWordController` in `iOS/Voxio/Core/Voice/TriggerWordController.swift` — the state machine. States: `passive`, `active`. Public API: `func start()` (move to passive and arm `TriggerWordDetector`), `func returnToPassive(reason: ReturnReason)` (called by E-25 on countdown resolution, or by the 5-second silence timer in active state). `ReturnReason` is `enum { case silence, command, interruption }`. On `onTriggerDetected` from T-2601: transition to active, suspend `TriggerWordDetector`, hand control to the existing v1.0 active speech pipeline (the same `SFSpeechRecognizer`-driven full-transcript capture path that v1.0 used after T-0301), and start a 5-second silence-timeout timer. On the active pipeline's silence-detection callback (the existing v1.0 `silenceTimeout`): hand the captured transcript to the `CommandParserRouter` (E-24); the resolution path through E-25 eventually calls back into `returnToPassive(reason: .command)`. On 5-second silence-timeout firing with no captured speech: `returnToPassive(reason: .silence)`. Log every transition at INFO.
+
+  **App-lifecycle ownership (per ADR-002 §Conflict 4 — moderate):** `TriggerWordController` must absorb the foreground/background lifecycle observers currently registered inside `VoiceToText.start` at `VoiceToText.swift` lines 68–84. Two observers live in that block today:
+  - the `UIApplication.didEnterBackgroundNotification` observer at lines 68–75, which calls `recorder.stopRecording()` and emits the "background paused" status;
+  - the `UIApplication.willEnterForegroundNotification` observer at lines 78–85, which calls `try? self?.recorder.startRecording()` and emits the "listening" status.
+
+  The foreground observer is the load-bearing one for this conflict: if it remains in `VoiceToText`, returning the app from background re-enters the active speech pipeline directly (bypassing `TriggerWordController`), and the orb will display the active treatment without "Voxio" ever being spoken. `TriggerWordController` is the new owner of foreground resume and must, on `willEnterForegroundNotification`, transition to `passive` and re-arm `TriggerWordDetector`. It is also the new owner of background pause and must, on `didEnterBackgroundNotification`, exit both `passive` and `active` (suspending `TriggerWordDetector` in the former case and the active pipeline in the latter). **Both observers must be removed from `VoiceToText.swift` lines 68–85 in the same change set; failure to remove them produces a foreground-resume race that re-enters active state.** The observer-installation logic moves into `TriggerWordController.start()` (or a sibling lifecycle-attach method); `VoiceToText` no longer manages app-lifecycle state after this change. The "background paused" / "listening" status strings continue to be emitted via the existing `onStatus` callback chain, now driven by `TriggerWordController` rather than by `VoiceToText`.
   *Depends on: T-2601.*
 
 - [ ] **T-2603** Investigate the iOS 26 keyword-spotting / wake-word API surface (Q20). Read the iOS 26 release notes, WWDC25 sessions, and `Speech.framework` and `AudioToolbox` documentation. Specifically, determine whether iOS 26 exposes a dedicated low-power keyword-spotting primitive (e.g. an extension to `SFSpeechRecognizer` such as a `requiresContinuousRecognition: false` mode, or a new framework-level API). Document findings in `Specification/Voxio 1.1/triggerword/keyword-spotting-investigation.md`. **Decision rule:** if the dedicated API exists and is at least 30 % more power-efficient than the `SFSpeechRecognizer`-based default, adopt it inside `TriggerWordDetector` (replacing the default implementation under the same callback surface). Otherwise, keep the `SFSpeechRecognizer` default and accept the battery cost. Investigation is a prerequisite for T-2606.
@@ -393,13 +416,13 @@ Replace the always-listening model with a wake-word activation model. The app's 
 
 6. **E-25 coordinator API change T-2501 unblocks countdown surface T-2502** — once T-2103 (the `.cancel` role rendering) and T-2501 are both in, T-2502 can build. After T-2502 lands, T-2203 (sheet dark-mode for the countdown surface) can be wired.
 
-7. **E-26 state machine and orb states** — T-2601 → T-2602 → T-2604 in parallel; T-2606 (orb states) waits on T-2602 and T-2603.
+7. **E-26 state machine and orb states** — T-2601 → T-2602 → T-2604 in parallel; T-2606 (orb states) waits on T-2602 and T-2603. T-2602 must remove the foreground/background observers from `VoiceToText.swift` in the same change set in which it installs them on `TriggerWordController` (per ADR-002 §Conflict 4).
 
 8. **E-22 contrast-reactive border tasks** — T-2205, T-2206, T-2207 depend on `DarkGlassButton` existing (T-2102) and on T-2100 (token aliases) — and on the speaker card being visible against the new background.
 
-9. **E-25 haptics, voice-cancel, integration** — T-2503 → T-2506 → T-2507 → T-2508 in sequence; T-2504, T-2505 in parallel after T-2501.
+9. **E-25 haptics, voice-cancel, integration** — T-2503 → T-2506 → T-2507 → T-2508 in sequence; T-2504, T-2505 in parallel after T-2501. T-2508 deletes the legacy `ConfirmationSheet` block and all five `coordinator.confirm`/`cancel` call sites in one change set (per ADR-002 §Conflict 3).
 
-10. **E-24 Tier 2 training, then Tier 1 integration, then router and call-site** — T-2407, T-2408 (training) depend on the corpus; T-2412, T-2413, T-2414 (Tier 1) are independent of training and can run in parallel; T-2415 router and T-2416 call-site wire-up depend on both Tier 1 and Tier 2 being ready.
+10. **E-24 Tier 2 training, then Tier 1 integration, then router and call-site** — T-2407, T-2408 (training) depend on the corpus; T-2412, T-2413, T-2414 (Tier 1) are independent of training and can run in parallel; T-2415 router and T-2416 call-site wire-up depend on both Tier 1 and Tier 2 being ready. T-2415 includes a prerequisite step (per ADR-002 §Conflict 1) to delete the `ParsedCommand` dispatch block from `HomeView.swift` lines 454–559 before the new router is wired in.
 
 11. **E-25 unit tests T-2509 → manual T-2510**; **E-26 reliability T-2607, T-2608, privacy T-2609, battery T-2610** — all run after the relevant build tasks land.
 
@@ -439,9 +462,20 @@ Week 5:    iOS:  T-2416 (parsing call-site wiring), T-2509, T-2510 (countdown ve
 | E-21 Dark Liquid Glass Button System | 11 | Includes T-2100 compile-blocker prerequisite. T-2105 and T-2106 are retired (do not reuse) — superseded by E-25 fresh-build of the cancel control. Supersedes v1.0 T-1104 (Yes button removed entirely), T-1105 (No button rendering replaced by countdown). |
 | E-22 Dark-Mode-Only Visual Layer | 9 | Closes the sheet-presentation gap from v1.0 |
 | E-23 v1.1 Visual QA & Regression Hardening | 9 | Depends on E-20, E-21, E-22, E-25, E-26 |
-| E-24 Three-Tier Voice Command Parsing | 19 | Supersedes v1.0 T-1801–T-1810 (rendering). Existing `CommandParser` shipped under E-18 retained as Tier 3. |
-| E-25 Auto-Execute Confirmation with Countdown Cancel | 10 | Supersedes v1.0 T-1104 (Yes button), T-1108 (haptic re-wired to countdown start), T-0805 (10 s timeout replaced by 3 s auto-execute). T-1109 `.success` haptic re-wired to auto-execute. |
-| E-26 "Voxio" Trigger Word | 10 | Supersedes v1.0 T-0301, T-0302, T-0303. Default implementation uses `SFSpeechRecognizer` in continuous on-device mode; T-2603 investigates the iOS 26 keyword-spotting API per Q20. |
+| E-24 Three-Tier Voice Command Parsing | 19 | Supersedes v1.0 T-1801–T-1810 (rendering). Existing `CommandParser` shipped under E-18 retained as Tier 3. T-2415 carries an ADR-002 §Conflict 1 prerequisite to delete the legacy `ParsedCommand` dispatch block from `HomeView.swift` lines 454–559. |
+| E-25 Auto-Execute Confirmation with Countdown Cancel | 10 | Supersedes v1.0 T-1104 (Yes button), T-1108 (haptic re-wired to countdown start), T-0805 (10 s timeout replaced by 3 s auto-execute). T-1109 `.success` haptic re-wired to auto-execute. T-2508 enumerates every `ConfirmationSheet` / `coordinator.confirm` / `coordinator.cancel` call site to delete (per ADR-002 §Conflict 3). |
+| E-26 "Voxio" Trigger Word | 10 | Supersedes v1.0 T-0301, T-0302, T-0303. Default implementation uses `SFSpeechRecognizer` in continuous on-device mode; T-2603 investigates the iOS 26 keyword-spotting API per Q20. T-2602 absorbs the foreground/background lifecycle observers from `VoiceToText.swift` lines 68–85 (per ADR-002 §Conflict 4). |
 | **Total (v1.1 only)** | **76** | Cumulative project total: 179 (v1.0) + 76 = **255**. v1.0 task IDs T-1104, T-1105, T-1108, T-0805, T-0301, T-0302, T-0303, T-1801–T-1810 are superseded but remain in v1.0 history. |
 
 > Note on the E-21 count: v1.1.2 reported 13 tasks for E-21 (including T-2105 and T-2106 for Yes/No button replacement). v1.1.3 retires T-2105 and T-2106 (the Yes button is deleted by E-25; the cancel control is built fresh against the countdown surface in T-2502). The remaining 11 E-21 tasks are T-2100, T-2101, T-2102, T-2103, T-2104, T-2107, T-2108, T-2109, T-2110, T-2111, T-2112.
+
+---
+
+## Amendment History
+
+| Date | Source | Change |
+|---|---|---|
+| 2026-04-29 | ADR-002 §Conflict 1 (critical) | T-2415 rewritten to include a prerequisite step removing the `ParsedCommand` dispatch block from `HomeView.swift` lines 454–559 (the `confirmationMessage(forParsed:)`, `completionMessage(forParsed:)`, and `dispatchParsed(command:to:)` trio); the `VoiceCommand` enum dispatch at lines 365–411 becomes the sole remaining path. |
+| 2026-04-29 | ADR-002 §Conflict 2 (informational) | T-2416 rewritten — the active parse call site is `HomeView.swift` lines 292–297 inside the `voiceToText.onFinalTranscript` closure, not `VoiceToText.swift:50` (which is dead code with respect to `HomeView`'s dispatch path; cleaned up under T-2415's prerequisite). |
+| 2026-04-29 | ADR-002 §Conflict 3 (moderate) | T-2508 rewritten to enumerate every `ConfirmationSheet` / `coordinator.confirm` / `coordinator.cancel` call site to delete: `HomeView.swift` lines 101–112 (the full `.sheet` block), and lines 103, 108, 109, 272, 273 (the five confirm/cancel invocations). The voice-confirm path is removed entirely; the voice-cancel path is replaced by T-2506's cancel-grammar detector. |
+| 2026-04-29 | ADR-002 §Conflict 4 (moderate) | T-2602 rewritten — `TriggerWordController` absorbs both the `didEnterBackgroundNotification` (lines 68–75) and `willEnterForegroundNotification` (lines 78–85) observers from `VoiceToText.swift`. The existing observers must be removed in the same change set to prevent a foreground-resume race that re-enters active state without "Voxio" being spoken. |
