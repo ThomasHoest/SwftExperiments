@@ -15,6 +15,10 @@ struct HomeView: View {
     @State private var isCommandActive  = false
     @State private var selectedSpeaker: Speaker?
     @State private var hasAppeared    = false
+    @State private var successMessage = ""
+    @AppStorage("hasSeenHint") private var hasSeenHint = false
+    @State private var showHintManually = false
+    @State private var showLanguagePicker = false
     @State private var currentToast:  Toast?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -26,6 +30,10 @@ struct HomeView: View {
 
     private var displayedSpeaker: Speaker? {
         selectedSpeaker ?? registry.speakers.first
+    }
+
+    private var shouldShowHint: Bool {
+        showHintManually || (!hasSeenHint && !registry.speakers.isEmpty)
     }
 
     var body: some View {
@@ -80,6 +88,18 @@ struct HomeView: View {
         .onChange(of: langService.activeLanguage) { _, language in
             voiceToText.setLanguage(language)
         }
+        .onChange(of: transcript) { _, new in
+            if !new.isEmpty { showHintManually = false }
+        }
+        .sheet(isPresented: $showLanguagePicker) {
+            LanguagePickerSheet { language in
+                Task { @MainActor in
+                    langService.setLanguage(language)
+                    showLanguagePicker = false
+                    startListening()
+                }
+            }
+        }
         .sheet(isPresented: Binding(
             get: { coordinator.isPending },
             set: { if !$0 { coordinator.cancel() } }
@@ -109,6 +129,21 @@ struct HomeView: View {
 
     private var statusBar: some View {
         HStack {
+            Button {
+                showHintManually.toggle()
+            } label: {
+                Image(systemName: "questionmark.circle")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel(
+                langService.activeLanguage == .danish
+                    ? "Vis kom-godt-i-gang-tip"
+                    : "Show getting-started hint"
+            )
+
             Spacer()
             ConnectionStatusChip(speakerCount: registry.speakers.count)
         }
@@ -174,7 +209,22 @@ struct HomeView: View {
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .padding(.top, 12)
+
+            if shouldShowHint && !coordinator.isPending {
+                HintCardView(
+                    speakerName: registry.speakers.first?.name,
+                    language: langService.activeLanguage,
+                    onDismiss: {
+                        hasSeenHint = true
+                        showHintManually = false
+                    }
+                )
+                .transition(.opacity)
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+            }
         }
+        .animation(.easeInOut(duration: 0.2), value: shouldShowHint)
     }
 
     // ── Setup ─────────────────────────────────────────────────────────────────
@@ -187,6 +237,16 @@ struct HomeView: View {
             hasAppeared = true
         }
 
+        // T-1903 — show language picker on first launch; defer mic/discovery until chosen
+        if !langService.hasExplicitlyChosen {
+            showLanguagePicker = true
+            return
+        }
+        startListening()
+    }
+
+    private func startListening() {
+        voiceToText.setLanguage(langService.activeLanguage)
         registry.start()
         motionManager.start()
         Task { await commandRouter.warmUp() }
@@ -212,6 +272,7 @@ struct HomeView: View {
                     let cmd = CommandParser(language: langService.activeLanguage).parse(text)
                     if cmd == .confirm { coordinator.confirm() }
                     else if cmd == .cancel { coordinator.cancel() }
+                    else { coordinator.announce(errorService.spoken(.voiceNotRecognised)) }
                     return
                 }
 
@@ -221,7 +282,8 @@ struct HomeView: View {
                 guard let (speaker, remaining) = registry.resolve(words: words) else {
                     Log.info("[HomeView] no speaker resolved for: \(text)")
                     let available = registry.speakers.map(\.name)
-                    handleError(.noSpeakerSpoken(available: available))
+                    coordinator.announce(errorService.spoken(.noSpeakerSpoken(available: available)))
+                    clearTranscriptAfterDelay()
                     return
                 }
                 selectedSpeaker = speaker
@@ -244,8 +306,11 @@ struct HomeView: View {
 
                 // Commands that need no confirmation (list, confirm, cancel, unknown)
                 guard let confirmMsg = confirmationMessage(forParsed: command, speaker: speaker) else {
+                    if command.intent == .unknown {
+                        coordinator.announce(errorService.spoken(.voiceNotRecognised))
+                    }
                     await dispatchParsed(command: command, to: speaker)
-                    if command.intent == .unknown { clearTranscriptAfterDelay() }
+                    clearTranscriptAfterDelay()
                     return
                 }
 
@@ -259,6 +324,7 @@ struct HomeView: View {
                     let succeeded = await dispatchParsed(command: command, to: speaker)
                     if succeeded { showSuccess("Done") }
                 }
+                clearTranscriptAfterDelay()
             }
         }
         voiceToText.start { status in
@@ -410,7 +476,11 @@ struct HomeView: View {
     private func clearTranscriptAfterDelay() {
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(5))
+            while coordinator.isPending {
+                try? await Task.sleep(for: .seconds(5))
+            }
             transcript = ""
+            voiceToText.resumeRecognition()
         }
     }
 
