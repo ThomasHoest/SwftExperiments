@@ -18,6 +18,11 @@ struct PlaybackState: Decodable {
     let value: PlaybackValue
 }
 
+// /playback/state returns a wrapper: { "state": {"value": "..."}, "metadata": {...}, ... }
+struct PlaybackResponse: Decodable {
+    let state: PlaybackState
+}
+
 struct PlaybackMetadata: Decodable {
     let title: String?
     let artist: String?

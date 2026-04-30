@@ -61,7 +61,9 @@ struct HomeView: View {
                     .padding(.bottom, 12)
                 }
             }
-            .frame(width: UIScreen.main.bounds.width - 40)
+            .frame(width: (UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first?.screen.bounds.width ?? 0) - 40)
             .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 0) }
 
             // Toast overlay (errors, volume limit, success)

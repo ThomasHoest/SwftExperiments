@@ -12,8 +12,7 @@ struct SpeakerSelectorPill: View {
     private var scrollWidth: CGFloat {
         let w = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
-            .first?.keyWindow?.bounds.width
-            ?? UIScreen.main.bounds.width
+            .first?.screen.bounds.width ?? 0
         return w - 40
     }
 

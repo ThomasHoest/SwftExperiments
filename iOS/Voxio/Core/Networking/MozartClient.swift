@@ -117,7 +117,8 @@ class MozartClient {
     /// Returns the current playback state (`playing`, `paused`, `stopped`, `buffering`, `unknown`).
     /// Note: real devices may also emit `started`, which is treated as equivalent to `playing`.
     func getPlaybackState() async throws -> PlaybackState {
-        try await get("/playback/state")
+        let response: PlaybackResponse = try await get("/playback/state")
+        return response.state
     }
 
     /// Returns metadata for the currently playing track (title, artist, album, artwork URL, duration).
