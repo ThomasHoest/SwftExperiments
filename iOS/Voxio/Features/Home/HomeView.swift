@@ -272,7 +272,7 @@ struct HomeView: View {
                     let cmd = CommandParser(language: langService.activeLanguage).parse(text)
                     if cmd == .confirm { coordinator.confirm() }
                     else if cmd == .cancel { coordinator.cancel() }
-                    else { coordinator.announce(errorService.spoken(.voiceNotRecognised)) }
+                    else { handleError(.voiceNotRecognised) }
                     return
                 }
 
@@ -282,7 +282,7 @@ struct HomeView: View {
                 guard let (speaker, remaining) = registry.resolve(words: words) else {
                     Log.info("[HomeView] no speaker resolved for: \(text)")
                     let available = registry.speakers.map(\.name)
-                    coordinator.announce(errorService.spoken(.noSpeakerSpoken(available: available)))
+                    handleError(.noSpeakerSpoken(available: available))
                     clearTranscriptAfterDelay()
                     return
                 }
@@ -307,7 +307,7 @@ struct HomeView: View {
                 // Commands that need no confirmation (list, confirm, cancel, unknown)
                 guard let confirmMsg = confirmationMessage(forParsed: command, speaker: speaker) else {
                     if command.intent == .unknown {
-                        coordinator.announce(errorService.spoken(.voiceNotRecognised))
+                        handleError(.voiceNotRecognised)
                     }
                     await dispatchParsed(command: command, to: speaker)
                     clearTranscriptAfterDelay()
