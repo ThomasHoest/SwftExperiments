@@ -1,6 +1,12 @@
 import AppIntents
 import Foundation
 
+// MARK: - Error
+
+private struct VoxioIntentError: LocalizedError {
+    let errorDescription: String?
+}
+
 // MARK: - SpeakerEntity
 
 struct SpeakerEntity: AppEntity, Sendable {
@@ -37,9 +43,9 @@ struct PlaybackToggleIntent: AudioPlaybackIntent {
     static var description = IntentDescription("Toggles play/pause on your active B&O speaker.")
 
     func perform() async throws -> some IntentResult {
+        let lang = LanguageService.shared.activeLanguage
         guard let speaker = await SpeakerStore.shared.activeSpeaker else {
-            let msg = IntentStrings.appNotRunning(LanguageService.shared.activeLanguage)
-            return .result(dialog: IntentDialog(stringLiteral: msg))
+            throw VoxioIntentError(errorDescription: IntentStrings.appNotRunning(lang))
         }
         do {
             if await speaker.isPlaying {
@@ -49,9 +55,7 @@ struct PlaybackToggleIntent: AudioPlaybackIntent {
             }
             return .result()
         } catch _ as SpeakerError {
-            let name = await speaker.name
-            let msg = IntentStrings.speakerUnreachable(name, LanguageService.shared.activeLanguage)
-            return .result(dialog: IntentDialog(stringLiteral: msg))
+            throw VoxioIntentError(errorDescription: IntentStrings.speakerUnreachable(await speaker.name, lang))
         }
     }
 }
@@ -66,21 +70,18 @@ struct AdjustVolumeIntent: AudioPlaybackIntent {
     var delta: Int
 
     func perform() async throws -> some IntentResult {
+        let lang = LanguageService.shared.activeLanguage
         guard let speaker = await SpeakerStore.shared.activeSpeaker else {
-            let msg = IntentStrings.appNotRunning(LanguageService.shared.activeLanguage)
-            return .result(dialog: IntentDialog(stringLiteral: msg))
+            throw VoxioIntentError(errorDescription: IntentStrings.appNotRunning(lang))
         }
         do {
-            let fetched = try? await speaker.client.getVolume()
+            let fetched  = try? await speaker.client.getVolume()
             let fallback = await speaker.volume ?? 50
-            let current = fetched ?? fallback
-            let clamped = max(0, min(100, current + delta))
+            let clamped  = max(0, min(100, (fetched ?? fallback) + delta))
             try await speaker.client.setVolume(clamped)
             return .result()
         } catch _ as SpeakerError {
-            let name = await speaker.name
-            let msg = IntentStrings.speakerUnreachable(name, LanguageService.shared.activeLanguage)
-            return .result(dialog: IntentDialog(stringLiteral: msg))
+            throw VoxioIntentError(errorDescription: IntentStrings.speakerUnreachable(await speaker.name, lang))
         }
     }
 }
@@ -92,18 +93,15 @@ struct MuteIntent: AudioPlaybackIntent {
     static var description = IntentDescription("Toggles mute on your active B&O speaker.")
 
     func perform() async throws -> some IntentResult {
+        let lang = LanguageService.shared.activeLanguage
         guard let speaker = await SpeakerStore.shared.activeSpeaker else {
-            let msg = IntentStrings.appNotRunning(LanguageService.shared.activeLanguage)
-            return .result(dialog: IntentDialog(stringLiteral: msg))
+            throw VoxioIntentError(errorDescription: IntentStrings.appNotRunning(lang))
         }
         do {
-            let muted = await speaker.isMuted
-            try await speaker.client.mute(!muted)
+            try await speaker.client.mute(!(await speaker.isMuted))
             return .result()
         } catch _ as SpeakerError {
-            let name = await speaker.name
-            let msg = IntentStrings.speakerUnreachable(name, LanguageService.shared.activeLanguage)
-            return .result(dialog: IntentDialog(stringLiteral: msg))
+            throw VoxioIntentError(errorDescription: IntentStrings.speakerUnreachable(await speaker.name, lang))
         }
     }
 }
@@ -120,36 +118,28 @@ struct JoinSpeakerIntent: AudioPlaybackIntent {
     @Parameter(title: "Target Speaker")
     var target: SpeakerEntity
 
-    func perform() async throws -> some IntentResult {
+    func perform() async throws -> some IntentResult & ProvidesDialog {
         let lang = LanguageService.shared.activeLanguage
         let (sourceSpeaker, targetSpeaker) = await MainActor.run {
             let all = SpeakerStore.shared.allSpeakers
-            return (
-                all.first(where: { $0.host == source.id }),
-                all.first(where: { $0.host == target.id })
-            )
+            return (all.first { $0.host == source.id }, all.first { $0.host == target.id })
         }
         guard let sourceSpeaker else {
-            return .result(dialog: IntentDialog(stringLiteral: IntentStrings.speakerNotFound(source.name, lang)))
+            throw VoxioIntentError(errorDescription: IntentStrings.speakerNotFound(source.name, lang))
         }
         guard let targetSpeaker else {
-            return .result(dialog: IntentDialog(stringLiteral: IntentStrings.speakerNotFound(target.name, lang)))
+            throw VoxioIntentError(errorDescription: IntentStrings.speakerNotFound(target.name, lang))
         }
         do {
-            // Mozart→any: expand from target; BNR→any: join from source
             if await targetSpeaker.identifier.platform == .mozart {
                 try await targetSpeaker.client.join(peer: await sourceSpeaker.identifier)
             } else {
                 try await sourceSpeaker.client.join(peer: await targetSpeaker.identifier)
             }
-            let sourceName = await sourceSpeaker.name
-            let targetName = await targetSpeaker.name
-            let msg = IntentStrings.joined(sourceName, targetName, lang)
+            let msg = IntentStrings.joined(await sourceSpeaker.name, await targetSpeaker.name, lang)
             return .result(dialog: IntentDialog(stringLiteral: msg))
         } catch _ as SpeakerError {
-            let name = await sourceSpeaker.name
-            let msg = IntentStrings.speakerUnreachable(name, lang)
-            return .result(dialog: IntentDialog(stringLiteral: msg))
+            throw VoxioIntentError(errorDescription: IntentStrings.speakerUnreachable(await sourceSpeaker.name, lang))
         }
     }
 }
@@ -163,23 +153,20 @@ struct LeaveSpeakerIntent: AudioPlaybackIntent {
     @Parameter(title: "Speaker")
     var speaker: SpeakerEntity
 
-    func perform() async throws -> some IntentResult {
+    func perform() async throws -> some IntentResult & ProvidesDialog {
         let lang = LanguageService.shared.activeLanguage
         let resolved = await MainActor.run {
-            SpeakerStore.shared.allSpeakers.first(where: { $0.host == speaker.id })
+            SpeakerStore.shared.allSpeakers.first { $0.host == speaker.id }
         }
         guard let resolved else {
-            return .result(dialog: IntentDialog(stringLiteral: IntentStrings.speakerNotFound(speaker.name, lang)))
+            throw VoxioIntentError(errorDescription: IntentStrings.speakerNotFound(speaker.name, lang))
         }
         do {
             try await resolved.client.leave()
-            let name = await resolved.name
-            let msg = IntentStrings.left(name, lang)
+            let msg = IntentStrings.left(await resolved.name, lang)
             return .result(dialog: IntentDialog(stringLiteral: msg))
         } catch _ as SpeakerError {
-            let name = await resolved.name
-            let msg = IntentStrings.speakerUnreachable(name, lang)
-            return .result(dialog: IntentDialog(stringLiteral: msg))
+            throw VoxioIntentError(errorDescription: IntentStrings.speakerUnreachable(await resolved.name, lang))
         }
     }
 }
