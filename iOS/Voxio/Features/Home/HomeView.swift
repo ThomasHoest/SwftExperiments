@@ -362,12 +362,15 @@ struct HomeView: View {
             : cs.adjustVolumeDown(speaker.name, abs(d))
         case .mute:                 return cs.mute(speaker.name, speaker.volume)
         case .unmute:               return cs.unmute(speaker.name)
+        case .joinSpeaker(let targetName):
+            return cs.joinSpeakers(speaker.name, targetName)
+        case .leaveSpeaker:         return cs.leaveSpeaker(speaker.name)
         case .listFavorites, .confirm, .cancel, .unknown:
             return nil
         }
     }
 
-    private func completionMessage(for command: VoiceCommand, speaker: Speaker) -> String? {
+    private func completionMessage(for command: VoiceCommand, speaker: Speaker, resolvedTarget: Speaker? = nil) -> String? {
         switch command {
         case .stop:                 return cs.stopped(speaker.name)
         case .pause:                return cs.paused(speaker.name)
@@ -376,6 +379,10 @@ struct HomeView: View {
         case .adjustVolume:         return cs.volumeAdjusted(speaker.name)
         case .mute:                 return cs.muted(speaker.name)
         case .unmute:               return cs.unmuted(speaker.name)
+        case .joinSpeaker:
+            if let target = resolvedTarget { return cs.joined(speaker.name, target.name) }
+            return nil
+        case .leaveSpeaker:         return cs.leftGroup(speaker.name)
         default:                    return nil
         }
     }
@@ -428,6 +435,32 @@ struct HomeView: View {
             return await perform(speaker: speaker) { try await speaker.mute() }
         case .unmute:
             return await perform(speaker: speaker) { try await speaker.unmute() }
+        case .joinSpeaker(let targetName):
+            let allSpeakers = discovery.groups.flatMap(\.members)
+            guard !targetName.isEmpty else {
+                handleError(.noSpeakerSpoken(available: allSpeakers.map(\.name)))
+                return false
+            }
+            let lower = targetName.lowercased()
+            guard let target = allSpeakers.first(where: {
+                $0.name.lowercased().contains(lower) || lower.contains($0.name.lowercased())
+            }) else {
+                handleError(.speakerNotFound(spoken: targetName, available: allSpeakers.map(\.name)))
+                return false
+            }
+            return await perform(speaker: speaker) {
+                if target.identifier.platform == .mozart {
+                    try await target.client.join(peer: speaker.identifier)
+                } else {
+                    try await speaker.client.join(peer: target.identifier)
+                }
+                discovery.mergeIntoSpeakerGroup(source: speaker, target: target)
+            }
+        case .leaveSpeaker:
+            return await perform(speaker: speaker) {
+                try await speaker.client.leave()
+                discovery.removeMember(speaker)
+            }
         case .confirm, .cancel, .unknown:
             Log.info("[HomeView] unhandled: \(command)")
             return false

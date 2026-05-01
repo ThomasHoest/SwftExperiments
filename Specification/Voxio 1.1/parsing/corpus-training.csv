@@ -1059,3 +1059,50 @@ good evening,unknown
 I need help,unknown
 can you help me,unknown
 what's my schedule,unknown
+join to the speaker,joinSpeaker
+join the speaker,joinSpeaker
+connect to the speaker,joinSpeaker
+connect to the other room,joinSpeaker
+join with the other speaker,joinSpeaker
+merge with the bedroom,joinSpeaker
+sync to the living room,joinSpeaker
+join them together,joinSpeaker
+connect the speakers,joinSpeaker
+join to the other speaker,joinSpeaker
+group with the speaker,joinSpeaker
+join the living room,joinSpeaker
+join the bedroom,joinSpeaker
+saml til højttaleren,joinSpeaker
+saml med den anden,joinSpeaker
+forbind til den anden højttaler,joinSpeaker
+saml dem,joinSpeaker
+saml højttalerne,joinSpeaker
+forbind højttalerne,joinSpeaker
+saml med stuen,joinSpeaker
+tilslut til den anden,joinSpeaker
+tilslut den anden højttaler,joinSpeaker
+synkroniser med den anden,joinSpeaker
+group them,joinSpeaker
+join speakers,joinSpeaker
+leave the group,leaveSpeaker
+leave group,leaveSpeaker
+disconnect from group,leaveSpeaker
+leave,leaveSpeaker
+separate from group,leaveSpeaker
+play alone,leaveSpeaker
+stop grouping,leaveSpeaker
+split from the group,leaveSpeaker
+disconnect this speaker,leaveSpeaker
+remove from group,leaveSpeaker
+ungroup,leaveSpeaker
+leave the speaker group,leaveSpeaker
+forlad gruppen,leaveSpeaker
+forlad,leaveSpeaker
+adskil fra gruppen,leaveSpeaker
+afkobl fra gruppen,leaveSpeaker
+spil alene,leaveSpeaker
+stop med at være i gruppen,leaveSpeaker
+fjern fra gruppen,leaveSpeaker
+afgrupper,leaveSpeaker
+separer fra gruppen,leaveSpeaker
+tag ud af gruppen,leaveSpeaker

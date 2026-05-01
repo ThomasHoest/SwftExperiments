@@ -4,27 +4,30 @@ import Foundation
 /// Produced by both `FoundationModelParser` and `TwoStageFallbackParser`;
 /// consumed by the HomeView dispatch layer.
 struct ParsedCommand: Codable, Equatable {
-    let intent:        CommandIntent
-    let favoriteName:  String?   // spoken favorite name for .playNamed
-    let favoriteIndex: Int?      // 1-based position for .playFavoriteByNumber
-    let volumeValue:   Int?      // absolute target 0–100 for .setVolume
-    let volumeDelta:   Int?      // relative step for .volumeUp/.volumeDown; nil = default
-    let rawText:       String?   // preserved for .unknown
+    let intent:             CommandIntent
+    let favoriteName:       String?   // spoken favorite name for .playNamed
+    let favoriteIndex:      Int?      // 1-based position for .playFavoriteByNumber
+    let volumeValue:        Int?      // absolute target 0–100 for .setVolume
+    let volumeDelta:        Int?      // relative step for .volumeUp/.volumeDown; nil = default
+    let targetSpeakerName:  String?   // spoken target speaker name for .joinSpeaker
+    let rawText:            String?   // preserved for .unknown
 
     init(
-        intent:        CommandIntent,
-        favoriteName:  String? = nil,
-        favoriteIndex: Int?    = nil,
-        volumeValue:   Int?    = nil,
-        volumeDelta:   Int?    = nil,
-        rawText:       String? = nil
+        intent:             CommandIntent,
+        favoriteName:       String? = nil,
+        favoriteIndex:      Int?    = nil,
+        volumeValue:        Int?    = nil,
+        volumeDelta:        Int?    = nil,
+        targetSpeakerName:  String? = nil,
+        rawText:            String? = nil
     ) {
-        self.intent        = intent
-        self.favoriteName  = favoriteName
-        self.favoriteIndex = favoriteIndex
-        self.volumeValue   = volumeValue
-        self.volumeDelta   = volumeDelta
-        self.rawText       = rawText
+        self.intent             = intent
+        self.favoriteName       = favoriteName
+        self.favoriteIndex      = favoriteIndex
+        self.volumeValue        = volumeValue
+        self.volumeDelta        = volumeDelta
+        self.targetSpeakerName  = targetSpeakerName
+        self.rawText            = rawText
     }
 
     static func unknown(_ text: String) -> ParsedCommand {
@@ -45,6 +48,8 @@ enum CommandIntent: String, CaseIterable, Codable, Equatable {
     case volumeDown     // "volume down [amount]"
     case mute
     case unmute
+    case joinSpeaker    // "join [speaker] to [target]"
+    case leaveSpeaker   // "[speaker] leave group"
     case confirm        // "Yes" / "Ja"
     case cancel         // "No" / "Nej"
     case unknown
@@ -65,6 +70,8 @@ extension ParsedCommand: CustomStringConvertible {
         case .volumeDown:    return "volumeDown(\(volumeDelta.map { "-\($0)" } ?? "default"))"
         case .mute:          return "mute"
         case .unmute:        return "unmute"
+        case .joinSpeaker:   return "joinSpeaker(\"\(targetSpeakerName ?? "")\")"
+        case .leaveSpeaker:  return "leaveSpeaker"
         case .confirm:       return "confirm"
         case .cancel:        return "cancel"
         case .unknown:       return "unknown(\"\(rawText ?? "")\")"
