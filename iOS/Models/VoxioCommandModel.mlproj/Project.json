@@ -1,0 +1,29 @@
+{
+  "activityEntities" : [
+    "projectCreated",
+    [
+      {
+        "createdDate" : "2026-04-30T15:15:58Z",
+        "event" : "projectCreated",
+        "id" : "0C514570-CB65-4755-89C6-7599D1A859FA",
+        "subtitle" : "VoxioCommandModel",
+        "title" : "Project Created"
+      }
+    ]
+  ],
+  "authorName" : "Thomas Andersen",
+  "createdDate" : "2026-04-30T15:15:58Z",
+  "description" : "",
+  "id" : "DC20C28C-C966-4F08-AF68-32BFFA1839B1",
+  "license" : "",
+  "location" : "",
+  "modifiedDate" : "2026-04-30T15:15:58Z",
+  "projectName" : "VoxioCommandModel",
+  "settingsEntity" : {
+    "snapshotOnExtendTraining" : true,
+    "snapshotOnResumeTraining" : false
+  },
+  "taskType" : "textClassifier",
+  "title" : "Text Classification",
+  "version" : "1.1"
+}

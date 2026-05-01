@@ -1,0 +1,77 @@
+{
+  "activityEntities" : [
+    "dataSourceCreated",
+    [
+      {
+        "createdDate" : "2026-04-30T15:17:19Z",
+        "event" : "dataSourceCreated",
+        "id" : "4C0BEC17-FDA1-48B4-BA67-DAEF2F033F2C",
+        "subtitle" : "parsing",
+        "title" : "Data Source Created"
+      }
+    ]
+  ],
+  "createdDate" : "2026-04-30T15:17:19Z",
+  "dataPathRelativeToProjectURL" : "../../../Specification/Voxio%201.1/parsing/",
+  "dataResult" : {
+    "classesCount" : 1,
+    "createdDate" : "2026-04-30T15:17:19Z",
+    "dataAnalysis" : {
+      "classifierAnalysis" : {
+        "labelStats" : {
+          "parsing" : 1
+        }
+      },
+      "issues" : [
+        {
+          "description" : "Found one folder \"parsing\" - expected at least two folders of texts, named for their classes",
+          "severity" : "error"
+        },
+        {
+          "description" : "Less than 50 total texts found - add more to improve model validation",
+          "severity" : "warning"
+        },
+        {
+          "description" : "Smallest class is \"parsing\" with 1 texts",
+          "severity" : "debug"
+        },
+        {
+          "description" : "Largest class is \"parsing\" with 1 text",
+          "severity" : "debug"
+        }
+      ],
+      "objectDetectorAnalysis" : {
+        "details" : {
+
+        }
+      },
+      "summary" : {
+        "canUseValidation" : 0,
+        "classCount" : 1,
+        "sampleCount" : 1
+      },
+      "warning" : "Less than 50 total texts found - add more to improve model validation"
+    },
+    "dataSourceID" : "B45E99AE-6D7B-40C5-918A-C65BE4A84B69",
+    "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments/Specification/Voxio%201.1/parsing/",
+    "error" : {
+      "code" : 1000,
+      "domain" : "composer.error.domain",
+      "errorType" : "error",
+      "reason" : "Found one folder \"parsing\" - expected at least two folders of texts, named for their classes"
+    },
+    "itemsCount" : 1,
+    "warning" : "Less than 50 total texts found - add more to improve model validation"
+  },
+  "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments/Specification/Voxio%201.1/parsing/",
+  "experimentIDs" : [
+    "4B9A296C-12D2-42D4-92B9-7B9FDBC90B66",
+    "FEB17AD1-133E-4A41-A0FC-B13AB3BC19FC"
+  ],
+  "id" : "B45E99AE-6D7B-40C5-918A-C65BE4A84B69",
+  "modifiedDate" : "2026-04-30T15:18:08Z",
+  "pathType" : 0,
+  "preferredFilename" : "parsing",
+  "title" : "parsing",
+  "version" : "1.0"
+}

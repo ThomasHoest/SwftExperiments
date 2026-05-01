@@ -1,0 +1,192 @@
+{
+  "activityEntities" : [
+    "trainingDataAdded",
+    [
+      {
+        "createdDate" : "2026-04-30T15:18:08Z",
+        "event" : "trainingDataAdded",
+        "id" : "88AE1BEA-15C2-4CDD-9EFC-820451059B69",
+        "subtitle" : "parsing",
+        "title" : "Training Data Added"
+      }
+    ],
+    "experimentCreated",
+    [
+      {
+        "createdDate" : "2026-04-30T15:18:08Z",
+        "event" : "experimentCreated",
+        "id" : "C3173F3F-6554-4C2F-9913-E0C458FCFDED",
+        "subtitle" : "VoxioCommandModel 1 copy",
+        "title" : "Model Source Created"
+      }
+    ]
+  ],
+  "contentDataResult" : {
+    "createdDate" : "2026-04-30T15:17:19Z"
+  },
+  "createdDate" : "2026-04-30T15:18:08Z",
+  "evaluationContainerEntity" : {
+    "createdDate" : "2026-04-30T15:18:08Z",
+    "evaluationEntities" : [
+
+    ],
+    "id" : "cb016450-a44b-4fc4-a2ff-24b4a5e338a6",
+    "modifiedDate" : "2026-04-30T15:18:08Z",
+    "previewType" : "textClassifier",
+    "testingEvaluationEntity" : {
+      "analysedDataType" : "none",
+      "createdDate" : "2026-04-30T15:18:08Z",
+      "dataResult" : {
+        "createdDate" : "2026-04-30T15:18:08Z"
+      },
+      "id" : "4fe628b2-7cba-4227-ad36-d78427826afe"
+    },
+    "trainingEvaluationEntity" : {
+      "analysedDataType" : "none",
+      "createdDate" : "2026-04-30T15:18:08Z",
+      "dataResult" : {
+        "createdDate" : "2026-04-30T15:18:08Z",
+        "dataSourceID" : "B45E99AE-6D7B-40C5-918A-C65BE4A84B69",
+        "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments/Specification/Voxio%201.1/parsing/"
+      },
+      "dataSourceID" : "B45E99AE-6D7B-40C5-918A-C65BE4A84B69",
+      "id" : "dff8d4c7-6b53-436f-b6d0-5cbd607a19ac"
+    },
+    "validationEvaluationEntity" : {
+      "analysedDataType" : "auto",
+      "createdDate" : "2026-04-30T15:18:08Z",
+      "dataResult" : {
+        "createdDate" : "2026-04-30T15:18:08Z"
+      },
+      "id" : "079825c6-c4be-422e-907a-9961a0808514"
+    }
+  },
+  "evaluationEntity" : {
+    "analysedDataType" : "none",
+    "dataResult" : {
+
+    },
+    "id" : "ab24e0b7-618e-47e1-9ab3-47322df02284"
+  },
+  "evaluationState" : "uninitialized",
+  "id" : "FEB17AD1-133E-4A41-A0FC-B13AB3BC19FC",
+  "modelEntity" : {
+    "createdDate" : "2026-04-30T15:18:08Z",
+    "experimentID" : "94490475-E341-4C18-9E2F-CDF9C1AF6879",
+    "id" : "8DBA88AD-5EA9-4574-BFFD-539974E5C3A9",
+    "modifiedDate" : "2026-04-30T15:18:08Z",
+    "title" : "",
+    "version" : "1.0"
+  },
+  "modifiedDate" : "2026-04-30T15:18:08Z",
+  "preferredFilename" : "VoxioCommandModel 1 copy",
+  "settingEntity" : {
+    "algorithmType" : "maxEnt",
+    "augmentations" : [
+
+    ],
+    "featureNames" : [
+
+    ],
+    "handActionClassifierAugmentations" : [
+
+    ],
+    "handPoseClassifierAugmentations" : [
+
+    ],
+    "harVideoAugmentations" : 0,
+    "seedType" : "default",
+    "styleTransferAlgorithmType" : "image",
+    "taskType" : "textClassifier",
+    "textClassifierArabicLanguage" : "automatic",
+    "textClassifierCJKLanguage" : "automatic",
+    "textClassifierCyrillicLanguage" : "automatic",
+    "textClassifierIndicLanguage" : "automatic",
+    "textClassifierLatin" : "automatic",
+    "textClassifierScript" : "latin",
+    "textClassifierThaiLanguage" : "automatic"
+  },
+  "snapshotRole" : {
+    "withoutSnapshots" : 0
+  },
+  "state" : "uninitialized",
+  "title" : "VoxioCommandModel 1 copy",
+  "trainingEntity" : {
+    "analysedDataType" : "datasource",
+    "checkpointMetrics" : {
+
+    },
+    "dataResult" : {
+      "classesCount" : 1,
+      "createdDate" : "2026-04-30T15:18:08Z",
+      "dataAnalysis" : {
+        "classifierAnalysis" : {
+          "labelStats" : {
+            "parsing" : 1
+          }
+        },
+        "issues" : [
+          {
+            "description" : "Found one folder \"parsing\" - expected at least two folders of texts, named for their classes",
+            "severity" : "error"
+          },
+          {
+            "description" : "Less than 50 total texts found - add more to improve model validation",
+            "severity" : "warning"
+          },
+          {
+            "description" : "Smallest class is \"parsing\" with 1 texts",
+            "severity" : "debug"
+          },
+          {
+            "description" : "Largest class is \"parsing\" with 1 text",
+            "severity" : "debug"
+          }
+        ],
+        "objectDetectorAnalysis" : {
+          "details" : {
+
+          }
+        },
+        "summary" : {
+          "canUseValidation" : 0,
+          "classCount" : 1,
+          "sampleCount" : 1
+        },
+        "warning" : "Less than 50 total texts found - add more to improve model validation"
+      },
+      "dataSourceID" : "B45E99AE-6D7B-40C5-918A-C65BE4A84B69",
+      "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments/Specification/Voxio%201.1/parsing/",
+      "error" : {
+        "code" : 1000,
+        "domain" : "composer.error.domain",
+        "errorType" : "error",
+        "reason" : "Found one folder \"parsing\" - expected at least two folders of texts, named for their classes"
+      },
+      "itemsCount" : 1,
+      "warning" : "Less than 50 total texts found - add more to improve model validation"
+    },
+    "dataSourceID" : "B45E99AE-6D7B-40C5-918A-C65BE4A84B69",
+    "featureExtractionCheckpointMayBeAvailable" : false,
+    "progress" : [
+
+    ],
+    "snapshottableCheckpoints" : {
+
+    }
+  },
+  "validationEntity" : {
+    "analysedDataType" : "auto",
+    "dataResult" : {
+      "createdDate" : "2026-04-30T15:18:08Z"
+    },
+    "splitOptions" : {
+      "strategy" : {
+        "automatic" : {
+
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
