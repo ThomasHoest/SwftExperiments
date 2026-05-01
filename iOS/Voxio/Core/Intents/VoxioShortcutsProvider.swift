@@ -1,6 +1,7 @@
 import AppIntents
 
 struct VoxioShortcutsProvider: AppShortcutsProvider {
+    @AppShortcutsBuilder
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: PlaybackToggleIntent(),
@@ -23,30 +24,15 @@ struct VoxioShortcutsProvider: AppShortcutsProvider {
             systemImageName: "speaker.slash.fill"
         )
         AppShortcut(
-            intent: {
-                var intent = AdjustVolumeIntent()
-                intent.delta = 10
-                return intent
-            }(),
+            intent: AdjustVolumeIntent(),
             phrases: [
                 "Turn up the volume in \(.applicationName)",
-                "Skru op for lyden i \(.applicationName)"
-            ],
-            shortTitle: "Volume Up",
-            systemImageName: "speaker.plus.fill"
-        )
-        AppShortcut(
-            intent: {
-                var intent = AdjustVolumeIntent()
-                intent.delta = -10
-                return intent
-            }(),
-            phrases: [
+                "Skru op for lyden i \(.applicationName)",
                 "Turn down the volume in \(.applicationName)",
                 "Skru ned for lyden i \(.applicationName)"
             ],
-            shortTitle: "Volume Down",
-            systemImageName: "speaker.minus.fill"
+            shortTitle: "Adjust Volume",
+            systemImageName: "speaker.wave.2.fill"
         )
         AppShortcut(
             intent: JoinSpeakerIntent(),

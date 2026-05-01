@@ -8,10 +8,6 @@ import SwiftUI
 
 @main
 struct VoxioApp: App {
-    init() {
-        VoxioShortcutsProvider.updateAppShortcutsParameters()
-    }
-
     var body: some Scene {
         WindowGroup {
             HomeView()

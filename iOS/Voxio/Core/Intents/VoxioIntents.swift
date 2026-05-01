@@ -43,7 +43,7 @@ struct PlaybackToggleIntent: AudioPlaybackIntent {
     static var description = IntentDescription("Toggles play/pause on your active B&O speaker.")
 
     func perform() async throws -> some IntentResult {
-        let lang = LanguageService.shared.activeLanguage
+        let lang = await MainActor.run { LanguageService.shared.activeLanguage }
         guard let speaker = await SpeakerStore.shared.activeSpeaker else {
             throw VoxioIntentError(errorDescription: IntentStrings.appNotRunning(lang))
         }
@@ -70,7 +70,7 @@ struct AdjustVolumeIntent: AudioPlaybackIntent {
     var delta: Int
 
     func perform() async throws -> some IntentResult {
-        let lang = LanguageService.shared.activeLanguage
+        let lang = await MainActor.run { LanguageService.shared.activeLanguage }
         guard let speaker = await SpeakerStore.shared.activeSpeaker else {
             throw VoxioIntentError(errorDescription: IntentStrings.appNotRunning(lang))
         }
@@ -93,7 +93,7 @@ struct MuteIntent: AudioPlaybackIntent {
     static var description = IntentDescription("Toggles mute on your active B&O speaker.")
 
     func perform() async throws -> some IntentResult {
-        let lang = LanguageService.shared.activeLanguage
+        let lang = await MainActor.run { LanguageService.shared.activeLanguage }
         guard let speaker = await SpeakerStore.shared.activeSpeaker else {
             throw VoxioIntentError(errorDescription: IntentStrings.appNotRunning(lang))
         }
@@ -119,7 +119,7 @@ struct JoinSpeakerIntent: AudioPlaybackIntent {
     var target: SpeakerEntity
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let lang = LanguageService.shared.activeLanguage
+        let lang = await MainActor.run { LanguageService.shared.activeLanguage }
         let (sourceSpeaker, targetSpeaker) = await MainActor.run {
             let all = SpeakerStore.shared.allSpeakers
             return (all.first { $0.host == source.id }, all.first { $0.host == target.id })
@@ -154,7 +154,7 @@ struct LeaveSpeakerIntent: AudioPlaybackIntent {
     var speaker: SpeakerEntity
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let lang = LanguageService.shared.activeLanguage
+        let lang = await MainActor.run { LanguageService.shared.activeLanguage }
         let resolved = await MainActor.run {
             SpeakerStore.shared.allSpeakers.first { $0.host == speaker.id }
         }

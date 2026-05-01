@@ -1,7 +1,7 @@
 import Foundation
 
 @Observable @MainActor
-final class Group: Identifiable {
+final class SpeakerGroup: Identifiable {
     var id: String
     var members: [Speaker]
     var hostSpeaker: Speaker
@@ -15,11 +15,11 @@ final class Group: Identifiable {
         precondition(!members.isEmpty)
         self.members     = members
         self.hostSpeaker = hostSpeaker
-        self.id          = Group.makeId(for: members)
+        self.id          = SpeakerGroup.makeId(for: members)
     }
 
-    static func single(_ speaker: Speaker) -> Group {
-        Group(members: [speaker], hostSpeaker: speaker)
+    static func single(_ speaker: Speaker) -> SpeakerGroup {
+        SpeakerGroup(members: [speaker], hostSpeaker: speaker)
     }
 
     // Stable ID: sort member keys, join, use as ID directly (no crypto dependency)

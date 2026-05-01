@@ -9,8 +9,10 @@ extension MozartEvents: SpeakerEventSource {
                 }
             }
             continuation.onTermination = { [weak self] _ in
-                self?.onEvent = nil
-                self?.disconnect()
+                Task { @MainActor [weak self] in
+                    self?.onEvent = nil
+                    self?.disconnect()
+                }
             }
             self.connect()
         }

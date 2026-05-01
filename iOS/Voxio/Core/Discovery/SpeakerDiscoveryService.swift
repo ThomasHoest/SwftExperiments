@@ -3,7 +3,7 @@ import Combine
 
 @MainActor
 class SpeakerDiscoveryService: ObservableObject {
-    @Published private(set) var groups: [Group] = []
+    @Published private(set) var groups: [SpeakerGroup] = []
     let favorites = FavoritesService()
 
     private let discovery = MdnsDiscovery()
@@ -118,19 +118,19 @@ class SpeakerDiscoveryService: ObservableObject {
 
         groups = components.values.map { members in
             let host = members.first(where: { $0.identifier.platform == .mozart }) ?? members[0]
-            return Group(members: members, hostSpeaker: host)
+            return SpeakerGroup(members: members, hostSpeaker: host)
         }
         Log.info("[SDS] \(groups.count) group(s) from \(speakers.count) speaker(s)")
     }
 
     // Group state mutations (called from E-32 join/leave dispatch)
-    func mergeIntoGroup(source: Speaker, target: Speaker) {
+    func mergeIntoSpeakerGroup(source: Speaker, target: Speaker) {
         removeMember(source)
         if let tg = groups.first(where: { $0.members.contains { $0.id == target.id } }) {
             tg.members.append(source)
-            tg.id = Group.makeId(for: tg.members)
+            tg.id = SpeakerGroup.makeId(for: tg.members)
         } else {
-            groups.append(Group(members: [target, source], hostSpeaker: target))
+            groups.append(SpeakerGroup(members: [target, source], hostSpeaker: target))
         }
     }
 
@@ -142,7 +142,7 @@ class SpeakerDiscoveryService: ObservableObject {
                 groups.remove(at: gi)
             } else if group.hostSpeaker.id == speaker.id {
                 group.hostSpeaker = group.members[0]
-                group.id = Group.makeId(for: group.members)
+                group.id = SpeakerGroup.makeId(for: group.members)
             }
             return
         }

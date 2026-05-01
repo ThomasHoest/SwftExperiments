@@ -15,7 +15,7 @@ final class GroupTests: XCTestCase {
 
     func testGroup_single_hasOneMember() {
         let speaker = makeTestSpeaker(host: "192.168.1.1")
-        let group = Group.single(speaker)
+        let group = SpeakerGroup.single(speaker)
         XCTAssertEqual(group.members.count, 1)
         XCTAssertEqual(group.hostSpeaker.host, speaker.host)
     }
@@ -23,8 +23,8 @@ final class GroupTests: XCTestCase {
     func testGroupId_stableForSameMembers() {
         let a = makeTestSpeaker(host: "192.168.1.1", jid: "jid-a")
         let b = makeTestSpeaker(host: "192.168.1.2", jid: "jid-b")
-        let id1 = Group.makeId(for: [a, b])
-        let id2 = Group.makeId(for: [b, a])
+        let id1 = SpeakerGroup.makeId(for: [a, b])
+        let id2 = SpeakerGroup.makeId(for: [b, a])
         XCTAssertEqual(id1, id2)
     }
 
@@ -32,6 +32,6 @@ final class GroupTests: XCTestCase {
         let a = makeTestSpeaker(host: "192.168.1.1", jid: "jid-a")
         let b = makeTestSpeaker(host: "192.168.1.2", jid: "jid-b")
         let c = makeTestSpeaker(host: "192.168.1.3", jid: "jid-c")
-        XCTAssertNotEqual(Group.makeId(for: [a, b]), Group.makeId(for: [a, c]))
+        XCTAssertNotEqual(SpeakerGroup.makeId(for: [a, b]), SpeakerGroup.makeId(for: [a, c]))
     }
 }

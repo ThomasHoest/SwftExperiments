@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 /// Owns mDNS discovery, maintains the live speaker list, and resolves voice commands
 /// to a target speaker using three-tier fallback:
