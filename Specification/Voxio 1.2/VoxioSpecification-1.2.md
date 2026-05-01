@@ -1,5 +1,5 @@
 # Voxio Specification — v1.2
-**Version:** 1.2.1
+**Version:** 1.2.2
 **Status:** Draft
 **Date:** 2026-05-01
 **Platform:** iOS 26 (iPhone, portrait)
@@ -11,7 +11,8 @@
 | Version | Date | Summary |
 |---|---|---|
 | 1.2.0 | 2026-05-01 | Initial draft. Two feature workstreams: ASE/BNR speaker support (E-27, E-28) and iOS widget + voice shortcuts (E-29, E-30, E-31). |
-| 1.2.1 | 2026-05-01 | Amendment: Group abstraction and speaker join/leave feature (E-32). Updated E-27 (Group model, GroupDiscovery, SpeakerClient protocol additions). Updated E-29 (join/leave App Intents). New user stories US-41–US-48. New error states and open questions. |
+| 1.2.1 | 2026-05-01 | Amendment: Group abstraction and speaker join/leave feature (E-32). Updated E-27 (Group model, SpeakerDiscoveryService, SpeakerClient protocol additions). Updated E-29 (join/leave App Intents). New user stories US-41–US-48. New error states and open questions. |
+| 1.2.2 | 2026-05-01 | Five architectural amendments: (1) `GroupDiscovery` renamed to `SpeakerDiscoveryService` throughout; Group declared as a pure model type with no discovery dependency; (2) Voice-leave confirmed immediate — no countdown — design spec §4.1 conflict resolved; US-44 acceptance criteria updated; (3) `SpeakerError` unified error type added to Technical Context; (4) `join(peer:)` protocol symmetry added as Open Question Q-17; (5) `BeoColor.separator` duplicate declaration risk noted. |
 
 ---
 
@@ -24,7 +25,7 @@ What v1.2 changes:
 1. **Shared speaker abstraction** — two new Swift protocols (`SpeakerClient` and `SpeakerEventSource`) in a new `Core/Protocols/` folder decouple `Speaker` from any specific API. `MozartClient` and `MozartEvents` gain retroactive protocol conformances. The entire app layer becomes API-agnostic. `SpeakerClient` also exposes `join(peer:)` and `leave()` for multiroom participation.
 2. **BNRClient and BNREvents** — a new concrete client pair implementing the BNR API (press+release playback commands, 0–9000 volume normalisation, long-poll reconnect loop). From `Speaker`'s perspective, a BNR speaker is indistinguishable from a Mozart speaker at compile time.
 3. **Dual mDNS discovery** — `MdnsDiscovery` browses both `_bangolufsen._tcp` (Mozart) and `_beoremote._tcp` (BNR) and instantiates the correct client pair via a factory. ASE and Mozart speakers appear identically in the UI and voice interactions.
-4. **Group abstraction** — a new `Group` model that holds 1–N `Speaker` members sharing a Beolink session. `GroupDiscovery` reconstructs existing sessions on startup via union-find on the peer graph. The UI and voice pipeline bind to `[Group]` rather than `[Speaker]`. A group-of-1 is visually and behaviourally identical to the current single-speaker card.
+4. **Group abstraction** — a new `Group` model that holds 1–N `Speaker` members sharing a Beolink session. `SpeakerDiscoveryService` reconstructs existing sessions on startup via union-find on the peer graph. The UI and voice pipeline bind to `[Group]` rather than `[Speaker]`. A group-of-1 is visually and behaviourally identical to the current single-speaker card.
 5. **App Intents** — `AudioPlaybackIntent`-conforming intents declared in a shared `VoxioIntents` target used by both the main app and the widget extension. `AppShortcutsProvider` registers Siri phrases in English and Danish. Includes `JoinSpeakerIntent` and `LeaveSpeakerIntent`.
 6. **Home-screen widget** — a single WidgetKit widget definition (`systemSmall` + `systemMedium`) backed by an App Groups shared container. Displays live speaker name, track, source, volume, and playback state. Interactive `Button(intent:)` controls for play/pause and volume. Liquid Glass rendering on iOS 26.
 7. **Control Widget** — a `ControlWidgetButton` (play/pause) and `ControlWidgetToggle` (mute) pair in Control Center and on the lock screen, always one swipe away.
@@ -68,15 +69,16 @@ What v1.2 changes:
 | Skip button | Omitted from v1.2. | Mozart source-agnostic skip endpoint availability across all active sources is not confirmed. BNR has `/BeoZone/Zone/Stream/Forward` but it is source-dependent. Deferred to v1.3. |
 | DesignTokens sharing with widget extension | `BeoColor.swift` and `DesignTokens.swift` are added to the widget extension target's file membership (simplest path). No shared Swift Package is created in v1.2. | A shared package is the cleaner long-term solution but adds build complexity without clear v1.2 necessity. Flagged as an open question for v1.3. |
 | Siri voice interaction | `AppShortcutsProvider` with `AudioPlaybackIntent`-conforming intents. Phrases in English and Danish. No microphone in widget — architecturally impossible. Siri is the only voice path from a widget surface. | Widgets run in a sandboxed process with no `AVAudioSession` recording capability. No iOS 26 exception exists. `AppShortcutsProvider` + `AudioPlaybackIntent` is the documented approach. |
-| Group abstraction top-level entity | `Group` model holds `members: [SpeakerReference]`, `hostSpeaker: SpeakerReference`, `playbackState`, `volume`, `metadata`. UI and voice pipeline bind to `[Group]`. `Speaker` becomes a member type. | A group-of-1 is behaviourally and visually identical to the current single-speaker card. No UI regression for the common single-speaker case. Enables multi-speaker cards in a future design increment (design-spec-group-ui-voxio-1.2.md). |
+| Group abstraction top-level entity | `Group` model holds `members: [SpeakerReference]`, `hostSpeaker: SpeakerReference`, `playbackState`, `volume`, `metadata`. UI and voice pipeline bind to `[Group]`. `Speaker` becomes a member type. Group is a pure model type with no discovery dependency; `SpeakerDiscoveryService` (a loosely coupled service) is responsible for assembling and maintaining Group objects. | A group-of-1 is behaviourally and visually identical to the current single-speaker card. No UI regression for the common single-speaker case. Enables multi-speaker cards in a future design increment (design-spec-group-ui-voxio-1.2.md). |
 | Group identity | `Group.id` is derived from sorted member JIDs/serials (concatenated, SHA-256 prefix optional). Stable across restarts as long as membership is unchanged. | Provides a stable key for the shared container widget state, speaker picker, and analytics. Reconstructed fresh on each launch from `GET /beolink/peers` + BNR sources. |
-| GroupDiscovery — Mozart peers | After mDNS resolves all Mozart speakers, call `GET /beolink/peers` on each. Build a union-find graph: speakers sharing a peer edge are in the same group. The speaker with the active source is designated `hostSpeaker`. | `GET /beolink/peers` is already implemented in `MozartClient.getBeolinkPeers()`. No new REST call required. |
-| GroupDiscovery — BNR speakers | After mDNS resolves each BNR speaker, call `GET /BeoZone/Zone/Sources`. A source with `multiroom: "listener"` indicates group membership as a follower. A source with `multiroom: "host"` or `borrowed: true` indicates the speaker is session host. Group identity is inferred heuristically — see Open Question 16. | BNR has no peers endpoint; session membership is inferred from source metadata. Partial accuracy is accepted (see Error States). |
+| SpeakerDiscoveryService — Mozart peers | After mDNS resolves all Mozart speakers, call `GET /beolink/peers` on each. Build a union-find graph: speakers sharing a peer edge are in the same group. The speaker with the active source is designated `hostSpeaker`. | `GET /beolink/peers` is already implemented in `MozartClient.getBeolinkPeers()`. No new REST call required. |
+| SpeakerDiscoveryService — BNR speakers | After mDNS resolves each BNR speaker, call `GET /BeoZone/Zone/Sources`. A source with `multiroom: "listener"` indicates group membership as a follower. A source with `multiroom: "host"` or `borrowed: true` indicates the speaker is session host. Group identity is inferred heuristically — see Open Question 16. | BNR has no peers endpoint; session membership is inferred from source metadata. Partial accuracy is accepted (see Error States). |
 | Join API — Mozart→Mozart | `beolinkExpand(jid: A.jid)` called on B's `MozartClient`. B pushes its session to A; A follows B's source. B stays host. | Explicit target avoids the ambiguity of `beolinkJoin()` when multiple sessions exist on the network. All Mozart multiroom methods are already present in `MozartClient` (lines 280–306). |
 | Join API — BNR→Any | `POST /BeoZone/Zone/Device/OneWayJoin` called on A's `BNRClient`. A joins whatever Beolink experience is currently active. B must be the active session. | BNR has no `expand` equivalent; broadcast join is the only option. Best-effort when multiple sessions exist. |
 | Join API — Mozart→BNR host | `beolinkJoin()` called on A's `MozartClient`. A joins B's active LAN session. Flagged as best-effort — requires B to be the only active session. | BNR cannot push to Mozart (no expand). Mozart `beolinkJoin()` is the only available path. Open question on reliability. |
 | Leave API — Mozart | `POST /beolink/leave` on the leaving speaker's `MozartClient` (`beolinkLeave()`). | Already implemented. |
 | Leave API — BNR | `DELETE /BeoZone/Zone/ActiveSources/primaryExperience` on the leaving speaker's `BNRClient`. | BNR-specific leave path; encapsulated inside `BNRClient.leave()`. |
+| Unified error type | `SpeakerError` enum in `Core/Errors/` with cases `.timeout`, `.unreachable`, `.httpError(Int)`, `.invalidResponse`. `MozartClient` conformance maps `MozartError` → `SpeakerError`. `BNRClient` throws `SpeakerError` directly. App layer catches `SpeakerError` only. `MozartError` is a Mozart-internal type not visible above the protocol boundary. | Removes the `HomeView.perform()` catch-clause bug (ADR Conflict 3) and provides a single error type for both platforms. |
 | Join confirmation | Join uses the v1.1 auto-execute countdown (3-second countdown, voice cancel) before the API call executes. | Consistent with all other destructive voice commands. A 3-second window is appropriate given that join changes the playback context of two speakers. |
 | Leave confirmation | Leave is immediate — no countdown required. | Leave restores the speaker to standalone playback; it is recoverable. Requiring confirmation for a recovery action would be counterproductive. |
 
@@ -334,7 +336,7 @@ What v1.2 changes:
 > As a user who has previously grouped speakers into a Beolink session using any B&O app or the speaker's own controls, I want Voxio to detect that group automatically when it launches, so that I see the correct group state without having to re-create it.
 
 **Acceptance criteria:**
-- After mDNS discovery completes, `GroupDiscovery` calls `GET /beolink/peers` on each discovered Mozart speaker.
+- After mDNS discovery completes, `SpeakerDiscoveryService` calls `GET /beolink/peers` on each discovered Mozart speaker.
 - Speakers that share a peer edge in the response are placed into the same `Group` object via union-find on the JID graph.
 - For each BNR speaker, `GET /BeoZone/Zone/Sources` is called. A source with `multiroom: "listener"` or `multiroom: "host"` indicates group membership; the speaker is assigned to a group accordingly.
 - A speaker with no peers and no multiroom sources forms a group-of-1.
@@ -387,7 +389,7 @@ What v1.2 changes:
 
 **Acceptance criteria:**
 - The voice command `leaveSpeaker(speaker: SpeakerIdentifier)` is parsed from the utterance.
-- Leave is executed immediately — no countdown confirmation is shown.
+- Leave is executed immediately — no countdown confirmation is shown. After the read-back completes, the leave API call fires immediately. No countdown is shown. The app returns to passive trigger-word state.
 - For a Mozart speaker: `beolinkLeave()` is called on the speaker's `MozartClient` (`POST /beolink/leave`).
 - For a BNR speaker: `DELETE /BeoZone/Zone/ActiveSources/primaryExperience` is called on the speaker's `BNRClient`.
 - On success: the speaker is removed from its `Group` in the app state. If the group had 2 members, the remaining speaker becomes a group-of-1. The UI updates within 3 seconds.
@@ -482,8 +484,8 @@ What v1.2 changes:
 | Leave attempted on speaker not in a group | `leaveSpeaker(speaker:)` is a no-op if the speaker is already a group-of-1. Toast: "[Speaker Name] is not in a group." No API call is made. |
 | BNR join is ambiguous — multiple active Beolink sessions on the network | `POST /BeoZone/Zone/Device/OneWayJoin` is issued on the BNR speaker. If the wrong session is joined, the user sees the BNR speaker following an unexpected source. Toast after join confirms which source is now active. No pre-flight ambiguity check is performed (BNR has no API to enumerate sessions). This is a known limitation — see Open Question 13. |
 | Cross-platform join (Mozart→BNR host) fails because no active LAN session | `beolinkJoin()` called on the Mozart speaker returns an error (no active experience to join). Error toast: "Couldn't join [Speaker A] to [Speaker B]. Make sure [Speaker B] is playing." No group state change. |
-| GroupDiscovery `GET /beolink/peers` times out for one speaker | That speaker is treated as a group-of-1 (partial reconstruction). No error toast — partial group state is logged at INFO. The app state is self-healing: on the next launch or manual refresh, the correct group is reconstructed if the speaker is reachable. |
-| Host speaker goes offline mid-session | The remaining group members' `Speaker` instances continue to operate. `GroupDiscovery` detects the host removal (mDNS withdrawal or failed ping) and promotes the next available member to `hostSpeaker`, or downgrades the group to a group-of-1 if no other member can act as host. Toast: "[Host Speaker Name] went offline. Group disbanded." |
+| SpeakerDiscoveryService `GET /beolink/peers` times out for one speaker | That speaker is treated as a group-of-1 (partial reconstruction). No error toast — partial group state is logged at INFO. The app state is self-healing: on the next launch or manual refresh, the correct group is reconstructed if the speaker is reachable. |
+| Host speaker goes offline mid-session | The remaining group members' `Speaker` instances continue to operate. `SpeakerDiscoveryService` detects the host removal (mDNS withdrawal or failed ping) and promotes the next available member to `hostSpeaker`, or downgrades the group to a group-of-1 if no other member can act as host. Toast: "[Host Speaker Name] went offline. Group disbanded." |
 | Join or leave Siri intent fails because the named speaker is not found | Siri speaks: "I couldn't find a speaker called [Name] in Voxio. Make sure it's on the network." No action taken. |
 
 ---
@@ -543,6 +545,8 @@ Epics and tasks are broken down in the sibling document `epics-and-tasks-voxio-1
 
 16. **BNR session identity without a peers endpoint — heuristic accuracy.** Owner: Engineering. Default assumption: BNR speakers with `multiroom: "listener"` in their source list are in "some" session; group identity is inferred by matching BNR listener speakers with Mozart host speakers on the same network. Question: quantify the false-positive and false-negative rate in practice. If two separate Beolink sessions are active on the same network, the heuristic may incorrectly merge BNR listeners into the wrong group. Accept this as a known limitation, or invest in a more robust heuristic (e.g. comparing the active source name between the BNR listener and the inferred Mozart host)?
 
+17. **`join(peer:)` protocol symmetry** — Owner: Engineering. Default assumption: the asymmetry is kept as-is (Mozart calls expand on the target; BNR calls join on the source) and the dispatcher in T-2757/T-2758 handles the platform-specific call logic above the protocol. Open questions: (a) Should `SpeakerClient` instead expose two methods — `expand(to peer: SpeakerIdentifier) async throws` (Mozart only) and `joinActiveSession() async throws` (BNR only) — with a default no-op implementation for the unsupported platform, making the asymmetry explicit in the protocol surface rather than hidden in the dispatcher? (b) Alternatively, should the asymmetry live entirely above the protocol in a `JoinDispatcher` service that knows both client types and calls the right method on the right client? (c) What is the correct behavior when a `BNRClient.join(peer:)` call cannot determine which active LAN session belongs to the target speaker? The answer to these questions affects T-2701 (protocol surface), T-2757 (Mozart→Mozart dispatch), T-2758 (BNR→Any dispatch), and T-2759 (Mozart→BNR best-effort). Engineering must resolve this before T-2757 begins.
+
 ---
 
 ## Resolved Decisions
@@ -565,7 +569,7 @@ Epics and tasks are broken down in the sibling document `epics-and-tasks-voxio-1
 | `BeoColor.separator` exposure? | Add `static let separator = Color("BeoSeparator")` to `BeoColor.swift`. Non-breaking additive change. Asset already exists in `Assets.xcassets`. |
 | Live Activity for v1.2? | Deferred to v1.3. Out of scope. |
 | Join confirmation strategy | 3-second auto-execute countdown (per E-25 flow). Consistent with all other potentially destructive voice commands. Siri-invoked join skips the countdown (Siri confirmation is implicit). |
-| Leave confirmation strategy | Immediate execution, no countdown. Leave restores standalone playback; it is recoverable with a single join command. A confirmation step on a recovery action would be counterproductive. |
+| Leave confirmation strategy | Leave (voice and tap) is immediate — no countdown. Leave is recoverable by re-issuing the join command. |
 | Join API choice — Mozart→Mozart | `beolinkExpand(jid: source.jid)` called on the target speaker. Deterministic targeting vs. the ambiguity of `beolinkJoin()` when multiple sessions exist. |
 | Join API choice — BNR→Any | `POST /BeoZone/Zone/Device/OneWayJoin` on the source speaker. Only join option available on BNR; broadcast join is accepted as best-effort. |
 | Top-level UI entity | `Group` (1–N speakers). A group-of-1 renders identically to the current speaker card — no UI regression for single-speaker users. |

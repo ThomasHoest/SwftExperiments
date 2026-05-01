@@ -22,7 +22,7 @@ The group card is still a single Liquid Glass surface. It grows vertically to ac
 2. **The card grows, not the list.** When speakers join a group, the existing card expands vertically. There is no transition to a new view or a new card type.
 3. **The session is always clear.** The user can tell at a glance that two speakers are playing together, who the host is, and which member they would be removing by tapping Leave.
 4. **Leave is one tap, not one gesture.** Per-member leave buttons are always visible in the expanded card. There is no swipe-to-reveal. Touch targets are ≥ 44 × 44 pt.
-5. **Join is confirmed, leave is immediate.** Joining another speaker's session is a state change with networking cost and is disruptive if accidental — it requires a 3-second countdown (matching E-25 precedent). Leaving is safe and easily reversible — it fires immediately with a toast confirmation.
+5. **Join is confirmed, leave is immediate.** Joining another speaker's session is a state change with networking cost and is disruptive if accidental — it requires a 3-second countdown (matching E-25 precedent). Leaving is safe and easily reversible — both tap-leave and voice-leave fire immediately with no countdown, and a toast confirmation is shown.
 
 ---
 
@@ -303,7 +303,7 @@ If the join API call fails:
 2. Leave is initiated by tapping a clearly labelled "Leave" button on the specific member's row — it is not a voice command that fires a global action on an ambiguous target. The intent is unambiguous.
 3. Requiring a 3-second countdown on a tap-to-leave action adds friction without safety value. The leave action is reversible by a voice command.
 
-**Exception:** Voice-command leave ("Speaker A leave the group") **does** go through a 1-second countdown — not 3 seconds — because voice commands carry more ambiguity risk than a deliberate button tap. A 1-second countdown is long enough to say "cancel" and short enough to feel responsive.
+**Voice-initiated leave is immediate — no countdown is shown.** The leave API call fires as soon as the voice command is parsed and the read-back completes. The card updates within 3 seconds to reflect the new group state. This matches the functional spec decision: leave is a recoverable action (the speaker can rejoin) and does not require a safety window.
 
 **Voice read-back for voice-command leave:**
 
@@ -311,9 +311,7 @@ If the join API call fails:
 |---|---|
 | "[A] leaving the group" | "[A] forlader gruppen" |
 
-Countdown: 1 second. Cancel grammar: identical to v1.1 ("cancel", "no", "nej", "annuller").
-
-**Flag for product sign-off:** The 1-second voice-leave countdown is a departure from the fixed 3-second countdown introduced in E-25. Engineering must confirm whether `ConfirmationCoordinator.startCountdown(action:)` supports a configurable duration, or whether a new `startShortCountdown(action:)` path is needed. See §7 Issue 3.
+**Note:** Issue 3 (1-second voice-leave countdown requiring `ConfirmationCoordinator` API change) is resolved: voice-leave is immediate. `ConfirmationCoordinator` requires no changes for v1.2.
 
 ---
 
@@ -513,19 +511,9 @@ If the app cannot identify all session members (BNR speaker as listener, peers u
 
 ---
 
-### Issue 3 — 1-Second Voice-Leave Countdown Duration (P2, Engineering Decision)
+### Issue 3 — Voice-Leave Countdown Duration (RESOLVED)
 
-**Description:** This spec introduces a 1-second countdown for voice-initiated leave commands, departing from the fixed 3-second countdown in E-25. The `ConfirmationCoordinator.startCountdown(action:)` introduced in v1.1 has a fixed 3-second duration.
-
-**Impact:** Engineering must support a configurable countdown duration. The API change is `startCountdown(action:, duration: TimeInterval)` with a default of 3 seconds. This is a minimal change but requires a spec amendment to `VoxioSpecification-1.1.md`.
-
-**Alternatives considered:**
-- Use the full 3-second countdown for voice-leave (consistent, no code change). Downside: 3 seconds feels long for a reversible, clearly-intentioned action.
-- Skip the countdown for voice-leave entirely and make it immediate like tap-leave. Downside: inconsistent with v1.1's principle that voice commands always have a cancellation window.
-
-**Recommendation:** 1-second configurable countdown. Flag as a v1.2 amendment to the confirmation coordinator.
-
-**Resolution needed from:** Engineering (API change feasibility), Product (approve 1 vs 3 seconds).
+**Resolution:** Voice-leave is immediate — no countdown. The leave API call fires as soon as the voice command is parsed and the read-back completes. This decision is recorded in the functional spec (VoxioSpecification-1.2.md §Technical Context: "Leave is immediate — no countdown required") and is now applied consistently in this design spec (§4.1). `ConfirmationCoordinator` requires no changes for v1.2. This issue is closed.
 
 ---
 

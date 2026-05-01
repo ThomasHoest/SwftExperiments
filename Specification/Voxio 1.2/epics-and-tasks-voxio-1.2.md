@@ -1,5 +1,5 @@
 # Epics & Tasks: Voxio v1.2
-**Version:** 1.2.2  
+**Version:** 1.2.3  
 **Status:** Draft  
 **Date:** 2026-05-01  
 **References:** VoxioSpecification-1.2.md, epics-and-tasks-voxio-1.1.md (E-20–E-26, T-2001–T-2610), research-findings-voxio-1.2.md, design-spec-widget-voxio-1.2.md, design-spec-group-ui-voxio-1.2.md, api-spec-beonetremote.md, CLAUDE.md  
@@ -28,9 +28,11 @@ This document breaks the Voxio v1.2 functional specification into epics and thei
 
 ## E-27 — Shared Speaker Abstraction + Group Model
 
-Introduce two Swift protocols (`SpeakerClient` and `SpeakerEventSource`) in a new `Core/Protocols/` folder. The protocol surface is designed **after E-28 is complete**, so both the Mozart and BNR concrete implementations are known — ensuring the abstraction covers both platforms without leaking platform-specific constraints. Refactor `Speaker` to hold existential protocol types instead of concrete `MozartClient` and `MozartEvents` references. Add retroactive protocol conformances to `MozartClient` and `MozartEvents`; add conformances to `BNRClient` and `BNREvents`. Define the normalised `SpeakerEvent` enum. Extend `MdnsDiscovery` with a second browser for `_beoremote._tcp` and a client factory. Add `join(peer:)` and `leave()` to `SpeakerClient`. Introduce the `Group` model, `GroupDiscovery`, and refactor the app layer to bind to `[Group]` instead of `[Speaker]`.
+Introduce two Swift protocols (`SpeakerClient` and `SpeakerEventSource`) in a new `Core/Protocols/` folder. The protocol surface is designed **after E-28 is complete**, so both the Mozart and BNR concrete implementations are known — ensuring the abstraction covers both platforms without leaking platform-specific constraints. Refactor `Speaker` to hold existential protocol types instead of concrete `MozartClient` and `MozartEvents` references. Add retroactive protocol conformances to `MozartClient` and `MozartEvents`; add conformances to `BNRClient` and `BNREvents`. Define the normalised `SpeakerEvent` enum. Extend `MdnsDiscovery` with a second browser for `_beoremote._tcp` and a client factory. Add `join(peer:)` and `leave()` to `SpeakerClient`. Introduce the `Group` model, `SpeakerDiscoveryService`, and refactor the app layer to bind to `[Group]` instead of `[Speaker]`.
 
-**The `Group` model is explicitly cross-platform.** A single `Group` may contain any mix of Mozart (`_bangolufsen._tcp`) and BNR (`_beoremote._tcp`) speakers. The app layer, voice pipeline, and widget layer treat all groups identically regardless of member platform. Platform-specific join/leave call logic is encapsulated inside each client's `join(peer:)` and `leave()` implementations — the `Group` and `GroupDiscovery` layers are platform-agnostic.
+`Group` is a pure `@Observable @MainActor` model class — it holds `members: [Speaker]`, `hostSpeaker: Speaker`, and playback state. It has no knowledge of discovery, networking, or how it was assembled. `SpeakerDiscoveryService` is the component responsible for mDNS browsing, peers API calls, union-find graph reconstruction, and publishing `[Group]` to `HomeView`. The two are loosely coupled: `SpeakerDiscoveryService` creates and updates `Group` objects; `Group` never references `SpeakerDiscoveryService`.
+
+**The `Group` model is explicitly cross-platform.** A single `Group` may contain any mix of Mozart (`_bangolufsen._tcp`) and BNR (`_beoremote._tcp`) speakers. The app layer, voice pipeline, and widget layer treat all groups identically regardless of member platform. Platform-specific join/leave call logic is encapsulated inside each client's `join(peer:)` and `leave()` implementations — the `Group` layer is platform-agnostic. `SpeakerDiscoveryService` handles the platform-specific peer graph assembly.
 
 **Depends on:** E-28 — BNRClient and BNREvents must be implemented as standalone concrete types first, so the protocol surface can be designed knowing the full capabilities and constraints of both platforms (e.g. BNR's broadcast-only join, absence of a peers endpoint, 0–9000 volume scale).  
 **Unlocks:** E-29 (intents call `SpeakerClient` methods), E-32 (join/leave commands call `SpeakerClient.join(peer:)` and `.leave()`)
@@ -67,6 +69,10 @@ Introduce two Swift protocols (`SpeakerClient` and `SpeakerEventSource`) in a ne
   enum SpeakerPlatform: String, Codable { case mozart, bnr }
   ```
   `join(peer:)` semantics: for Mozart, calls `beolinkExpand(jid: peer.jid)` on the target client (this client expands TO the peer); for BNR, calls `POST /BeoZone/Zone/Device/OneWayJoin` on this client. `leave()` semantics: for Mozart, calls `beolinkLeave()`; for BNR, sends `DELETE /BeoZone/Zone/ActiveSources/primaryExperience`.
+
+  Add `SpeakerError` to the protocol surface. Define `SpeakerError` as a new enum in `iOS/Voxio/Core/Errors/SpeakerError.swift` with cases: `.timeout`, `.unreachable`, `.httpError(Int)`, `.invalidResponse`. The `SpeakerClient` protocol's async methods throw `SpeakerError`. `MozartError` is retained as an internal Mozart implementation detail but is not exposed across the protocol boundary.
+
+  NOTE: The `join(peer:)` protocol symmetry question (Open Question Q-17 in the functional spec) must be resolved before T-2757/T-2758 begin. T-2701 may define `join(peer:)` as a placeholder; its final signature and semantics are locked by the OQ-17 resolution.
   *No dependencies. Prerequisite for T-2703, T-2704, T-2706, T-2744.*
 
 - [ ] **T-2702** Add `SpeakerEventSource.swift` to `iOS/Voxio/Core/Protocols/` declaring the `SpeakerEventSource` protocol:
@@ -82,8 +88,20 @@ Introduce two Swift protocols (`SpeakerClient` and `SpeakerEventSource`) in a ne
   Document each case with an inline comment indicating the platform event it maps from.
   *No dependencies. Prerequisite for T-2703, T-2704, T-2705, T-2706.*
 
-- [ ] **T-2703** Add retroactive `SpeakerClient` conformance to `MozartClient` in a new extension file `iOS/Voxio/Core/Networking/MozartClient+SpeakerClient.swift`. Each protocol method maps to the existing `MozartClient` method with the same semantics. `getVolume()` returns the current volume as a 0–100 integer (Mozart volume is already 0–100). `getName()` calls the existing `getBeolinkSelf()` or equivalent and returns the speaker's friendly name. `getBattery()` calls `getBattery()`. No logic changes to `MozartClient.swift` itself.
-  *Depends on: T-2701, T-2702.*
+- [ ] **T-2766** Create `iOS/Voxio/Core/Errors/SpeakerError.swift` with:
+  ```swift
+  enum SpeakerError: Error {
+      case timeout
+      case unreachable
+      case httpError(Int)
+      case invalidResponse
+  }
+  ```
+  Add a static helper `SpeakerError.from(_ mozartError: MozartError) -> SpeakerError` that maps: `.timeout` → `.timeout`, `.unreachable` → `.unreachable`, `.httpError(let code)` → `.httpError(code)`, `.invalidResponse` → `.invalidResponse`. This helper is used by the Mozart conformance extensions in T-2703/T-2704.
+  *Depends on: T-2701.*
+
+- [ ] **T-2703** Add retroactive `SpeakerClient` conformance to `MozartClient` in a new extension file `iOS/Voxio/Core/Networking/MozartClient+SpeakerClient.swift`. Each protocol method maps to the existing `MozartClient` method with the same semantics. `getVolume()` returns the current volume as a 0–100 integer (Mozart volume is already 0–100). `getName()` calls the existing `getBeolinkSelf()` or equivalent and returns the speaker's friendly name. `getBattery()` calls `getBattery()`. No logic changes to `MozartClient.swift` itself. The `MozartClient` conformance extension wraps all `MozartError` throws with `SpeakerError.from(error)` so that the protocol surface always throws `SpeakerError`. The `do { try await client.method() } catch let e as MozartError { throw SpeakerError.from(e) }` pattern is applied in each forwarding method.
+  *Depends on: T-2701, T-2702, T-2766.*
 
 - [ ] **T-2704** Add retroactive `SpeakerEventSource` conformance to `MozartEvents` in a new extension file `iOS/Voxio/Core/Networking/MozartEvents+SpeakerEventSource.swift`. `events()` returns an `AsyncStream<SpeakerEvent>` that wraps the existing `MozartEvents` WebSocket event stream, translating each `BeoEvent` case into the corresponding `SpeakerEvent` case. The translation table:
   - `BeoEvent.playbackState(let s)` → `.playbackState(…)` — map Mozart state string to `SpeakerPlaybackState` (note: Mozart `"started"` == `"playing"`)
@@ -96,7 +114,7 @@ Introduce two Swift protocols (`SpeakerClient` and `SpeakerEventSource`) in a ne
 
 ### Speaker refactor
 
-- [ ] **T-2705** Refactor `Speaker.swift` to hold `let client: any SpeakerClient` and `let eventSource: any SpeakerEventSource` instead of `let client: MozartClient` and `let events: MozartEvents`. Add a new designated initialiser: `init(host: String, client: any SpeakerClient, eventSource: any SpeakerEventSource)`. The existing `init(host:)` convenience initialiser (if present) is replaced by factory usage in `MdnsDiscovery` (T-2708). All call sites of `client.play()`, `client.setVolume()`, etc. remain syntactically unchanged — they now resolve against the protocol surface rather than the concrete type. Replace all `events.onEvent` callback-based consumption with `for await event in eventSource.events()` task loop, yielding `SpeakerEvent` values to the existing handler logic (renamed from `handleBeoEvent(_:)` to `handleEvent(_:)`). `handleEvent` maps each `SpeakerEvent` case to the same `@Published` / `@Observable` property mutations as the existing handler. No behavioural change to the `Speaker` observable state machine.
+- [ ] **T-2705** Refactor `Speaker.swift` to hold `let client: any SpeakerClient` and `let eventSource: any SpeakerEventSource` instead of `let client: MozartClient` and `let events: MozartEvents`. Add a new designated initialiser: `init(host: String, client: any SpeakerClient, eventSource: any SpeakerEventSource)`. The existing `init(host:)` convenience initialiser (if present) is replaced by factory usage in `MdnsDiscovery` (T-2708). All call sites of `client.play()`, `client.setVolume()`, etc. remain syntactically unchanged — they now resolve against the protocol surface rather than the concrete type. Replace all `events.onEvent` callback-based consumption with `for await event in eventSource.events()` task loop, yielding `SpeakerEvent` values to the existing handler logic (renamed from `handleBeoEvent(_:)` to `handleEvent(_:)`). `handleEvent` maps each `SpeakerEvent` case to the same `@Published` / `@Observable` property mutations as the existing handler. No behavioural change to the `Speaker` observable state machine. Update `HomeView.perform()` and all other `catch let error as MozartError` clauses in `iOS/Voxio/Features/` to `catch let error as SpeakerError`. Map `.timeout` → `AppError.apiTimeout`, all others → `AppError.speakerUnreachable`. Audit: grep `iOS/Voxio/Features/` for `MozartError` and confirm zero remaining references after this task.
   *Depends on: T-2703, T-2704.*
 
 - [ ] **T-2706** Verify that `ContentView.swift`, `SpeakerCardView.swift`, and all views in `iOS/Voxio/Features/` have zero direct references to `MozartClient`, `MozartEvents`, `BNRClient`, or `BNREvents` after T-2705 lands. Add a lint rule (a `grep`-based CI check or a SwiftLint custom rule) that fails the build if any of these four type names appear in `iOS/Voxio/Features/` or in `iOS/Voxio/Core/` outside of `Core/Networking/` and `Core/Protocols/`. Document the check in `iOS/.swiftlint.yml` or equivalent.
@@ -141,11 +159,13 @@ Introduce two Swift protocols (`SpeakerClient` and `SpeakerEventSource`) in a ne
   A static factory `Group.single(_ speaker: Speaker) -> Group` creates a group-of-1 for newly discovered standalone speakers.
   *Depends on: T-2701, T-2705.*
 
-- [ ] **T-2745** Create `iOS/Voxio/Core/Discovery/GroupDiscovery.swift`. `GroupDiscovery` is an `@Observable @MainActor` class that owns `var groups: [Group]` — the source of truth for the entire app. It replaces the `[Speaker]` array that `MdnsDiscovery` currently publishes to the UI.
+- [ ] **T-2745** Create `iOS/Voxio/Core/Discovery/SpeakerDiscoveryService.swift`. `SpeakerDiscoveryService` is the service responsible for: (a) wrapping `MdnsDiscovery` browsing for both `_bangolufsen._tcp` and `_beoremote._tcp` service types; (b) calling `getBeolinkPeers()` on Mozart speakers after a settle window; (c) running union-find on the peer graph to assemble `Group` objects; (d) publishing `@Published var groups: [Group]` to the app layer; (e) exposing `func resolve(speakerName: String) -> Speaker?` for voice command dispatch (migrated from `SpeakerRegistry.resolve(words:)`). The service does NOT own `Group` business logic — it only creates and mutates `Group.members` from the outside. `Group` is a pure model type and never references `SpeakerDiscoveryService`.
+
+  `SpeakerDiscoveryService` is an `@Observable @MainActor` class that owns `var groups: [Group]` — the source of truth for the entire app. It replaces the `[Speaker]` array that `MdnsDiscovery` currently publishes to the UI.
 
   Startup reconstruction algorithm:
-  1. `MdnsDiscovery` discovers speakers and calls `GroupDiscovery.speakerDiscovered(_ speaker: Speaker)`.
-  2. After a configurable settle window (500 ms default — waiting for all mDNS announcements), `GroupDiscovery` calls `reconstructGroups()`.
+  1. `MdnsDiscovery` discovers speakers and calls `SpeakerDiscoveryService.speakerDiscovered(_ speaker: Speaker)`.
+  2. After a configurable settle window (500 ms default — waiting for all mDNS announcements), `SpeakerDiscoveryService` calls `reconstructGroups()`.
   3. `reconstructGroups()`:
      a. For each Mozart speaker: call `speaker.client.getBeolinkPeers()` (or expose `getPeers()` as a separate `SpeakerClient` method — see note). Collect `(speaker, [BeolinkPeer])` tuples.
      b. Run union-find: for each peer edge `(speakerA, jidB)`, find `speakerB` in the discovered set by matching `identifier.jid`. Union A and B into the same group.
@@ -164,10 +184,13 @@ Introduce two Swift protocols (`SpeakerClient` and `SpeakerEventSource`) in a ne
 - [ ] **T-2746** Add `func getPeers() async throws -> [BeolinkPeer]` to the `SpeakerClient` protocol in `SpeakerClient.swift`. Provide a default implementation that returns `[]` (suitable for BNR speakers). Add the retroactive conformance mapping to `MozartClient+SpeakerClient.swift` (from T-2703): `getPeers()` calls `getBeolinkPeers()` on `MozartClient`. `BNRClient` uses the default `[]` implementation.
   *Depends on: T-2701, T-2703.*
 
-- [ ] **T-2747** Refactor `HomeView` / speaker list binding to use `[Group]` from `GroupDiscovery` instead of `[Speaker]` from `MdnsDiscovery`. `ContentView` and the speaker list observe `GroupDiscovery.shared.groups`. `SpeakerCardView` accepts a `Group` and renders: (a) if `group.members.count == 1`, renders identically to the current single-speaker card — no layout change; (b) if `group.members.count > 1`, renders the expanded group card layout defined in `design-spec-group-ui-voxio-1.2.md`. All voice command dispatch logic (`dispatchTarget`) is updated to resolve speaker names against `GroupDiscovery.shared.groups.flatMap(\.members)`.
+- [ ] **T-2747** Refactor `HomeView` to replace `@StateObject var registry = SpeakerRegistry()` with `@StateObject var discovery = SpeakerDiscoveryService()` and bind to `discovery.groups: [Group]`. `ContentView` and the speaker list observe `SpeakerDiscoveryService.shared.groups`. `SpeakerCardView` accepts a `Group` and renders: (a) if `group.members.count == 1`, renders identically to the current single-speaker card — no layout change; (b) if `group.members.count > 1`, renders the expanded group card layout defined in `design-spec-group-ui-voxio-1.2.md`. All voice command dispatch logic (`dispatchTarget`) is updated to resolve speaker names against `SpeakerDiscoveryService.shared.groups.flatMap(\.members)`. `SpeakerRegistry` is deprecated and its responsibilities migrated: favorites → to `FavoritesService` (already exists as `FavoritesService.swift`), speaker resolution → to `SpeakerDiscoveryService.resolve(speakerName:)`.
   *Depends on: T-2744, T-2745.*
 
-- [ ] **T-2748** Unit tests for `Group` and `GroupDiscovery` in `iOS/VoxioTests/GroupTests.swift`. Use `MockSpeakerClient` (from T-2709) configured with peer responses. Tests cover: (a) two Mozart speakers with mutual peer edges form a single group of 2; (b) three speakers — two sharing a peer, one isolated — form one group-of-2 and one group-of-1; (c) BNR speaker with `multiroom: "listener"` is placed in a group; (d) BNR speaker with no multiroom source forms a group-of-1; (e) removing a non-host speaker from a group leaves the host as group-of-1; (f) removing the host speaker promotes the next member; (g) `Group.id` is stable for the same member set across re-computation.
+- [ ] **T-2765** Deprecate and remove `SpeakerRegistry`. Migrate `registry.favorites` to `FavoritesService`. Migrate `registry.resolve(words:)` to `SpeakerDiscoveryService.resolve(speakerName:)`. Confirm `HomeView` no longer references `SpeakerRegistry`. Mark `SpeakerRegistry` as `@available(*, deprecated)` in this task and delete it in a follow-up (out of scope for v1.2 unless time permits).
+  *Depends on: T-2747.*
+
+- [ ] **T-2748** Unit tests for `Group` and `SpeakerDiscoveryService` in `iOS/VoxioTests/GroupTests.swift`. Use `MockSpeakerClient` (from T-2709) configured with peer responses. Tests cover: (a) two Mozart speakers with mutual peer edges form a single group of 2; (b) three speakers — two sharing a peer, one isolated — form one group-of-2 and one group-of-1; (c) BNR speaker with `multiroom: "listener"` is placed in a group; (d) BNR speaker with no multiroom source forms a group-of-1; (e) removing a non-host speaker from a group leaves the host as group-of-1; (f) removing the host speaker promotes the next member; (g) `Group.id` is stable for the same member set across re-computation.
   *Depends on: T-2745, T-2746.*
 
 ---
@@ -182,7 +205,7 @@ Implement `BNRClient: SpeakerClient` and `BNREvents: SpeakerEventSource` for the
 
 ### BNRClient
 
-- [ ] **T-2711** Create `iOS/Voxio/Core/Networking/BNRClient.swift`. Implement as a **standalone concrete class** with no protocol dependency — protocol conformance (`SpeakerClient`) is added retroactively in E-27 (T-2703-style) once the protocol surface is finalised. Properties: `host: String`, `port: Int` (default 8080), a `URLSession` with 5-second timeout matching `MozartClient`'s pattern. Base URL: `http://{host}:{port}`. All requests use `Content-Type: application/json`. All `URLError.timedOut` errors map to `MozartError.timeout` (or `SpeakerError.timeout` if a unified error type is introduced). Connection errors map to `SpeakerError.unreachable`. Non-2xx responses other than 501 map to `SpeakerError.httpError(statusCode)`. HTTP 501 on write operations: log at INFO, do not throw.
+- [ ] **T-2711** Create `iOS/Voxio/Core/Networking/BNRClient.swift`. Implement as a **standalone concrete class** with no protocol dependency — protocol conformance (`SpeakerClient`) is added retroactively in E-27 (T-2703-style) once the protocol surface is finalised. Properties: `host: String`, `port: Int` (default 8080), a `URLSession` with 5-second timeout matching `MozartClient`'s pattern. Base URL: `http://{host}:{port}`. All requests use `Content-Type: application/json`. `BNRClient` throws `SpeakerError` directly — not `MozartError`. Map `URLError.timedOut` → `SpeakerError.timeout`, connection errors → `SpeakerError.unreachable`, non-2xx (not 501) → `SpeakerError.httpError(statusCode)`, decode failures → `SpeakerError.invalidResponse`. HTTP 501 on write operations: log at INFO, do not throw.
   *Depends on: none.*
 
 - [ ] **T-2712** Implement volume read/write in `BNRClient`. On initialisation (or first `getVolume()` call), fetch `GET /BeoZone/Zone/Sound/Volume/Speaker` and store `range.maximum`. Subsequent writes use `level = percentage * storedMaximum / 100` rounded to nearest integer. `getVolume()` returns `speaker.level * 100 / storedMaximum` rounded. `setVolume(_ level: Int)` sends `PUT /BeoZone/Zone/Sound/Volume/Speaker/Level` with `{ "level": level * maximum / 100 }`. `mute(_ muted: Bool)` sends `PUT /BeoZone/Zone/Sound/Volume/Speaker/Muted` with `{ "muted": muted }`. If `range.maximum` has not been fetched yet, fetch it synchronously before proceeding with the write.
@@ -258,7 +281,7 @@ Declare `AudioPlaybackIntent`-conforming intents for play/pause toggle, volume a
   - `PlaybackToggleIntent` — toggles play/pause on the active speaker. `title: LocalizedStringResource = "Play/Pause Voxio"`. `perform()` reads the active speaker from `SpeakerStore.shared` (or the App Groups shared container) and calls `speaker.client.play()` if paused or `speaker.client.pause()` if playing.
   - `AdjustVolumeIntent` — adjusts volume by a fixed delta. Parameter: `delta: Int` (positive = up, negative = down; default magnitudes ±10). `title: LocalizedStringResource = "Adjust Volume in Voxio"`. `perform()` calls `speaker.client.getVolume()` then `speaker.client.setVolume(clamped)`.
   - `MuteIntent` — toggles mute state. `title: LocalizedStringResource = "Mute Voxio"`. `perform()` reads current mute state from shared container and calls `speaker.client.mute(!currentMuted)`.
-  - `JoinSpeakerIntent` — joins speaker A to speaker B's session. Parameters: `source: SpeakerEntity` (the speaker that will follow), `target: SpeakerEntity` (the speaker whose source is played). `title: LocalizedStringResource = "Join Speakers in Voxio"`. `perform()` resolves both speakers from `GroupDiscovery`, then calls `target.client.join(peer: source.identifier)` for Mozart→Mozart (expand call on the target), or `source.client.join(peer: target.identifier)` for BNR→Any (OneWayJoin on the source). See E-32 T-2758 for platform dispatch logic. Returns a confirmation dialog on success: "Joined [Source] to [Target]." (en) / "Tilsluttede [Kilde] til [Mål]." (da).
+  - `JoinSpeakerIntent` — joins speaker A to speaker B's session. Parameters: `source: SpeakerEntity` (the speaker that will follow), `target: SpeakerEntity` (the speaker whose source is played). `title: LocalizedStringResource = "Join Speakers in Voxio"`. `perform()` resolves both speakers from `SpeakerDiscoveryService`, then calls `target.client.join(peer: source.identifier)` for Mozart→Mozart (expand call on the target), or `source.client.join(peer: target.identifier)` for BNR→Any (OneWayJoin on the source). See E-32 T-2758 for platform dispatch logic. Returns a confirmation dialog on success: "Joined [Source] to [Target]." (en) / "Tilsluttede [Kilde] til [Mål]." (da).
   - `LeaveSpeakerIntent` — causes a speaker to leave its group. Parameter: `speaker: SpeakerEntity`. `title: LocalizedStringResource = "Leave Group in Voxio"`. `perform()` calls `speaker.client.leave()`. Returns confirmation: "[Speaker] is now playing alone." (en) / "[Højttaler] spiller nu alene." (da). If speaker is not in a group, returns error dialog: "[Speaker] is not in a group." (en).
   Add the file to both the main app target and the widget extension target's file membership (the widget extension target is created in E-30; add membership after E-30's T-2729).
   *Depends on: T-2701, T-2744.*
@@ -277,7 +300,7 @@ Declare `AudioPlaybackIntent`-conforming intents for play/pause toggle, volume a
 - [ ] **T-2725** Add a `SpeakerStore` singleton (or App Groups `UserDefaults`-backed accessor) that `AudioPlaybackIntent.perform()` uses to find the active speaker's client. `SpeakerStore.shared.activeSpeaker` returns the currently active `Speaker` (or the configured speaker for a specific widget configuration). This store is populated by `MdnsDiscovery` as speakers are found and initialised, and updated when the user switches active speakers. It is backed by in-memory state for the main app process; widget intents access speaker state via the shared container (E-30 T-2731).
   *Depends on: T-2723.*
 
-- [ ] **T-2726** Add error responses for Siri intent failures. When `perform()` throws a `SpeakerError.timeout` or `.unreachable`, the intent constructs an `IntentResultDialog` with the string: "I couldn't reach [Speaker Name]. Make sure Voxio is running and the speaker is on the network." (en) / "Jeg kunne ikke nå [Højttalernavn]. Sørg for, at Voxio kører og højttaleren er på netværket." (da). When `perform()` cannot reach the app process (app not running), the dialog is: "To control your speaker, open Voxio first." (en) / "Åbn Voxio for at styre din højttaler." (da). For join/leave intents, when the named speaker is not found in `GroupDiscovery`: "I couldn't find a speaker called [Name] in Voxio. Make sure it's on the network." (en) / "Jeg kunne ikke finde en højttaler ved navn [Navn] i Voxio. Sørg for, at den er på netværket." (da). All strings flow through `LanguageService` / `String(localized:)`.
+- [ ] **T-2726** Add error responses for Siri intent failures. When `perform()` throws a `SpeakerError.timeout` or `.unreachable`, the intent constructs an `IntentResultDialog` with the string: "I couldn't reach [Speaker Name]. Make sure Voxio is running and the speaker is on the network." (en) / "Jeg kunne ikke nå [Højttalernavn]. Sørg for, at Voxio kører og højttaleren er på netværket." (da). When `perform()` cannot reach the app process (app not running), the dialog is: "To control your speaker, open Voxio first." (en) / "Åbn Voxio for at styre din højttaler." (da). For join/leave intents, when the named speaker is not found in `SpeakerDiscoveryService`: "I couldn't find a speaker called [Name] in Voxio. Make sure it's on the network." (en) / "Jeg kunne ikke finde en højttaler ved navn [Navn] i Voxio. Sørg for, at den er på netværket." (da). All strings flow through `LanguageService` / `String(localized:)`.
   *Depends on: T-2724.*
 
 - [ ] **T-2727** Verify App Intents declarations compile and appear in Shortcuts app. On a device, confirm "Voxio" appears in the Shortcuts app shortcut list with all seven phrase variants (existing five + join + leave). Confirm Siri can invoke "Pause Voxio" from a voice invocation (app running in background). Confirm "Sæt Voxio på pause" works in a da-DK locale. Confirm "Join speakers in Voxio" appears in the Shortcuts list. Document the test device, iOS version, and result in the PR description.
@@ -328,10 +351,7 @@ Create the WidgetKit extension with `systemSmall` and `systemMedium` widget size
         static let iconOnlySize: CGFloat = 36
     }
     ```
-  - In `BeoColor.swift`, add:
-    ```swift
-    static let separator = Color("BeoSeparator")
-    ```
+  Note: `BeoColor.separator` is already declared in `BeoColor.swift` (line 11: `static let separator = Color("BeoSeparator")`). Do NOT re-add it — this would cause a duplicate declaration compile error. T-2730 only adds widget-specific tokens (`BeoType.widgetSpeakerName`, `BeoType.widgetTrack`, `BeoType.widgetCaption`, `WidgetButtonToken` namespace) that are not already present.
   Inline comment on each `BeoType.widget*` token: "Widget extension only — not used in the main app target." Inline comment on `WidgetButtonToken`: "Widget canvas-sized button padding — do not use in main app. See DarkGlassButtonTokens for main app values."
   Confirm that the existing `BeoSeparator` asset is present in `Assets.xcassets`. If absent, add it with a light/dark adaptive colour matching its use in `SpeakerCardView`'s divider.
   *Depends on: T-2729.*
@@ -458,9 +478,9 @@ Build the Control Widget (`ControlWidgetButton` for play/pause and `ControlWidge
 
 ## E-32 — Speaker Join / Leave
 
-Implement the voice command pipeline for `joinSpeaker(source:target:)` and `leaveSpeaker(speaker:)`. Extend the three-tier NLP parser with all join and leave variant phrases in English and Danish. Wire the parsed commands through the auto-execute countdown (join only) to the appropriate `SpeakerClient.join(peer:)` and `.leave()` calls. Update `GroupDiscovery` to reflect the resulting group state change. Add `JoinSpeakerIntent` and `LeaveSpeakerIntent` as Siri-invocable intents (declared in E-29 T-2723; the NLP parser and confirmation wiring are in this epic).
+Implement the voice command pipeline for `joinSpeaker(source:target:)` and `leaveSpeaker(speaker:)`. Extend the three-tier NLP parser with all join and leave variant phrases in English and Danish. Wire the parsed commands through the auto-execute countdown (join only) to the appropriate `SpeakerClient.join(peer:)` and `.leave()` calls. Update `SpeakerDiscoveryService` to reflect the resulting group state change. Add `JoinSpeakerIntent` and `LeaveSpeakerIntent` as Siri-invocable intents (declared in E-29 T-2723; the NLP parser and confirmation wiring are in this epic).
 
-**Depends on:** E-27 (Group model, `SpeakerClient.join(peer:)` and `.leave()` from T-2701, `GroupDiscovery` from T-2745), E-28 (BNRClient `join` and `leave` implementations), E-29 (`JoinSpeakerIntent` and `LeaveSpeakerIntent` declared in T-2723)  
+**Depends on:** E-27 (Group model, `SpeakerClient.join(peer:)` and `.leave()` from T-2701, `SpeakerDiscoveryService` from T-2745), E-28 (BNRClient `join` and `leave` implementations), E-29 (`JoinSpeakerIntent` and `LeaveSpeakerIntent` declared in T-2723)  
 **User Stories:** US-42, US-43, US-44, US-45, US-48
 
 ---
@@ -488,7 +508,7 @@ Implement the voice command pipeline for `joinSpeaker(source:target:)` and `leav
   - `synkroniser med`
   - `følg`
 
-  Pattern structure: `[source speaker name] <join phrase> [target speaker name]`. Speaker name resolution uses the existing `dispatchTarget` mechanism against `GroupDiscovery.shared.groups.flatMap(\.members)`.
+  Pattern structure: `[source speaker name] <join phrase> [target speaker name]`. Speaker name resolution uses the existing `dispatchTarget` mechanism against `SpeakerDiscoveryService.shared.groups.flatMap(\.members)`.
   *Depends on: T-2749, T-2747.*
 
 - [ ] **T-2751** Implement Tier-1 regex/keyword detection for leave phrases in the NLP parser. Patterns to match:
@@ -519,7 +539,7 @@ Implement the voice command pipeline for `joinSpeaker(source:target:)` and `leav
   The user can cancel by saying "cancel" or tapping the orb (per E-25 behaviour). After the countdown, dispatch the join API call (T-2758). The `JoinSpeakerIntent` path (Siri) bypasses this countdown.
   *Depends on: T-2749, T-2750.*
 
-- [ ] **T-2754** Wire `leaveSpeaker` to execute immediately with no countdown. When `leaveSpeaker(speaker:)` is parsed, dispatch the leave API call (T-2759) immediately. No confirmation orb countdown is shown. A brief haptic feedback (success/failure) is the only acknowledgement.
+- [ ] **T-2754** Wire `leaveSpeaker` intent to immediate execution. After the TTS read-back of "Removing [Speaker] from the group" completes, call `speaker.client.leave()` directly — no `ConfirmationCoordinator.startCountdown` call. On success, call `SpeakerDiscoveryService.shared.removeMember(speaker)` to update the group state. `ConfirmationCoordinator` is NOT invoked for leave commands.
   *Depends on: T-2749, T-2751.*
 
 ### Join API dispatch
@@ -532,12 +552,12 @@ Implement the voice command pipeline for `joinSpeaker(source:target:)` and `leav
 
 - [ ] **T-2757** Implement join API dispatch for Mozart→Mozart. Call `target.client.join(peer: source.identifier)` which maps to `beolinkExpand(jid: source.identifier.jid!)` on the `MozartClient+SpeakerClient` conformance extension (update T-2703 to add the `join(peer:)` mapping — `join(peer:)` on a Mozart client sends `POST /beolink/expand/{jid}` where jid is `peer.jid`).
 
-  On success: call `GroupDiscovery.shared.mergeIntoGroup(source: source, target: target)` to update the app's group state. The UI updates as `groups` changes.
+  On success: call `SpeakerDiscoveryService.shared.mergeIntoGroup(source: source, target: target)` to update the app's group state. The UI updates as `groups` changes.
   On failure (`SpeakerError.timeout` or `.unreachable`): show toast: "Couldn't join [Source] to [Target]. Check the speaker is reachable." (en). Do not modify group state.
-  *Depends on: T-2703, T-2744, T-2745, T-2755.*
+  *Depends on: T-2703, T-2744, T-2745, T-2755. Also depends on: OQ-17 resolution (join(peer:) protocol symmetry) — T-2757 must not begin until Open Question Q-17 in the functional spec is resolved.*
 
-- [ ] **T-2758** Implement join API dispatch for BNR→Any. Call `source.client.join(peer: target.identifier)` which maps to `POST /BeoZone/Zone/Device/OneWayJoin` on the `BNRClient` (implement `join(peer:)` in `BNRClient` — the `peer` argument is available for logging but BNR join is broadcast-only). On success: update group state via `GroupDiscovery.shared.mergeIntoGroup(source: source, target: target)`. On failure: toast as per T-2757.
-  *Depends on: T-2711, T-2744, T-2745, T-2755.*
+- [ ] **T-2758** Implement join API dispatch for BNR→Any. Call `source.client.join(peer: target.identifier)` which maps to `POST /BeoZone/Zone/Device/OneWayJoin` on the `BNRClient` (implement `join(peer:)` in `BNRClient` — the `peer` argument is available for logging but BNR join is broadcast-only). On success: update group state via `SpeakerDiscoveryService.shared.mergeIntoGroup(source: source, target: target)`. On failure: toast as per T-2757.
+  *Depends on: T-2711, T-2744, T-2745, T-2755. Also depends on: OQ-17 resolution (join(peer:) protocol symmetry) — T-2758 must not begin until Open Question Q-17 in the functional spec is resolved.*
 
 - [ ] **T-2759** Implement join API dispatch for Mozart→BNR host (best-effort path). Call `source.client.join(peer: target.identifier)` — for Mozart client, when `peer.platform == .bnr`, call `beolinkJoin()` (no jid argument) on the Mozart client. Log at INFO: `[JoinDispatch] Mozart→BNR join: calling beolinkJoin() on \(source.identifier.host). This is best-effort.` On success: update group state. On failure or when no active session is detected: toast: "Couldn't join [Source] to [Target]. Make sure [Target] is playing." (en). Flag this task's PR with a comment referencing Open Question 13 for post-ship evaluation.
   *Depends on: T-2703, T-2744, T-2745, T-2755.*
@@ -546,13 +566,13 @@ Implement the voice command pipeline for `joinSpeaker(source:target:)` and `leav
 
 - [ ] **T-2760** Implement leave API dispatch. For a Mozart speaker: call `speaker.client.leave()` which maps to `beolinkLeave()` on `MozartClient+SpeakerClient` (add the mapping in the conformance extension from T-2703: `leave()` → `beolinkLeave()`). For a BNR speaker: `leave()` maps to `DELETE /BeoZone/Zone/ActiveSources/primaryExperience` (implement in `BNRClient`).
 
-  On success: call `GroupDiscovery.shared.removeMember(speaker)`. If the group had 2 members, the remaining speaker becomes a group-of-1.
+  On success: call `SpeakerDiscoveryService.shared.removeMember(speaker)`. If the group had 2 members, the remaining speaker becomes a group-of-1.
   On failure: toast: "Couldn't leave the group. Check the speaker is reachable." (en) / "Kunne ikke forlade gruppen. Tjek, at højttaleren er tilgængelig." (da).
   *Depends on: T-2703, T-2711, T-2744, T-2745, T-2756.*
 
-### GroupDiscovery state mutations
+### SpeakerDiscoveryService state mutations
 
-- [ ] **T-2761** Add `mergeIntoGroup(source: Speaker, target: Speaker)` and `removeMember(_ speaker: Speaker)` methods to `GroupDiscovery`. `mergeIntoGroup` places source and target into the same `Group`, recomputing `Group.id` from the new member set and designating `target` as `hostSpeaker`. `removeMember` removes the speaker from its group; if the group becomes empty it is removed; if only one member remains it becomes the host. Both methods run on `@MainActor` and update `self.groups` atomically, triggering UI updates via `@Observable`.
+- [ ] **T-2761** Add `mergeIntoGroup(source: Speaker, target: Speaker)` and `removeMember(_ speaker: Speaker)` methods to `SpeakerDiscoveryService`. `mergeIntoGroup` places source and target into the same `Group`, recomputing `Group.id` from the new member set and designating `target` as `hostSpeaker`. `removeMember` removes the speaker from its group; if the group becomes empty it is removed; if only one member remains it becomes the host. Both methods run on `@MainActor` and update `self.groups` atomically, triggering UI updates via `@Observable`.
   *Depends on: T-2744, T-2745.*
 
 ### Verification
@@ -560,7 +580,7 @@ Implement the voice command pipeline for `joinSpeaker(source:target:)` and `leav
 - [ ] **T-2762** Unit tests for join/leave voice parsing in `iOS/VoxioTests/JoinLeaveParserTests.swift`. Tests cover: (a) each of the 8 English join phrases correctly produces `joinSpeaker(source:target:)` with correct speaker resolution; (b) each of the 4 Danish join phrases correctly produces `joinSpeaker`; (c) each of the 5 English leave phrases correctly produces `leaveSpeaker(speaker:)`; (d) each of the 3 Danish leave phrases produces `leaveSpeaker`; (e) an utterance with an unknown speaker name produces a `.speakerNotFound` error, not a crash; (f) join on already-grouped speakers produces an early-exit (no API call in the mock).
   *Depends on: T-2750, T-2751, T-2752, T-2755, T-2756.*
 
-- [ ] **T-2763** Unit tests for join/leave API dispatch in `iOS/VoxioTests/JoinLeaveDispatchTests.swift`. Use `MockSpeakerClient`. Tests cover: (a) Mozart→Mozart join calls `expand` on the target and not on the source; (b) BNR→Any join calls `OneWayJoin` on the source; (c) Mozart→BNR join calls `beolinkJoin()` on the source; (d) leave calls `beolinkLeave()` for Mozart; (e) leave calls `DELETE /BeoZone/Zone/ActiveSources/primaryExperience` for BNR; (f) join failure does not modify `GroupDiscovery.groups`; (g) leave failure does not modify `GroupDiscovery.groups`; (h) successful join updates `GroupDiscovery.groups` to reflect the merged group.
+- [ ] **T-2763** Unit tests for join/leave API dispatch in `iOS/VoxioTests/JoinLeaveDispatchTests.swift`. Use `MockSpeakerClient`. Tests cover: (a) Mozart→Mozart join calls `expand` on the target and not on the source; (b) BNR→Any join calls `OneWayJoin` on the source; (c) Mozart→BNR join calls `beolinkJoin()` on the source; (d) leave calls `beolinkLeave()` for Mozart; (e) leave calls `DELETE /BeoZone/Zone/ActiveSources/primaryExperience` for BNR; (f) join failure does not modify `SpeakerDiscoveryService.groups`; (g) leave failure does not modify `SpeakerDiscoveryService.groups`; (h) successful join updates `SpeakerDiscoveryService.groups` to reflect the merged group.
   *Depends on: T-2757, T-2758, T-2759, T-2760, T-2761.*
 
 - [ ] **T-2764** Manual integration test on physical speakers: two Mozart speakers (or one Mozart + one BNR) on the same local network. Verify: (a) "Voxio, [Mozart A] join [Mozart B]" causes A to follow B's source within 5 seconds (countdown + API round-trip); (b) "Voxio, [Speaker A] leave the group" causes A to return to standalone within 3 seconds; (c) re-joining after leaving works correctly; (d) all 8 English join phrase variants produce a successful join; (e) "spil med" Danish variant works in da-DK locale; (f) join on already-grouped speakers shows the "already playing with" toast. Document device models, firmware versions, and any deviations.
@@ -580,7 +600,7 @@ Implement the voice command pipeline for `joinSpeaker(source:target:)` and `leav
 
 4. **E-28 init wiring and verification** — T-2719 (BNR init wiring into discovery factory) after T-2707/T-2708 (dual discovery). T-2720, T-2721 (unit tests) after conformances exist. T-2722 (physical device test) after T-2719.
 
-5. **E-27 Group model and GroupDiscovery** — T-2744 depends on T-2701 and T-2705; T-2745 depends on T-2744 and T-2707/T-2708; T-2746 depends on T-2701/T-2703; T-2747 (HomeView refactor) depends on T-2744/T-2745. T-2748 (tests) after T-2745/T-2746.
+5. **E-27 Group model and SpeakerDiscoveryService** — T-2744 depends on T-2701 and T-2705; T-2745 depends on T-2744 and T-2707/T-2708; T-2746 depends on T-2701/T-2703; T-2747 (HomeView refactor) depends on T-2744/T-2745. T-2748 (tests) after T-2745/T-2746.
    - Sub-order: T-2744 → T-2745, T-2746 in parallel → T-2747 → T-2748.
 
 6. **E-29 App Intents — after T-2701 (SpeakerClient) exists** — T-2723 depends on T-2701 and can begin once the protocol is defined. `JoinSpeakerIntent` and `LeaveSpeakerIntent` in T-2723 also depend on T-2744 (Group model) — complete T-2744 before declaring those two intent types.
@@ -588,7 +608,7 @@ Implement the voice command pipeline for `joinSpeaker(source:target:)` and `leav
 
 7. **E-27 verification** — T-2709 (mock tests) after T-2705; T-2710 (regression) after T-2708; T-2748 (Group tests) after T-2745, T-2746.
 
-8. **E-32 Speaker Join / Leave** — depends on T-2744/T-2745/T-2747 (Group model + GroupDiscovery + HomeView), T-2723 (join/leave intents declared), E-28 (BNRClient). Voice parsing tasks (T-2749–T-2752) can begin as soon as T-2747 lands. Dispatch tasks (T-2757–T-2760) can begin after both Mozart and BNR conformances for `join`/`leave` exist.
+8. **E-32 Speaker Join / Leave** — depends on T-2744/T-2745/T-2747 (Group model + SpeakerDiscoveryService + HomeView), T-2723 (join/leave intents declared), E-28 (BNRClient). Voice parsing tasks (T-2749–T-2752) can begin as soon as T-2747 lands. Dispatch tasks (T-2757–T-2760) can begin after both Mozart and BNR conformances for `join`/`leave` exist.
    - Sub-order: T-2749 → T-2750, T-2751 in parallel → T-2752 → T-2753, T-2754 in parallel. Dispatch: T-2755, T-2756 (guards) in parallel → T-2757, T-2758, T-2759, T-2760 in parallel → T-2761 → T-2762, T-2763 in parallel → T-2764.
 
 9. **E-30 design tokens and shared container (T-2730, T-2731)** can begin after T-2728. The widget extension target setup (T-2729) also starts after T-2728.
@@ -620,7 +640,7 @@ Week 3:   T-2706 (no-platform-type-in-features lint check)
           T-2707, T-2708 (dual discovery + factory — both _bangolufsen._tcp and _beoremote._tcp)
           T-2719 (BNR init wiring into discovery factory)
           T-2744 (Group model — cross-platform, Mozart + BNR members supported)
-          T-2745, T-2746 (GroupDiscovery + SpeakerClient.getPeers)
+          T-2745, T-2746 (SpeakerDiscoveryService + SpeakerClient.getPeers)
           T-2724, T-2725, T-2726 (Shortcuts provider + SpeakerStore + error strings)
           T-2729 (widget extension target, after App Groups confirmed)
           T-2730 (design tokens)
@@ -638,7 +658,7 @@ Week 5:   T-2749–T-2752 (E-32 NLP parser extension)
           T-2753, T-2754 (join countdown + leave immediate wiring)
           T-2755, T-2756 (join/leave guards)
           T-2757–T-2760 (join/leave API dispatch)
-          T-2761 (GroupDiscovery state mutations)
+          T-2761 (SpeakerDiscoveryService state mutations)
           T-2734, T-2735 (small and medium widget views)
           T-2736 (widget definition)
           T-2739, T-2740, T-2741, T-2742 (Control Widget)
@@ -658,13 +678,13 @@ Week 6:   T-2762, T-2763 (E-32 unit tests)
 
 | Epic | Tasks | Notes |
 |---|---|---|
-| E-27 Shared Speaker Abstraction + Group Model | 15 | T-2701–T-2710 (original 10) + T-2744–T-2748 (Group model, GroupDiscovery, HomeView refactor). `join(peer:)` and `leave()` added to T-2701. |
-| E-28 BNRClient + BNREvents | 12 | T-2711–T-2722. Press+release encapsulated in BNRClient. BNR 501 is a soft warning. |
+| E-27 Shared Speaker Abstraction + Group Model | 17 | T-2701–T-2710 (original 10) + T-2744–T-2748 (Group model, SpeakerDiscoveryService, HomeView refactor) + T-2765 (deprecate SpeakerRegistry) + T-2766 (SpeakerError.swift). `join(peer:)` and `leave()` added to T-2701. SpeakerError unified error type added. |
+| E-28 BNRClient + BNREvents | 12 | T-2711–T-2722. Press+release encapsulated in BNRClient. BNR 501 is a soft warning. BNRClient throws SpeakerError directly. |
 | E-29 App Intents Declarations | 5 | T-2723–T-2727. Now includes JoinSpeakerIntent and LeaveSpeakerIntent. English + Danish Siri phrases. |
 | E-30 Home-Screen Widget | 12 | T-2728–T-2738. T-2728 (App Groups entitlement) is the P0 blocker for the epic. systemSmall + systemMedium. |
 | E-31 Control Widget | 5 | T-2739–T-2743. Play/pause + mute. Per-speaker configuration. |
-| E-32 Speaker Join / Leave | 16 | T-2749–T-2764. NLP parser extension (join + leave variants, English + Danish), confirmation wiring, API dispatch (Mozart→Mozart, BNR→Any, Mozart→BNR), GroupDiscovery mutations, unit tests, manual integration test. |
-| **Total (v1.2 only)** | **64** | Cumulative project total: 255 (v1.0 + v1.1) + 64 = **319**. |
+| E-32 Speaker Join / Leave | 16 | T-2749–T-2764. NLP parser extension (join + leave variants, English + Danish), confirmation wiring (join with countdown; leave immediate — no ConfirmationCoordinator), API dispatch (Mozart→Mozart, BNR→Any, Mozart→BNR), SpeakerDiscoveryService mutations, unit tests, manual integration test. |
+| **Total (v1.2 only)** | **66** | Cumulative project total: 255 (v1.0 + v1.1) + 66 = **321**. Two new tasks added in v1.2.3 (T-2765, T-2766). |
 
 ---
 
@@ -673,5 +693,6 @@ Week 6:   T-2762, T-2763 (E-32 unit tests)
 | Date | Source | Change |
 |---|---|---|
 | 2026-05-01 | Initial draft | First version of v1.2 epics and tasks (E-27–E-31, T-2701–T-2743). |
-| 2026-05-01 | v1.2.1 amendment | Added E-32 (Speaker Join / Leave, T-2749–T-2764). Extended E-27 with Group model and GroupDiscovery tasks (T-2744–T-2748). Updated T-2701 to add `join(peer:)`, `leave()`, and `getPeers()` to `SpeakerClient`. Extended T-2723 (E-29) to include `JoinSpeakerIntent` and `LeaveSpeakerIntent`. Updated Epic Index, Recommended Implementation Order, weekly schedule, and Task Summary. |
+| 2026-05-01 | v1.2.1 amendment | Added E-32 (Speaker Join / Leave, T-2749–T-2764). Extended E-27 with Group model and SpeakerDiscoveryService tasks (T-2744–T-2748). Updated T-2701 to add `join(peer:)`, `leave()`, and `getPeers()` to `SpeakerClient`. Extended T-2723 (E-29) to include `JoinSpeakerIntent` and `LeaveSpeakerIntent`. Updated Epic Index, Recommended Implementation Order, weekly schedule, and Task Summary. |
 | 2026-05-01 | v1.2.2 amendment | Reversed E-28/E-27 implementation order. E-28 (BNRClient) is now implemented first as a standalone concrete type with no protocol dependency, so the E-27 protocol surface is designed knowing both Mozart and BNR constraints. E-27 `Depends on` updated to E-28. E-28 `Depends on` updated to none. T-2711 dependency removed. Group model description updated to explicitly state cross-platform support (Mozart + BNR speakers in the same Group). Recommended Implementation Order and weekly schedule updated accordingly. |
+| 2026-05-01 | v1.2.3 amendment | Five architectural amendments applied: (1) Renamed `GroupDiscovery` → `SpeakerDiscoveryService` throughout; E-27 epic description updated to clarify Group as a pure model type with no discovery dependency; T-2745 updated to fully describe SpeakerDiscoveryService responsibilities; T-2747 updated to include SpeakerRegistry migration; new task T-2765 added (deprecate/remove SpeakerRegistry). (2) T-2754 updated to wire leave as immediate execution with no ConfirmationCoordinator call. (3) T-2701 updated to include SpeakerError protocol surface; new task T-2766 added (create SpeakerError.swift with MozartError mapping helper); T-2703 updated to wrap MozartError throws via SpeakerError.from(); T-2705 updated to audit and replace all MozartError catch clauses; T-2711 updated to throw SpeakerError directly. (4) T-2701 AC note added re OQ-17 (join(peer:) symmetry); T-2757 and T-2758 depends-on updated to reference OQ-17 resolution. (5) T-2730 updated to note BeoColor.separator already exists — must not be re-declared. |
