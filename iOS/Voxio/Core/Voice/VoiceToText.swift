@@ -22,6 +22,9 @@ class VoiceToText {
     /// Resumes transcription after a pause.
     func resumeRecognition() { recorder.unmute() }
 
+    /// Resets the accumulated recognition buffer and starts a fresh request.
+    func resetRecognitionBuffer() { recorder.resetBuffer() }
+
     /// Switches recognition locale and command parsing language.
     func setLanguage(_ language: Language) {
         currentLanguage = language

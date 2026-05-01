@@ -13,9 +13,10 @@ class AVService {
     private var request:    SFSpeechAudioBufferRecognitionRequest?
     private var task:       SFSpeechRecognitionTask?
     private var silenceTimer: Timer?
-    private var hasSpeech   = false
-    private var stopped     = true
-    private var isMuted     = false
+    private var hasSpeech        = false
+    private var stopped          = true
+    private var isMuted          = false
+    private var requestGeneration = 0
 
     // AVAudioSession.setActive() and AVAudioEngine.start() perform synchronous
     // IPC internally. Routing them through a dedicated serial queue keeps that
@@ -135,26 +136,49 @@ class AVService {
         engine.prepare()
     }
 
+    /// Cancels the current recognition request and starts a fresh one with an
+    /// empty buffer. Safe to call while the engine is running.
+    func resetBuffer() {
+        guard !isMuted, !stopped else { return }
+        silenceTimer?.invalidate()
+        silenceTimer = nil
+        hasSpeech = false
+        task?.cancel(); task = nil
+        request?.endAudio(); request = nil
+        startRequest()
+        Log.info("[AVService] buffer reset")
+    }
+
     /// Starts a fresh `SFSpeechAudioBufferRecognitionRequest`. Safe to call
     /// while the engine is running — the existing tap feeds audio into the
     /// new request immediately.
     private func startRequest() {
         guard !isMuted, !stopped else { return }
+        requestGeneration += 1
+        let generation = requestGeneration
+
         let req = SFSpeechAudioBufferRecognitionRequest()
         req.shouldReportPartialResults = true
         request = req
 
         task = recognizer.recognitionTask(with: req) { [weak self] result, error in
             guard let self, !self.stopped, !self.isMuted else { return }
+            guard self.requestGeneration == generation else { return }
 
             if let result {
                 self.onTranscription?(result.bestTranscription.formattedString, result.isFinal)
                 if result.isFinal {
                     self.hasSpeech = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { self.startRequest() }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        guard self.requestGeneration == generation else { return }
+                        self.startRequest()
+                    }
                 }
             } else if error != nil {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.startRequest() }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    guard self.requestGeneration == generation else { return }
+                    self.startRequest()
+                }
             }
         }
     }

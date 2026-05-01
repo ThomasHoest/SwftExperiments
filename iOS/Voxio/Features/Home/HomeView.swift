@@ -8,7 +8,7 @@ struct HomeView: View {
     @ObservedObject private var langService = LanguageService.shared
     @State private var voiceToText    = VoiceToText()
     @State private var commandRouter  = CommandParserRouter()
-    @State private var transcript     = ""
+    @StateObject private var transcriptController = TranscriptController()
     @State private var micStatus      = "Initialising microphone…"
     @State private var audioLevel:    Float   = 0
     @State private var isListening    = false
@@ -91,7 +91,7 @@ struct HomeView: View {
         .onChange(of: langService.activeLanguage) { _, language in
             voiceToText.setLanguage(language)
         }
-        .onChange(of: transcript) { _, new in
+        .onChange(of: transcriptController.text) { _, new in
             if !new.isEmpty { showHintManually = false }
         }
         .sheet(isPresented: $showLanguagePicker) {
@@ -200,8 +200,8 @@ struct HomeView: View {
             WaveformView(audioLevel: audioLevel, isListening: isListening)
                 .frame(height: 44)
 
-            if !transcript.isEmpty {
-                Text(transcript)
+            if !transcriptController.text.isEmpty {
+                Text(transcriptController.text)
                     .font(BeoType.confirmation)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
@@ -209,7 +209,8 @@ struct HomeView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
                     .transition(.opacity)
-                    .animation(.easeIn(duration: 0.15), value: transcript)
+                    .animation(.easeIn(duration: 0.15), value: transcriptController.text)
+                    .onTapGesture { transcriptController.clearNow() }
             }
 
             Text(micStatus)
@@ -257,9 +258,12 @@ struct HomeView: View {
         motionManager.start()
         Task { await commandRouter.warmUp() }
 
+        transcriptController.configure(coordinator: coordinator)
+        transcriptController.onClear = { voiceToText.resetRecognitionBuffer() }
+
         voiceToText.onTranscript = { text in
             DispatchQueue.main.async {
-                transcript = text
+                transcriptController.update(text)
                 isCommandActive = !text.isEmpty
             }
         }
@@ -269,7 +273,7 @@ struct HomeView: View {
                 isListening = rms > 0.01
             }
         }
-        voiceToText.onFinalTranscript = { text in
+        let handleFinalTranscript: (String) -> Void = { text in
             Task { @MainActor in
                 isCommandActive = false
 
@@ -289,7 +293,7 @@ struct HomeView: View {
                     Log.info("[HomeView] no speaker resolved for: \(text)")
                     let available = registry.speakers.map(\.name)
                     handleError(.noSpeakerSpoken(available: available))
-                    clearTranscriptAfterDelay()
+                    transcriptController.clearAfterCommand()
                     return
                 }
                 selectedSpeaker = speaker
@@ -300,34 +304,42 @@ struct HomeView: View {
                 if case .unknown = command { } else { HapticEngine.shared.commandRecognised() }
 
                 if case .playFavorite(let index) = command {
+                    Log.info("[HomeView][clear] path=playFavorite index=\(index)")
                     await handlePlayFavorite(index: index, speaker: speaker)
                     return
                 }
 
                 // Commands that need no confirmation (listFavorites, confirm, cancel, unknown)
                 guard let confirmMsg = confirmationMessage(for: command, speaker: speaker) else {
+                    Log.info("[HomeView][clear] path=noConfirmation command=\(command) → clearAfterCommand")
                     if case .unknown = command { handleError(.voiceNotRecognised) }
                     await dispatch(command: command, to: speaker)
-                    clearTranscriptAfterDelay()
+                    transcriptController.clearAfterCommand()
                     return
                 }
 
                 if let preflight = preflightError(for: command, speaker: speaker) {
+                    Log.info("[HomeView][clear] path=preflightError command=\(command) error=\(preflight) → clearAfterCommand")
                     handleError(preflight)
+                    transcriptController.clearAfterCommand()
                     return
                 }
+
+                Log.info("[HomeView][clear] path=countdown command=\(command) → clearAfterCommand deferred to action")
 
                 coordinator.startCountdown(
                     action: {
                         let succeeded = await dispatch(command: command, to: speaker)
                         if succeeded { showSuccess("Done") }
-                        clearTranscriptAfterDelay()
+                        transcriptController.clearAfterCommand()
                     },
                     readBack: confirmMsg,
                     onResolved: { _ in }
                 )
             }
         }
+        voiceToText.onFinalTranscript = handleFinalTranscript
+        transcriptController.onForceFinal  = handleFinalTranscript
         voiceToText.start { status in
             micStatus = status
         }
@@ -381,8 +393,8 @@ struct HomeView: View {
         case .listFavorites:
             let names = await registry.favorites.listFavorites(for: speaker)
             let list  = names.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "  ·  ")
-            transcript = cs.listFavoritesResult(speaker.name, list)
-            clearTranscriptAfterDelay()
+            transcriptController.update(cs.listFavoritesResult(speaker.name, list))
+            transcriptController.clearAfterCommand()
             return true
         case .stop:
             guard speaker.isPlaying else {
@@ -443,9 +455,12 @@ struct HomeView: View {
     private func handlePlayFavorite(index: Int, speaker: Speaker) async {
         guard let favorite = await registry.favorites.favorite(at: index, for: speaker) else {
             let available = await registry.favorites.listFavorites(for: speaker)
+            Log.info("[HomeView][clear] path=handlePlayFavorite guardFail index=\(index) → clearAfterCommand")
             handleError(.favoriteIndexOutOfRange(index: index, speaker: speaker.name, available: available))
+            transcriptController.clearAfterCommand()
             return
         }
+        Log.info("[HomeView][clear] path=handlePlayFavorite countdown favorite=\(favorite.displayName)")
         let confirmMsg = cs.playFavoriteByName(favorite.displayName, speaker.name)
         coordinator.startCountdown(
             action: {
@@ -453,6 +468,7 @@ struct HomeView: View {
                     try await speaker.playFavorite(presetIndex: favorite.presetIndex)
                 }
                 if succeeded { showSuccess("Done") }
+                transcriptController.clearAfterCommand()
             },
             readBack: confirmMsg,
             onResolved: { _ in }
@@ -472,16 +488,6 @@ struct HomeView: View {
         return nil
     }
 
-    private func clearTranscriptAfterDelay() {
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(5))
-            while coordinator.isPending {
-                try? await Task.sleep(for: .seconds(5))
-            }
-            transcript = ""
-            voiceToText.resumeRecognition()
-        }
-    }
 
     private func handleError(_ error: AppError) {
         let message = errorService.spoken(error)

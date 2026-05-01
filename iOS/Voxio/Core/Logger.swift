@@ -14,6 +14,12 @@ enum Log {
     static func info   (_ message: String) { emit(.info,    message) }
     static func error  (_ message: String) { emit(.error,   message) }
 
+    private static let formatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm:ss.SSS"
+        return f
+    }()
+
     private static func emit(_ level: LogLevel, _ message: String) {
         guard level.rawValue >= currentLevel.rawValue else { return }
         let tag: String
@@ -22,6 +28,7 @@ enum Log {
         case .info:    tag = "INFO"
         case .error:   tag = "ERROR"
         }
-        print("[\(tag)] \(message)")
+        let ts = formatter.string(from: Date())
+        print("\(ts) [\(tag)] \(message)")
     }
 }

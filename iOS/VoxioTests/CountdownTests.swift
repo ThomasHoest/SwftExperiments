@@ -19,8 +19,8 @@ final class CountdownTests: XCTestCase {
             onResolved: { resolution = $0 }
         )
 
-        // Wait long enough for the 3-second countdown to complete
-        try await Task.sleep(for: .seconds(4))
+        // Wait long enough for the 2-second countdown to complete
+        try await Task.sleep(for: .seconds(3))
 
         XCTAssertEqual(actionCallCount, 1)
         XCTAssertEqual(resolution, .fired)
@@ -112,10 +112,10 @@ final class CountdownTests: XCTestCase {
         let coordinator = ConfirmationCoordinator()
 
         coordinator.startCountdown(action: { }, readBack: "Test", onResolved: { _ in })
-        XCTAssertEqual(coordinator.secondsRemaining, 3)
+        XCTAssertEqual(coordinator.secondsRemaining, 2)
 
         try await Task.sleep(for: .seconds(1.1))
-        XCTAssertEqual(coordinator.secondsRemaining, 2)
+        XCTAssertEqual(coordinator.secondsRemaining, 1)
 
         coordinator.cancelCountdown(reason: .interruption)
     }
