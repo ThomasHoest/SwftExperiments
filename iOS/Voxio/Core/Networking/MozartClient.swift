@@ -215,8 +215,8 @@ class MozartClient {
     /// Sets the volume level.
     /// - Parameter level: Integer 0–100.
     func mozartSetVolume(_ level: Int) async throws {
-        struct Body: Encodable { let volumeLevel: Int }
-        try await putVoid("/sound/volume/level", body: try encode(Body(volumeLevel: level)))
+        struct Body: Encodable { let level: Int }
+        try await putVoid("/sound/volume/level", body: try encode(Body(level: level)))
     }
 
     /// Mutes or unmutes the speaker without changing the stored volume level.

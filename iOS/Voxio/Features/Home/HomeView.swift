@@ -406,16 +406,8 @@ struct HomeView: View {
             transcriptController.clearAfterCommand()
             return true
         case .stop:
-            guard speaker.isPlaying else {
-                handleError(.nothingPlaying(speaker: speaker.name))
-                return false
-            }
             return await perform(speaker: speaker) { try await speaker.stop() }
         case .pause:
-            guard speaker.isPlaying else {
-                handleError(.nothingPlaying(speaker: speaker.name))
-                return false
-            }
             return await perform(speaker: speaker) { try await speaker.pause() }
         case .resume:
             return await perform(speaker: speaker) { try await speaker.play() }
