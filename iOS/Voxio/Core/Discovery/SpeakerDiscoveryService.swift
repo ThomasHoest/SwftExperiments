@@ -39,16 +39,17 @@ class SpeakerDiscoveryService: ObservableObject {
     }
 
     private func addSpeaker(ip: String, platform: SpeakerPlatform) async {
+        Log.info("[SDS] initializing \(platform.rawValue) speaker at \(ip)")
         let (client, eventSource) = makeSpeakerClientPair(host: ip, platform: platform)
         let speaker = Speaker(host: ip, client: client, eventSource: eventSource, platform: platform)
         do {
             try await speaker.initialize()
             allSpeakers.append(speaker)
             SpeakerStore.shared.allSpeakers = allSpeakers
-            Log.info("[SDS] added \(speaker.name) (\(ip))")
+            Log.info("[SDS] added \(speaker.name) (\(ip)) platform=\(platform.rawValue)")
             scheduleReconstruction()
         } catch {
-            Log.error("[SDS] rejected \(ip): \(error.localizedDescription)")
+            Log.error("[SDS] rejected \(ip) (\(platform.rawValue)): \(error)")
         }
     }
 
