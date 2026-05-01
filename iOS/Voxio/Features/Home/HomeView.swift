@@ -449,11 +449,7 @@ struct HomeView: View {
                 return false
             }
             return await perform(speaker: speaker) {
-                if target.identifier.platform == .mozart {
-                    try await target.client.join(peer: speaker.identifier)
-                } else {
-                    try await speaker.client.join(peer: target.identifier)
-                }
+                try await speaker.client.join(peer: target.identifier)
                 discovery.mergeIntoSpeakerGroup(source: speaker, target: target)
             }
         case .leaveSpeaker:

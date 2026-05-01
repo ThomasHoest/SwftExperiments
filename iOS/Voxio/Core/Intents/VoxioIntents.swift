@@ -131,11 +131,7 @@ struct JoinSpeakerIntent: AudioPlaybackIntent {
             throw VoxioIntentError(errorDescription: IntentStrings.speakerNotFound(target.name, lang))
         }
         do {
-            if await targetSpeaker.identifier.platform == .mozart {
-                try await targetSpeaker.client.join(peer: await sourceSpeaker.identifier)
-            } else {
-                try await sourceSpeaker.client.join(peer: await targetSpeaker.identifier)
-            }
+            try await sourceSpeaker.client.join(peer: await targetSpeaker.identifier)
             let msg = IntentStrings.joined(await sourceSpeaker.name, await targetSpeaker.name, lang)
             return .result(dialog: IntentDialog(stringLiteral: msg))
         } catch _ as SpeakerError {
