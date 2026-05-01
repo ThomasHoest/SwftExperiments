@@ -1,5 +1,5 @@
 # Epics & Tasks: Voxio v1.2
-**Version:** 1.2.1  
+**Version:** 1.2.2  
 **Status:** Draft  
 **Date:** 2026-05-01  
 **References:** VoxioSpecification-1.2.md, epics-and-tasks-voxio-1.1.md (E-20–E-26, T-2001–T-2610), research-findings-voxio-1.2.md, design-spec-widget-voxio-1.2.md, design-spec-group-ui-voxio-1.2.md, api-spec-beonetremote.md, CLAUDE.md  
@@ -17,8 +17,8 @@ This document breaks the Voxio v1.2 functional specification into epics and thei
 
 | # | Epic | User Stories | Feature Area |
 |---|---|---|---|
-| E-27 | Shared Speaker Abstraction + Group Model | US-32, US-41, US-46, US-47 | ASE/BNR support — protocols, normalisation, Group abstraction |
-| E-28 | BNRClient + BNREvents | US-28, US-29, US-30, US-31 | ASE/BNR support — new API client |
+| E-28 | BNRClient + BNREvents | US-28, US-29, US-30, US-31 | ASE/BNR support — new API client (implemented first, informs E-27 abstraction) |
+| E-27 | Shared Speaker Abstraction + Group Model | US-32, US-41, US-46, US-47 | ASE/BNR support — protocols, normalisation, cross-platform Group abstraction |
 | E-29 | App Intents Declarations | US-38, US-48 | Widget + voice — Siri integration (incl. join/leave intents) |
 | E-30 | Home-Screen Widget | US-33, US-34, US-35, US-36, US-39, US-40 | Widget + voice — WidgetKit extension |
 | E-31 | Control Widget | US-37, US-40 | Widget + voice — Control Center / lock screen |
@@ -28,10 +28,12 @@ This document breaks the Voxio v1.2 functional specification into epics and thei
 
 ## E-27 — Shared Speaker Abstraction + Group Model
 
-Introduce two Swift protocols (`SpeakerClient` and `SpeakerEventSource`) in a new `Core/Protocols/` folder. Refactor `Speaker` to hold existential protocol types instead of concrete `MozartClient` and `MozartEvents` references. Add retroactive protocol conformances to `MozartClient` and `MozartEvents`. Define the normalised `SpeakerEvent` enum. Extend `MdnsDiscovery` with a second browser for `_beoremote._tcp` and a client factory. Add `join(peer:)` and `leave()` to `SpeakerClient`. Introduce the `Group` model, `GroupDiscovery`, and refactor the app layer to bind to `[Group]` instead of `[Speaker]`.
+Introduce two Swift protocols (`SpeakerClient` and `SpeakerEventSource`) in a new `Core/Protocols/` folder. The protocol surface is designed **after E-28 is complete**, so both the Mozart and BNR concrete implementations are known — ensuring the abstraction covers both platforms without leaking platform-specific constraints. Refactor `Speaker` to hold existential protocol types instead of concrete `MozartClient` and `MozartEvents` references. Add retroactive protocol conformances to `MozartClient` and `MozartEvents`; add conformances to `BNRClient` and `BNREvents`. Define the normalised `SpeakerEvent` enum. Extend `MdnsDiscovery` with a second browser for `_beoremote._tcp` and a client factory. Add `join(peer:)` and `leave()` to `SpeakerClient`. Introduce the `Group` model, `GroupDiscovery`, and refactor the app layer to bind to `[Group]` instead of `[Speaker]`.
 
-**Depends on:** none — purely additive at the protocol and discovery layer  
-**Unlocks:** E-28 (BNRClient must conform to the same protocols defined here), E-32 (join/leave commands call `SpeakerClient.join(peer:)` and `.leave()`)
+**The `Group` model is explicitly cross-platform.** A single `Group` may contain any mix of Mozart (`_bangolufsen._tcp`) and BNR (`_beoremote._tcp`) speakers. The app layer, voice pipeline, and widget layer treat all groups identically regardless of member platform. Platform-specific join/leave call logic is encapsulated inside each client's `join(peer:)` and `leave()` implementations — the `Group` and `GroupDiscovery` layers are platform-agnostic.
+
+**Depends on:** E-28 — BNRClient and BNREvents must be implemented as standalone concrete types first, so the protocol surface can be designed knowing the full capabilities and constraints of both platforms (e.g. BNR's broadcast-only join, absence of a peers endpoint, 0–9000 volume scale).  
+**Unlocks:** E-29 (intents call `SpeakerClient` methods), E-32 (join/leave commands call `SpeakerClient.join(peer:)` and `.leave()`)
 
 ---
 
@@ -174,14 +176,14 @@ Introduce two Swift protocols (`SpeakerClient` and `SpeakerEventSource`) in a ne
 
 Implement `BNRClient: SpeakerClient` and `BNREvents: SpeakerEventSource` for the BNR (BeoNetRemote) REST + long-poll API. Encapsulate the press+release playback command pattern, 0–`range.maximum` volume normalisation, and long-poll reconnect loop. ASE-platform speakers discovered via `_beoremote._tcp` are fully controllable through these types.
 
-**Depends on:** E-27 (protocols and factory)
+**Depends on:** none — BNRClient and BNREvents are implemented as standalone concrete classes directly against the BNR REST API, with no protocol dependency. Protocol conformances (`SpeakerClient`, `SpeakerEventSource`) are added retroactively in E-27 once the abstraction surface is finalised. Implementing E-28 first ensures the protocol design in E-27 is grounded in the real BNR API constraints.
 
 ---
 
 ### BNRClient
 
-- [ ] **T-2711** Create `iOS/Voxio/Core/Networking/BNRClient.swift`. This type conforms to `SpeakerClient`. Properties: `host: String`, `port: Int` (default 8080), a `URLSession` with 5-second timeout matching `MozartClient`'s pattern. Base URL: `http://{host}:{port}`. All requests use `Content-Type: application/json`. All `URLError.timedOut` errors map to `MozartError.timeout` (or `SpeakerError.timeout` if a unified error type is introduced). Connection errors map to `SpeakerError.unreachable`. Non-2xx responses other than 501 map to `SpeakerError.httpError(statusCode)`. HTTP 501 on write operations: log at INFO, do not throw.
-  *Depends on: T-2701.*
+- [ ] **T-2711** Create `iOS/Voxio/Core/Networking/BNRClient.swift`. Implement as a **standalone concrete class** with no protocol dependency — protocol conformance (`SpeakerClient`) is added retroactively in E-27 (T-2703-style) once the protocol surface is finalised. Properties: `host: String`, `port: Int` (default 8080), a `URLSession` with 5-second timeout matching `MozartClient`'s pattern. Base URL: `http://{host}:{port}`. All requests use `Content-Type: application/json`. All `URLError.timedOut` errors map to `MozartError.timeout` (or `SpeakerError.timeout` if a unified error type is introduced). Connection errors map to `SpeakerError.unreachable`. Non-2xx responses other than 501 map to `SpeakerError.httpError(statusCode)`. HTTP 501 on write operations: log at INFO, do not throw.
+  *Depends on: none.*
 
 - [ ] **T-2712** Implement volume read/write in `BNRClient`. On initialisation (or first `getVolume()` call), fetch `GET /BeoZone/Zone/Sound/Volume/Speaker` and store `range.maximum`. Subsequent writes use `level = percentage * storedMaximum / 100` rounded to nearest integer. `getVolume()` returns `speaker.level * 100 / storedMaximum` rounded. `setVolume(_ level: Int)` sends `PUT /BeoZone/Zone/Sound/Volume/Speaker/Level` with `{ "level": level * maximum / 100 }`. `mute(_ muted: Bool)` sends `PUT /BeoZone/Zone/Sound/Volume/Speaker/Muted` with `{ "muted": muted }`. If `range.maximum` has not been fetched yet, fetch it synchronously before proceeding with the write.
   *Depends on: T-2711.*
@@ -570,21 +572,21 @@ Implement the voice command pipeline for `joinSpeaker(source:target:)` and `leav
 
 1. **T-2728 (App Groups entitlement) first** — this is the P0 blocker for all widget state sharing and must be resolved before E-30 or E-31 widget UI work begins. It can run in parallel with all code tasks.
 
-2. **E-27 protocols and normalisation in parallel** — `SpeakerClient`, `SpeakerEventSource`, `SpeakerEvent` (T-2701, T-2702) have no dependencies and are the foundation for both E-28 and E-29.
-   - Sub-order: T-2701, T-2702 in parallel → T-2703, T-2704 in parallel → T-2705 → T-2706, T-2707 in parallel → T-2708.
+2. **E-28 BNRClient first** — implement `BNRClient` and `BNREvents` as standalone concrete types before any protocol work. This grounds the E-27 abstraction design in the real BNR API constraints (broadcast-only join, no peers endpoint, 0–9000 volume scale, press+release playback, long-poll events). T-2711 has no dependencies.
+   - Sub-order: T-2711 → T-2712, T-2713, T-2714, T-2715, T-2716 in parallel → T-2717 → T-2718. T-2719 (init wiring) and T-2720, T-2721 (unit tests) follow after E-27 protocols exist.
 
-3. **E-28 BNRClient build in parallel with E-27 speaker refactor** — T-2711 through T-2718 depend only on T-2701/T-2702 and can begin immediately. T-2719 (initialization wiring) waits for both T-2705 (Speaker refactor) and T-2715–T-2716 (BNRClient REST methods).
-   - Sub-order: T-2711 → T-2712, T-2713, T-2714, T-2715, T-2716 in parallel → T-2717 → T-2718 → T-2719.
+3. **E-27 protocols and abstraction — after E-28 is substantially complete** — `SpeakerClient`, `SpeakerEventSource`, `SpeakerEvent` (T-2701, T-2702) are designed knowing both Mozart and BNR concrete implementations. The `Group` model is explicitly cross-platform: a group may contain any mix of Mozart and BNR members.
+   - Sub-order: T-2701, T-2702 in parallel → T-2703, T-2704 (Mozart conformances), T-2711-conformance (BNR conformance) in parallel → T-2705 → T-2706, T-2707 in parallel → T-2708.
 
-4. **E-29 App Intents in parallel with E-27 refactor** — T-2723 depends on T-2701 only and can begin once `SpeakerClient` exists. T-2724 and T-2725 follow T-2723. `JoinSpeakerIntent` and `LeaveSpeakerIntent` in T-2723 depend also on T-2744 (Group model) — complete T-2744 before declaring those two intent types.
-   - Sub-order: T-2723 → T-2724, T-2725 in parallel → T-2726 → T-2727.
+4. **E-28 init wiring and verification** — T-2719 (BNR init wiring into discovery factory) after T-2707/T-2708 (dual discovery). T-2720, T-2721 (unit tests) after conformances exist. T-2722 (physical device test) after T-2719.
 
 5. **E-27 Group model and GroupDiscovery** — T-2744 depends on T-2701 and T-2705; T-2745 depends on T-2744 and T-2707/T-2708; T-2746 depends on T-2701/T-2703; T-2747 (HomeView refactor) depends on T-2744/T-2745. T-2748 (tests) after T-2745/T-2746.
    - Sub-order: T-2744 → T-2745, T-2746 in parallel → T-2747 → T-2748.
 
-6. **E-27 verification** — T-2709 (mock tests) after T-2705; T-2710 (regression) after T-2708; T-2748 (Group tests) after T-2745, T-2746.
+6. **E-29 App Intents — after T-2701 (SpeakerClient) exists** — T-2723 depends on T-2701 and can begin once the protocol is defined. `JoinSpeakerIntent` and `LeaveSpeakerIntent` in T-2723 also depend on T-2744 (Group model) — complete T-2744 before declaring those two intent types.
+   - Sub-order: T-2723 → T-2724, T-2725 in parallel → T-2726 → T-2727.
 
-7. **E-28 verification** — T-2720, T-2721 (unit tests) in parallel after T-2711–T-2718; T-2722 (manual BNR integration) after T-2719.
+7. **E-27 verification** — T-2709 (mock tests) after T-2705; T-2710 (regression) after T-2708; T-2748 (Group tests) after T-2745, T-2746.
 
 8. **E-32 Speaker Join / Leave** — depends on T-2744/T-2745/T-2747 (Group model + GroupDiscovery + HomeView), T-2723 (join/leave intents declared), E-28 (BNRClient). Voice parsing tasks (T-2749–T-2752) can begin as soon as T-2747 lands. Dispatch tasks (T-2757–T-2760) can begin after both Mozart and BNR conformances for `join`/`leave` exist.
    - Sub-order: T-2749 → T-2750, T-2751 in parallel → T-2752 → T-2753, T-2754 in parallel. Dispatch: T-2755, T-2756 (guards) in parallel → T-2757, T-2758, T-2759, T-2760 in parallel → T-2761 → T-2762, T-2763 in parallel → T-2764.
@@ -603,19 +605,21 @@ A reasonable team sequence (one iOS engineer + part-time access to physical B&O 
 
 ```
 Week 1:   T-2728 (App Groups — start immediately, may need portal admin)
-          T-2701, T-2702 (protocols + SpeakerEvent, incl. join/leave on SpeakerClient)
-          T-2703, T-2704 (Mozart retroactive conformances)
-          T-2711 (BNRClient skeleton)
+          T-2711 (BNRClient skeleton — standalone, no protocol dependency)
+          T-2712–T-2716 (BNRClient REST methods incl. join/leave; volume normalisation)
+          T-2717, T-2718 (BNREvents long-poll loop + normalisation)
 
-Week 2:   T-2705 (Speaker refactor)
-          T-2712–T-2716 (BNRClient REST methods, incl. join/leave implementations)
-          T-2717, T-2718 (BNREvents long-poll + normalisation)
+Week 2:   T-2701, T-2702 (SpeakerClient + SpeakerEventSource protocols + SpeakerEvent —
+                           designed now that BNRClient shape is known)
+          T-2703, T-2704 (Mozart retroactive conformances)
+          BNRClient conformance to SpeakerClient/SpeakerEventSource (retroactive, part of T-2711)
+          T-2705 (Speaker refactor to hold any SpeakerClient / any SpeakerEventSource)
           T-2723 (App Intents declarations — base intents; join/leave stubs added after T-2744)
 
 Week 3:   T-2706 (no-platform-type-in-features lint check)
-          T-2707, T-2708 (dual discovery + factory)
-          T-2719 (BNR init wiring)
-          T-2744 (Group model)
+          T-2707, T-2708 (dual discovery + factory — both _bangolufsen._tcp and _beoremote._tcp)
+          T-2719 (BNR init wiring into discovery factory)
+          T-2744 (Group model — cross-platform, Mozart + BNR members supported)
           T-2745, T-2746 (GroupDiscovery + SpeakerClient.getPeers)
           T-2724, T-2725, T-2726 (Shortcuts provider + SpeakerStore + error strings)
           T-2729 (widget extension target, after App Groups confirmed)
@@ -670,3 +674,4 @@ Week 6:   T-2762, T-2763 (E-32 unit tests)
 |---|---|---|
 | 2026-05-01 | Initial draft | First version of v1.2 epics and tasks (E-27–E-31, T-2701–T-2743). |
 | 2026-05-01 | v1.2.1 amendment | Added E-32 (Speaker Join / Leave, T-2749–T-2764). Extended E-27 with Group model and GroupDiscovery tasks (T-2744–T-2748). Updated T-2701 to add `join(peer:)`, `leave()`, and `getPeers()` to `SpeakerClient`. Extended T-2723 (E-29) to include `JoinSpeakerIntent` and `LeaveSpeakerIntent`. Updated Epic Index, Recommended Implementation Order, weekly schedule, and Task Summary. |
+| 2026-05-01 | v1.2.2 amendment | Reversed E-28/E-27 implementation order. E-28 (BNRClient) is now implemented first as a standalone concrete type with no protocol dependency, so the E-27 protocol surface is designed knowing both Mozart and BNR constraints. E-27 `Depends on` updated to E-28. E-28 `Depends on` updated to none. T-2711 dependency removed. Group model description updated to explicitly state cross-platform support (Mozart + BNR speakers in the same Group). Recommended Implementation Order and weekly schedule updated accordingly. |
