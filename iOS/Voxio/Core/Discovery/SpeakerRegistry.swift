@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 
 /// Owns mDNS discovery, maintains the live speaker list, and resolves voice commands
 /// to a target speaker using three-tier fallback:
@@ -16,15 +15,26 @@ class SpeakerRegistry: ObservableObject {
 
     private let discovery = MdnsDiscovery()
     private let matcher   = SpeakerNameMatcher()
-    private var cancellable: AnyCancellable?
 
     init() {
-        cancellable = discovery.$speakers.sink { [weak self] list in
+        discovery.onSpeakerDiscovered = { [weak self] ip, platform in
             guard let self else { return }
-            self.speakers = list
-            if let active = self.activeSpeaker, !list.contains(where: { $0.id == active.id }) {
-                self.activeSpeaker = nil
+            let (client, eventSource) = makeSpeakerClientPair(host: ip, platform: platform)
+            let speaker = Speaker(host: ip, client: client, eventSource: eventSource, platform: platform)
+            do {
+                try await speaker.initialize()
+                self.speakers.append(speaker)
+            } catch {
+                Log.error("[SpeakerRegistry] rejected \(ip): \(error.localizedDescription)")
             }
+        }
+        discovery.onSpeakerRemoved = { [weak self] ip in
+            guard let self else { return }
+            if let idx = self.speakers.firstIndex(where: { $0.host == ip }) {
+                self.speakers[idx].dispose()
+                self.speakers.remove(at: idx)
+            }
+            if self.activeSpeaker?.host == ip { self.activeSpeaker = nil }
         }
     }
 
