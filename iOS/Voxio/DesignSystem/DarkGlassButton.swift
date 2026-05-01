@@ -7,7 +7,7 @@ struct DarkGlassButton: View {
     enum Role {
         case `default`
         case confirm    // accent gold icon; no v1.1 call sites — retained for forward compatibility
-        case cancel     // label and icon in system red
+        case cancel     // label and icon in secondary label colour (subtle, not red)
         case disabled   // 0.4 opacity, non-interactive
     }
 
@@ -20,7 +20,7 @@ struct DarkGlassButton: View {
 
     private var labelColor: Color {
         switch role {
-        case .cancel: return .red
+        case .cancel: return BeoColor.labelSecondary
         default:      return BeoColor.labelPrimary
         }
     }
@@ -28,7 +28,7 @@ struct DarkGlassButton: View {
     private var iconColor: Color {
         switch role {
         case .confirm: return BeoColor.accent
-        case .cancel:  return .red
+        case .cancel:  return BeoColor.labelSecondary
         default:       return .white
         }
     }
@@ -84,7 +84,7 @@ struct DarkGlassIconButton: View {
     private var iconColor: Color {
         switch role {
         case .confirm: return BeoColor.accent
-        case .cancel:  return .red
+        case .cancel:  return BeoColor.labelSecondary
         default:       return .white
         }
     }
