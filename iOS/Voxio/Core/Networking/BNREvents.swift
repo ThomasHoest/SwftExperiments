@@ -46,10 +46,12 @@ class BNREvents {
 
         while !cancelled && !Task.isCancelled {
             do {
-                let notification = try await fetchNextNotification()
-                backoffSeconds = 1   // reset on success
-                if let event = normalise(notification) {
-                    onEvent?(event)
+                let notifications = try await fetchNotifications()
+                backoffSeconds = 1
+                for notification in notifications {
+                    if let event = normalise(notification) {
+                        onEvent?(event)
+                    }
                 }
             } catch {
                 guard !cancelled && !Task.isCancelled else { return }
@@ -60,7 +62,7 @@ class BNREvents {
         }
     }
 
-    private func fetchNextNotification() async throws -> BNRNotification {
+    private func fetchNotifications() async throws -> [BNRNotification] {
         guard let url = URL(string: "http://\(host):\(port)/BeoNotify/Notifications") else {
             throw SpeakerError.invalidResponse
         }
@@ -74,13 +76,21 @@ class BNREvents {
             guard (200..<300).contains(status) else {
                 throw SpeakerError.httpError(status)
             }
-            do {
-                return try decoder.decode(BNRNotification.self, from: data)
-            } catch {
-                let raw = String(data: data, encoding: .utf8) ?? "<non-utf8>"
-                Log.error("[BNR-LP:\(host)] decode error: \(error) | raw: \(raw)")
-                throw SpeakerError.invalidResponse
+            // The endpoint returns one or more newline-delimited JSON objects per response.
+            let lines = (String(data: data, encoding: .utf8) ?? "")
+                .components(separatedBy: "\n")
+                .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+            let results: [BNRNotification] = lines.compactMap { line in
+                guard let lineData = line.data(using: .utf8) else { return nil }
+                do {
+                    return try decoder.decode(BNRNotification.self, from: lineData)
+                } catch {
+                    Log.error("[BNR-LP:\(host)] decode error: \(error) | raw: \(line)")
+                    return nil
+                }
             }
+            guard !results.isEmpty else { throw SpeakerError.invalidResponse }
+            return results
         } catch let error as SpeakerError {
             throw error
         } catch let urlError as URLError {
