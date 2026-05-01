@@ -50,10 +50,6 @@ struct CommandStrings {
         adjustVolumeDown: { s, a in "Turning \(s) volume down by \(a)" },
         mute:             { s, v in "Muting \(s)\(v.map { " (currently at volume \($0))" } ?? "")" },
         unmute:           { s in "Unmuting \(s)" },
-        joinSpeakers:     { src, tgt in "Joining \(src) to \(tgt)" },
-        leaveSpeaker:     { s in "Disconnecting \(s) from its group" },
-        joined:           { src, tgt in "\(src) joined \(tgt)" },
-        leftGroup:        { s in "\(s) is now playing alone" },
         stopped:          { s in "\(s) stopped" },
         paused:           { s in "\(s) paused" },
         resumed:          { s in "\(s) resumed" },
@@ -61,6 +57,10 @@ struct CommandStrings {
         volumeAdjusted:   { s in "\(s) volume adjusted" },
         muted:            { s in "\(s) muted" },
         unmuted:          { s in "\(s) unmuted" },
+        joinSpeakers:     { src, tgt in "Joining \(src) to \(tgt)" },
+        leaveSpeaker:     { s in "Disconnecting \(s) from its group" },
+        joined:           { src, tgt in "\(src) joined \(tgt)" },
+        leftGroup:        { s in "\(s) is now playing alone" },
         listFavoritesResult: { s, list in "Favorites on \(s): \(list)" },
         actionCancelled:  "Action cancelled"
     )
@@ -77,10 +77,6 @@ struct CommandStrings {
         adjustVolumeDown: { s, a in "Skruer \(s) lydstyrke ned med \(a)" },
         mute:             { s, v in "Slår \(s) fra\(v.map { " (lydstyrke \($0))" } ?? "")" },
         unmute:           { s in "Slår \(s) til" },
-        joinSpeakers:     { src, tgt in "Tilslutter \(src) til \(tgt)" },
-        leaveSpeaker:     { s in "Afkobler \(s) fra gruppen" },
-        joined:           { src, tgt in "\(src) tilsluttet \(tgt)" },
-        leftGroup:        { s in "\(s) spiller nu alene" },
         stopped:          { s in "\(s) stoppet" },
         paused:           { s in "\(s) sat på pause" },
         resumed:          { s in "\(s) genoptaget" },
@@ -88,6 +84,10 @@ struct CommandStrings {
         volumeAdjusted:   { s in "\(s) lydstyrke justeret" },
         muted:            { s in "\(s) slået fra" },
         unmuted:          { s in "\(s) slået til" },
+        joinSpeakers:     { src, tgt in "Tilslutter \(src) til \(tgt)" },
+        leaveSpeaker:     { s in "Afkobler \(s) fra gruppen" },
+        joined:           { src, tgt in "\(src) tilsluttet \(tgt)" },
+        leftGroup:        { s in "\(s) spiller nu alene" },
         listFavoritesResult: { s, list in "Favoritter på \(s): \(list)" },
         actionCancelled:  "Handling annulleret"
     )
