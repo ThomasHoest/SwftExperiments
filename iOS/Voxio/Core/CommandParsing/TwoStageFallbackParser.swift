@@ -129,9 +129,11 @@ struct TwoStageFallbackParser {
         }
 
         // leave group — check before join so "leave" doesn't partially match join patterns
-        if text.contains(/\b(leave|separate|forlad|adskil|afkobl)\b/)
+        if text.contains(/\b(leave|separate|forlad|adskil|afkobl|frakobl|unpair|unsync)\b/)
             || text.contains(/\bplay alone\b/)
-            || text.contains(/\bspil alene\b/) {
+            || text.contains(/\bspil alene\b/)
+            || text.contains(/\bstop sync/)
+            || text.contains(/\bgå solo\b/) {
             return ParsedCommand(intent: .leaveSpeaker)
         }
 
@@ -146,7 +148,7 @@ struct TwoStageFallbackParser {
 
     // ── Shared patterns ───────────────────────────────────────────────────────
 
-    static let joinTriggerRegex = /\b(?:join|connect|merge|sync|saml|forbind)\b\s+(?:(?:to|with|til|og|med)\s+)?(.+)/
+    static let joinTriggerRegex = /\b(?:join|connect|merge|sync|link|pair|group|add|saml|forbind|tilslut|synkroniser)\b\s+(?:(?:to|with|til|og|med)\s+)?(.+)/
 
     // ── Stage 2: NLModel Classifier ───────────────────────────────────────────
 
