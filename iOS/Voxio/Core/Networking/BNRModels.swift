@@ -96,6 +96,9 @@ func normalise(_ notification: BNRNotification) -> BNREvent? {
     case "NOW_PLAYING_STORED_MUSIC":
         return .metadata(title: data.name, artist: data.artist, album: data.album)
 
+    case "SOFTWARE_UPDATE_STATE":
+        return nil
+
     default:
         Log.verbose("[BNR] unknown notification type: \(envelope.type)")
         return nil
