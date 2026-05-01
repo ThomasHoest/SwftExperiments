@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 struct HomeView: View {
-    @StateObject private var registry      = SpeakerRegistry()
+    @StateObject private var discovery     = SpeakerDiscoveryService()
     @StateObject private var coordinator   = ConfirmationCoordinator()
     @StateObject private var motionManager = MotionManager()
     @ObservedObject private var langService = LanguageService.shared
@@ -29,11 +29,11 @@ struct HomeView: View {
     private var ui: UIStrings      { UIStrings.forLanguage(langService.activeLanguage) }
 
     private var displayedSpeaker: Speaker? {
-        selectedSpeaker ?? registry.speakers.first
+        selectedSpeaker ?? discovery.groups.first?.hostSpeaker
     }
 
     private var shouldShowHint: Bool {
-        showHintManually || (!hasSeenHint && !registry.speakers.isEmpty)
+        showHintManually || (!hasSeenHint && !discovery.groups.flatMap(\.members).isEmpty)
     }
 
     var body: some View {
@@ -53,9 +53,9 @@ struct HomeView: View {
 
                 Spacer(minLength: 20)
 
-                if registry.speakers.count > 1 {
+                if discovery.groups.flatMap(\.members).count > 1 {
                     SpeakerSelectorPill(
-                        speakers: registry.speakers,
+                        speakers: discovery.groups.flatMap(\.members),
                         selectedSpeaker: $selectedSpeaker
                     )
                     .padding(.bottom, 12)
@@ -81,11 +81,13 @@ struct HomeView: View {
         }
         .animation(BeoAnimation.toast, value: currentToast)
         .onAppear(perform: onAppear)
-        .onChange(of: registry.speakers.map(\.id)) { _, ids in
+        .onChange(of: discovery.groups.flatMap(\.members).map(\.id)) { _, ids in
             if let sel = selectedSpeaker, !ids.contains(sel.id) {
-                selectedSpeaker = registry.speakers.first
+                selectedSpeaker = discovery.groups.flatMap(\.members).first
+                SpeakerStore.shared.activeSpeaker = selectedSpeaker ?? discovery.groups.flatMap(\.members).first
             } else if selectedSpeaker == nil {
-                selectedSpeaker = registry.speakers.first
+                selectedSpeaker = discovery.groups.flatMap(\.members).first
+                SpeakerStore.shared.activeSpeaker = selectedSpeaker ?? discovery.groups.flatMap(\.members).first
             }
         }
         .onChange(of: langService.activeLanguage) { _, language in
@@ -155,7 +157,7 @@ struct HomeView: View {
             }
 
             Spacer()
-            ConnectionStatusChip(speakerCount: registry.speakers.count)
+            ConnectionStatusChip(speakerCount: discovery.groups.flatMap(\.members).count)
         }
         .padding(.top, 8)
     }
@@ -220,7 +222,7 @@ struct HomeView: View {
 
             if shouldShowHint && !coordinator.isPending {
                 HintCardView(
-                    speakerName: registry.speakers.first?.name,
+                    speakerName: discovery.groups.first?.hostSpeaker.name,
                     language: langService.activeLanguage,
                     onDismiss: {
                         hasSeenHint = true
@@ -254,7 +256,7 @@ struct HomeView: View {
 
     private func startListening() {
         voiceToText.setLanguage(langService.activeLanguage)
-        registry.start()
+        discovery.start()
         motionManager.start()
         Task { await commandRouter.warmUp() }
 
@@ -289,9 +291,9 @@ struct HomeView: View {
                 let words = text.lowercased()
                     .components(separatedBy: .whitespaces)
                     .filter { !$0.isEmpty }
-                guard let (speaker, remaining) = registry.resolve(words: words) else {
+                guard let (speaker, remaining) = discovery.resolve(words: words) else {
                     Log.info("[HomeView] no speaker resolved for: \(text)")
-                    let available = registry.speakers.map(\.name)
+                    let available = discovery.groups.flatMap(\.members).map(\.name)
                     handleError(.noSpeakerSpoken(available: available))
                     transcriptController.clearAfterCommand()
                     return
@@ -385,13 +387,13 @@ struct HomeView: View {
     private func dispatch(command: VoiceCommand, to speaker: Speaker) async -> Bool {
         switch command {
         case .playFavorite(let index):
-            await registry.favorites.play(index: index, on: speaker)
+            await discovery.favorites.play(index: index, on: speaker)
             return true
         case .playDefault:
-            await registry.favorites.playDefault(on: speaker)
+            await discovery.favorites.playDefault(on: speaker)
             return true
         case .listFavorites:
-            let names = await registry.favorites.listFavorites(for: speaker)
+            let names = await discovery.favorites.listFavorites(for: speaker)
             let list  = names.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "  ·  ")
             transcriptController.update(cs.listFavoritesResult(speaker.name, list))
             transcriptController.clearAfterCommand()
@@ -439,7 +441,7 @@ struct HomeView: View {
         do {
             try await action()
             return true
-        } catch let error as MozartError {
+        } catch let error as SpeakerError {
             let appError: AppError
             if case .timeout = error { appError = .apiTimeout }
             else { appError = .speakerUnreachable(speaker: speaker.name) }
@@ -453,8 +455,8 @@ struct HomeView: View {
 
     @MainActor
     private func handlePlayFavorite(index: Int, speaker: Speaker) async {
-        guard let favorite = await registry.favorites.favorite(at: index, for: speaker) else {
-            let available = await registry.favorites.listFavorites(for: speaker)
+        guard let favorite = await discovery.favorites.favorite(at: index, for: speaker) else {
+            let available = await discovery.favorites.listFavorites(for: speaker)
             Log.info("[HomeView][clear] path=handlePlayFavorite guardFail index=\(index) → clearAfterCommand")
             handleError(.favoriteIndexOutOfRange(index: index, speaker: speaker.name, available: available))
             transcriptController.clearAfterCommand()

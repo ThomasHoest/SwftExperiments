@@ -6,6 +6,7 @@ import Combine
 ///   1. Explicit name match in the leading transcript words (fuzzy, Levenshtein ≤ 2)
 ///   2. Single actively-playing speaker (implicit session)
 ///   3. Most recently explicitly-addressed speaker
+@available(*, deprecated, message: "Use SpeakerDiscoveryService instead.")
 @MainActor
 class SpeakerRegistry: ObservableObject {
     @Published private(set) var speakers: [Speaker] = []

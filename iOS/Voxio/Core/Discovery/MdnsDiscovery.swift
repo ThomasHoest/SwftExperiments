@@ -1,44 +1,37 @@
 import Foundation
 import Network
-import Combine
 
 @MainActor
-class MdnsDiscovery: NSObject, ObservableObject {
-    @Published var speakers: [Speaker] = []
+class MdnsDiscovery: NSObject {
+    var onSpeakerDiscovered: ((String, SpeakerPlatform) async -> Void)?
+    var onSpeakerRemoved: ((String) -> Void)?
 
-    private let browser = NetServiceBrowser()
+    private let mozartBrowser = NetServiceBrowser()
+    private let bnrBrowser    = NetServiceBrowser()
     private var pendingServices: [NetService] = []
     private var foundHosts = Set<String>()
     private var serviceNameToHost: [String: String] = [:]
+    private var serviceNameToType: [String: SpeakerPlatform] = [:]
+    private var browserPlatform: [ObjectIdentifier: SpeakerPlatform] = [:]
 
     override init() {
         super.init()
-        browser.delegate = self
+        mozartBrowser.delegate = self
+        bnrBrowser.delegate    = self
+        browserPlatform[ObjectIdentifier(mozartBrowser)] = .mozart
+        browserPlatform[ObjectIdentifier(bnrBrowser)]    = .bnr
     }
 
     func start() {
-        Log.info("[mDNS] started browsing for _bangolufsen._tcp.")
-        browser.searchForServices(ofType: "_bangolufsen._tcp.", inDomain: "local.")
+        Log.info("[mDNS] started browsing for _bangolufsen._tcp. and _beoremote._tcp.")
+        mozartBrowser.searchForServices(ofType: "_bangolufsen._tcp.", inDomain: "local.")
+        bnrBrowser.searchForServices(ofType: "_beoremote._tcp.", inDomain: "local.")
     }
 
     func stop() {
         Log.info("[mDNS] stopped browsing")
-        browser.stop()
-    }
-
-    private func tryAdd(ip: String) async {
-        guard foundHosts.insert(ip).inserted else { return }
-        Log.info("[mDNS] attempting to add speaker at \(ip)")
-        let speaker = Speaker(host: ip)
-        do {
-            try await speaker.initialize()
-            speakers.append(speaker)
-            Log.info("[mDNS] added speaker \(speaker.name) (\(ip))")
-        } catch {
-            Log.error("[mDNS] rejected \(ip): \(error.localizedDescription)")
-            foundHosts.remove(ip)
-            speaker.dispose()
-        }
+        mozartBrowser.stop()
+        bnrBrowser.stop()
     }
 
     private func ipv4(from data: Data) -> String? {
@@ -57,6 +50,8 @@ class MdnsDiscovery: NSObject, ObservableObject {
 extension MdnsDiscovery: NetServiceBrowserDelegate, NetServiceDelegate {
     func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
         Log.verbose("[mDNS] found service: \(service.name)")
+        let platform = browserPlatform[ObjectIdentifier(browser)] ?? .mozart
+        serviceNameToType[service.name] = platform
         service.delegate = self
         pendingServices.append(service)
         service.resolve(withTimeout: 5)
@@ -65,11 +60,13 @@ extension MdnsDiscovery: NetServiceBrowserDelegate, NetServiceDelegate {
     func netServiceDidResolveAddress(_ sender: NetService) {
         pendingServices.removeAll { $0 === sender }
         guard let addresses = sender.addresses else { return }
+        let platform = serviceNameToType[sender.name] ?? .mozart
         for data in addresses {
             if let ip = ipv4(from: data) {
-                Log.info("[mDNS] resolved \(sender.name) → \(ip)")
+                guard foundHosts.insert(ip).inserted else { return }
+                Log.info("[mDNS] resolved \(sender.name) → \(ip) (\(platform.rawValue))")
                 serviceNameToHost[sender.name] = ip
-                Task { await self.tryAdd(ip: ip) }
+                Task { await self.onSpeakerDiscovered?(ip, platform) }
                 return
             }
         }
@@ -78,13 +75,10 @@ extension MdnsDiscovery: NetServiceBrowserDelegate, NetServiceDelegate {
 
     func netServiceBrowser(_ browser: NetServiceBrowser, didRemove service: NetService, moreComing: Bool) {
         Log.info("[mDNS] lost service: \(service.name)")
+        serviceNameToType.removeValue(forKey: service.name)
         guard let host = serviceNameToHost.removeValue(forKey: service.name) else { return }
         foundHosts.remove(host)
-        if let idx = speakers.firstIndex(where: { $0.host == host }) {
-            speakers[idx].dispose()
-            speakers.remove(at: idx)
-            Log.info("[mDNS] removed speaker at \(host)")
-        }
+        onSpeakerRemoved?(host)
     }
 
     func netService(_ sender: NetService, didNotResolve errorDict: [String: NSNumber]) {
