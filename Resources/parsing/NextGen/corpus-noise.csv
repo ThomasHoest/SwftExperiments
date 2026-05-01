@@ -1,0 +1,895 @@
+text,label,lang,noise,source
+hmm med det samme sæt en timer til ti minutter,unknown,da,filler,med det samme sæt en timer til ti minutter
+hmm må jeg bede dig om at slå lyden fra,mute,da,filler,må jeg bede dig om at slå lyden fra
+now now tell me my favorites,listFavorites,en,repetition,now tell me my favorites
+like silent mode right away,mute,en,filler,silent mode right away
+spil favor- nummer 9,playFavoriteByNumber,da,partial_word,spil favorit nummer 9
+turn turn it up by ten,volumeUp,en,repetition,turn it up by ten
+spil spil favorit 9,playFavoriteByNumber,da,repetition,spil favorit 9
+real quick pau- everything,pause,en,partial_word,real quick pause everything
+real real quick go ahead and separate this speaker,leaveSpeaker,en,repetition,real quick go ahead and separate this speaker
+må må jeg bede dig om at spille favorit 2,playFavoriteByNumber,da,repetition,må jeg bede dig om at spille favorit 2
+altså vil du indstille lydstyrken til tyve,setVolume,da,filler,vil du indstille lydstyrken til tyve
+uhh would you please group with the garden,joinSpeaker,en,filler,would you please group with the garden
+kan kan du venligst forlade gruppen,leaveSpeaker,da,repetition,kan du venligst forlade gruppen
+column down 15,volumeDown,en,mistranscription,volume down 15
+ville du venligst mood,mute,da,mistranscription,ville du venligst mute
+just louder by you know twenty-five,volumeUp,en,filler,just louder by twenty-five
+set the valium to 1,setVolume,en,mistranscription,set the volume to 1
+er volume level 20,setVolume,en,filler,volume level 20
+hmm kindly unmute,unmute,en,filler,kindly unmute
+bare bare lyd tilbage,unmute,da,repetition,bare lyd tilbage
+i would you know like you to stop,stop,en,filler,i would like you to stop
+like please put on some music,playDefault,en,filler,please put on some music
+lige fjern lydl-,unmute,da,partial_word,lige fjern lydløs
+vil du skrue ligesom ned,volumeDown,da,filler,vil du skrue ned
+hmm med det samme vær så venlig at frakoble,leaveSpeaker,da,filler,med det samme vær så venlig at frakoble
+hmm mere lyd med det samme,volumeUp,da,filler,mere lyd med det samme
+hurtigt pause it,pause,da,mistranscription,hurtigt pause
+jeg vil gerne have at du spille faborit ti,playFavoriteByNumber,da,mistranscription,jeg vil gerne have at du spille favorit ti
+what's what's in my favorites real quick,listFavorites,en,repetition,what's in my favorites real quick
+start klassisk musik,playNamed,en,dropped_article,start the klassisk musik
+could you kindly plate favorite 5,playFavoriteByNumber,en,mistranscription,could you kindly play favorite 5
+uhh now turn off the music,stop,en,filler,now turn off the music
+stop øhh synkronisering,leaveSpeaker,da,filler,stop synkronisering
+lav pause nu,pause,da,dropped_article,lav en pause nu
+bare bare musik tak,playDefault,da,repetition,bare musik tak
+could you kindly set column to 100,setVolume,en,mistranscription,could you kindly set volume to 100
+ville du venligst indstille lydstyrken til øh 20,setVolume,da,filler,ville du venligst indstille lydstyrken til 20
+break break the music right now,pause,en,repetition,break the music right now
+med med det samme fjern lyden,mute,da,repetition,med det samme fjern lyden
+kunne kunne du venligst skrue op for lyden,volumeUp,da,repetition,kunne du venligst skrue op for lyden
+højde med ti nu,volumeUp,da,mistranscription,højere med ti nu
+må jeg bede dig om at afspille favoret nummer fem,playFavoriteByNumber,da,mistranscription,må jeg bede dig om at afspille favorit nummer fem
+vil- du spille This American Life,playNamed,da,partial_word,ville du spille This American Life
+you know can you unpause,resume,en,filler,can you unpause
+ville ville du ændre lydstyrken til halvtreds,setVolume,da,repetition,ville du ændre lydstyrken til halvtreds
+change change volume to sixty,setVolume,en,repetition,change volume to sixty
+could could you please put on Taylor Swift,playNamed,en,repetition,could you please put on Taylor Swift
+could you set valium to 45,setVolume,en,mistranscription,could you set volume to 45
+rig- away louder,volumeUp,en,partial_word,right away louder
+med det sam- hæv lydstyrken med femogtyve,volumeUp,da,partial_word,med det samme hæv lydstyrken med femogtyve
+uhh kindly play number eight,playFavoriteByNumber,en,filler,kindly play number eight
+kindly kindly read out my favorites,listFavorites,en,repetition,kindly read out my favorites
+lydløs med samme,mute,da,dropped_article,lydløs med det samme
+kunne du venlig- mute,mute,da,partial_word,kunne du venligst mute
+quickly go ahe- and pause,pause,en,partial_word,quickly go ahead and pause
+uh real quick stop the audio,stop,en,filler,real quick stop the audio
+could could you list my favorites,listFavorites,en,repetition,could you list my favorites
+bring bring the sound back right now,unmute,en,repetition,bring the sound back right now
+right away hmm start playing again,resume,en,filler,right away start playing again
+disconnect disconnect,leaveSpeaker,en,repetition,disconnect
+i want you uhh to resume,resume,en,filler,i want you to resume
+fje- fra gruppen nu,leaveSpeaker,da,partial_word,fjern fra gruppen nu
+vil vil du afspille rolig musik,playNamed,da,repetition,vil du afspille rolig musik
+vil- du sætte Kendrick Lamar på,playNamed,da,partial_word,ville du sætte Kendrick Lamar på
+just just i need you to continue,resume,en,repetition,just i need you to continue
+would you you know set volume to 40,setVolume,en,filler,would you set volume to 40
+i'd i'd like you to set volume to 1,setVolume,en,repetition,i'd like you to set volume to 1
+quieter by twen-,volumeDown,en,partial_word,quieter by twenty
+øhh afbryd lige,pause,da,filler,afbryd lige
+uh turn it down by 5,volumeDown,en,filler,turn it down by 5
+i i want you to play favorite 9,playFavoriteByNumber,en,repetition,i want you to play favorite 9
+få få det til at stoppe,stop,da,repetition,få det til at stoppe
+please pause the um music,pause,en,filler,please pause the music
+bil,playDefault,da,mistranscription,spil
+can can you play favorite 10,playFavoriteByNumber,en,repetition,can you play favorite 10
+can can you please kill the sound,mute,en,repetition,can you please kill the sound
+vær venlig at forbinde med ligesom køkkenet,joinSpeaker,da,filler,vær venlig at forbinde med køkkenet
+go ahead and plate favorite 9,playFavoriteByNumber,en,mistranscription,go ahead and play favorite 9
+please put on song,playDefault,en,dropped_article,please put on a song
+quickly quickly start music,playDefault,en,repetition,quickly start music
+kindly kindly resume the music,resume,en,repetition,kindly resume the music
+vil ligesom du spille musik,playDefault,da,filler,vil du spille musik
+quickly quickly queue up music,playDefault,en,repetition,quickly queue up music
+hurtigt fjern dæmpni-,unmute,da,partial_word,hurtigt fjern dæmpning
+quickly turn volume up,volumeUp,en,dropped_article,quickly turn the volume up
+lige ehm afspil musik,playDefault,da,filler,lige afspil musik
+assume playing,resume,en,mistranscription,resume playing
+hmm hvad betyder bonjour nu,unknown,da,filler,hvad betyder bonjour nu
+could you set valium to 100,setVolume,en,mistranscription,could you set volume to 100
+play play right now,playDefault,en,repetition,play right now
+hurtigt ligesom sluk lyden,mute,da,filler,hurtigt sluk lyden
+må må jeg bede dig om at spille Classic FM,playNamed,da,repetition,må jeg bede dig om at spille Classic FM
+would would you mind to join the dining room,joinSpeaker,en,repetition,would you mind to join the dining room
+would you group with dining room,joinSpeaker,en,dropped_article,would you group with the dining room
+turn turn the volume up,volumeUp,en,repetition,turn the volume up
+right away go ahead and hold music,pause,en,dropped_article,right away go ahead and hold the music
+favorit favorit 2,playFavoriteByNumber,da,repetition,favorit 2
+would you er mind to group with the living room,joinSpeaker,en,filler,would you mind to group with the living room
+vil vil du sætte lydstyrken til fyrre,setVolume,da,repetition,vil du sætte lydstyrken til fyrre
+could you change the er volume to 80,setVolume,en,filler,could you change the volume to 80
+could you please gro- with the hallway,joinSpeaker,en,partial_word,could you please group with the hallway
+would you please plays number five,playFavoriteByNumber,en,mistranscription,would you please play number five
+group with er the bathroom,joinSpeaker,en,filler,group with the bathroom
+uhh go ahead and unmute,unmute,en,filler,go ahead and unmute
+sluk sluk for lyden,mute,da,repetition,sluk for lyden
+hold hold the song,pause,en,repetition,hold the song
+hmm bare tilføj æg til min indkøbsliste,unknown,da,filler,bare tilføj æg til min indkøbsliste
+må må jeg bede dig om at pause afspilningen,pause,da,repetition,må jeg bede dig om at pause afspilningen
+kunne kunne du venligst sætte Pop FM på,playNamed,da,repetition,kunne du venligst sætte Pop FM på
+med det samme start afspilning-,playDefault,da,partial_word,med det samme start afspilningen
+fjern al lyd med samme,mute,da,dropped_article,fjern al lyd med det samme
+quickly quickly go ahead and list my favorites,listFavorites,en,repetition,quickly go ahead and list my favorites
+mute song right now,mute,en,dropped_article,mute the song right now
+merge merge with the patio,joinSpeaker,en,repetition,merge with the patio
+right away decrease um volume by 30,volumeDown,en,filler,right away decrease volume by 30
+i want you to join kitchen,joinSpeaker,en,dropped_article,i want you to join the kitchen
+now go uhh ahead and freeze the music,pause,en,filler,now go ahead and freeze the music
+add add the hallway to the group,joinSpeaker,en,repetition,add the hallway to the group
+right right away play music,playDefault,en,repetition,right away play music
+go go ahead and restore the sound now,unmute,en,repetition,go ahead and restore the sound now
+jeg jeg vil bede dig om at fjerne lydløs,unmute,da,repetition,jeg vil bede dig om at fjerne lydløs
+fil noget musik nu,playDefault,da,mistranscription,spil noget musik nu
+lige lige tænd for musikken,unmute,da,repetition,lige tænd for musikken
+altså sæt P6 på,playNamed,da,filler,sæt P6 på
+synkroniser altså med terrassen,joinSpeaker,da,filler,synkroniser med terrassen
+um right away how far is copenhagen,unknown,en,filler,right away how far is copenhagen
+jeg jeg vil bede dig om at spille noget,playDefault,da,repetition,jeg vil bede dig om at spille noget
+i want you to mood now,mute,en,mistranscription,i want you to mute now
+øhh jeg vil bede dig om at holde op,stop,da,filler,jeg vil bede dig om at holde op
+bare bare skru ned 25,volumeDown,da,repetition,bare skru ned 25
+med det samme ehm start igen,resume,da,filler,med det samme start igen
+højre med tredive,volumeUp,da,mistranscription,højere med tredive
+now i would um like you to resume,resume,en,filler,now i would like you to resume
+i uh would like you to play favorite 10,playFavoriteByNumber,en,filler,i would like you to play favorite 10
+can can you mute,mute,en,repetition,can you mute
+please make it quiet-,volumeDown,en,partial_word,please make it quieter
+hurtigt hurtigt tag højttaleren ud af gruppen,leaveSpeaker,da,repetition,hurtigt tag højttaleren ud af gruppen
+continue hmm playing,resume,en,filler,continue playing
+sync sync with the kitchen,joinSpeaker,en,repetition,sync with the kitchen
+top the mute right away,unmute,en,mistranscription,stop the mute right away
+i'd like you to list favorites,listFavorites,en,dropped_article,i'd like you to list my favorites
+quickly quickly resume the track,resume,en,repetition,quickly resume the track
+halt music real quick,pause,en,dropped_article,halt the music real quick
+turn uhh off the audio real quick,stop,en,filler,turn off the audio real quick
+spil spil min favorit seks,playFavoriteByNumber,da,repetition,spil min favorit seks
+real qui- what's the capital of france,unknown,en,partial_word,real quick what's the capital of france
+må må jeg bede dig om at starte musikken,playDefault,da,repetition,må jeg bede dig om at starte musikken
+right away rai- the volume,volumeUp,en,partial_word,right away raise the volume
+quieted by ten,volumeDown,en,mistranscription,quieter by ten
+vil du tænde hmm for lyden,unmute,da,filler,vil du tænde for lyden
+could could you kindly put on Volbeat,playNamed,en,repetition,could you kindly put on Volbeat
+ehm stop al lyd,stop,da,filler,stop al lyd
+i would like you to change the volume you know to 65,setVolume,en,filler,i would like you to change the volume to 65
+um i would like you to put on Genstart,playNamed,en,filler,i would like you to put on Genstart
+fjern denne højttaler fra gruppen hurti-,leaveSpeaker,da,partial_word,fjern denne højttaler fra gruppen hurtigt
+right now restore the uhh volume,unmute,en,filler,right now restore the volume
+uh right away sound off,mute,en,filler,right away sound off
+louder you know by fifteen,volumeUp,en,filler,louder by fifteen
+like pick a random number now,unknown,en,filler,pick a random number now
+drop drop the audio real quick,mute,en,repetition,drop the audio real quick
+vil du venligst dæm- lyden,mute,da,partial_word,vil du venligst dæmpe lyden
+play study music,playNamed,en,dropped_article,play the study music
+pause speaker right now,pause,en,dropped_article,pause the speaker right now
+øh kunne du venligst fjerne lydløs,unmute,da,filler,kunne du venligst fjerne lydløs
+real quick show my you know favorites,listFavorites,en,filler,real quick show my favorites
+please change the valium to 80,setVolume,en,mistranscription,please change the volume to 80
+real real quick fire up some music,playDefault,en,repetition,real quick fire up some music
+kindly stop music,stop,en,dropped_article,kindly stop the music
+real you know quick pick up where you left off,resume,en,filler,real quick pick up where you left off
+put put on some tunes right away,playDefault,en,repetition,put on some tunes right away
+column five,setVolume,en,mistranscription,volume five
+could could you please put on Bob Dylan,playNamed,en,repetition,could you please put on Bob Dylan
+you know please play favorite nine,playFavoriteByNumber,en,filler,please play favorite nine
+kan kan du venligst slukke for lyden,mute,da,repetition,kan du venligst slukke for lyden
+would you restore sound,unmute,en,dropped_article,would you restore the sound
+um play by yourself,leaveSpeaker,en,filler,play by yourself
+pair pair with the bedroom,joinSpeaker,en,repetition,pair with the bedroom
+øhh ville du venligst stoppe musikken,stop,da,filler,ville du venligst stoppe musikken
+vær vær så venlig at holde pause med det samme,pause,da,repetition,vær så venlig at holde pause med det samme
+right away turn you know it down by ten,volumeDown,en,filler,right away turn it down by ten
+vær vær venlig at skrue op for lyden,volumeUp,da,repetition,vær venlig at skrue op for lyden
+quickly kill the uhh music,stop,en,filler,quickly kill the music
+go go ahead and ungroup right away,leaveSpeaker,en,repetition,go ahead and ungroup right away
+restore audio right away,unmute,en,dropped_article,restore the audio right away
+rig- now i would like you to disconnect,leaveSpeaker,en,partial_word,right now i would like you to disconnect
+ehm kunne du venligst skrue ned for lyden,volumeDown,da,filler,kunne du venligst skrue ned for lyden
+read read the favorites,listFavorites,en,repetition,read the favorites
+kindly kindly change the volume to five,setVolume,en,repetition,kindly change the volume to five
+plays the Taylor Swift,playNamed,en,mistranscription,play the Taylor Swift
+er i need you to join the dining room,joinSpeaker,en,filler,i need you to join the dining room
+plays my music,playDefault,en,mistranscription,play my music
+go go ahead and mute now,mute,en,repetition,go ahead and mute now
+i i need you to stop playing,stop,en,repetition,i need you to stop playing
+uh right now calculate the tip,unknown,en,filler,right now calculate the tip
+stop song right away,stop,en,dropped_article,stop the song right away
+please mute speaker,mute,en,dropped_article,please mute the speaker
+ligesom vær så venlig at dæmpe lyden,mute,da,filler,vær så venlig at dæmpe lyden
+i'd like you to plays something,playDefault,en,mistranscription,i'd like you to play something
+skru skru op 25 nu,volumeUp,da,repetition,skru op 25 nu
+could you kindly put the valium at 85,setVolume,en,mistranscription,could you kindly put the volume at 85
+turn turn it down by 15 real quick,volumeDown,en,repetition,turn it down by 15 real quick
+favourites like list,listFavorites,en,filler,favourites list
+nu vær så venlig at stoppe ligesom musikken,stop,da,filler,nu vær så venlig at stoppe musikken
+real quick what's on my er favorites list,listFavorites,en,filler,real quick what's on my favorites list
+øhh må jeg bede dig om at afspille klassisk musik,playNamed,da,filler,må jeg bede dig om at afspille klassisk musik
+right now i would like you uhh to resume,resume,en,filler,right now i would like you to resume
+disconnect disconnect from the group right away,leaveSpeaker,en,repetition,disconnect from the group right away
+make it loud- right now,volumeUp,en,partial_word,make it louder right now
+like now i need you to carry on,resume,en,filler,now i need you to carry on
+now bring sound back,unmute,en,dropped_article,now bring the sound back
+bump volume real quick,volumeUp,en,dropped_article,bump the volume real quick
+play play the Genstart,playNamed,en,repetition,play the Genstart
+vil- du venligst afspille favorit nummer et,playFavoriteByNumber,da,partial_word,ville du venligst afspille favorit nummer et
+spil samtidig med køkken-,joinSpeaker,da,partial_word,spil samtidig med køkkenet
+vær vær så venlig at spille musik med det samme,playDefault,da,repetition,vær så venlig at spille musik med det samme
+lower lower the volume by 10 now,volumeDown,en,repetition,lower the volume by 10 now
+quickly i'd like some uhh music,playDefault,en,filler,quickly i'd like some music
+go ahead and list favorites,listFavorites,en,dropped_article,go ahead and list my favorites
+vil vil du venligst sætte lydstyrken til fyrre,setVolume,da,repetition,vil du venligst sætte lydstyrken til fyrre
+hmm venligst skru op med fem,volumeUp,da,filler,venligst skru op med fem
+um would you freeze the music,pause,en,filler,would you freeze the music
+right right away show me what's saved,listFavorites,en,repetition,right away show me what's saved
+what what does bonjour mean real quick,unknown,en,repetition,what does bonjour mean real quick
+just let's hear some uhh music,playDefault,en,filler,just let's hear some music
+kunne kunne du ophæve grupperingen,leaveSpeaker,da,repetition,kunne du ophæve grupperingen
+kindly pau- the music,pause,en,partial_word,kindly pause the music
+uhh right away i'd like you to pause it,pause,en,filler,right away i'd like you to pause it
+just just end it,stop,en,repetition,just end it
+stop stop the audio,stop,en,repetition,stop the audio
+i hmm need you to freeze the music,pause,en,filler,i need you to freeze the music
+quickly er mute the music,mute,en,filler,quickly mute the music
+i need you to pause it right away,pause,en,mistranscription,i need you to pause right away
+er now list favourites,listFavorites,en,filler,now list favourites
+med det sam- pause musikken,pause,da,partial_word,med det samme pause musikken
+fjern ligesom mig fra gruppen nu,leaveSpeaker,da,filler,fjern mig fra gruppen nu
+vil vil du venligst sætte musik på,playDefault,da,repetition,vil du venligst sætte musik på
+fjern fjern dæmpning,unmute,da,repetition,fjern dæmpning
+er add eggs to my shopping list,unknown,en,filler,add eggs to my shopping list
+venlig- gør lyden lavere,volumeDown,da,partial_word,venligst gør lyden lavere
+spil favorit hmm nummer fem,playFavoriteByNumber,da,filler,spil favorit nummer fem
+venligst venligst spil noget musik,playDefault,da,repetition,venligst spil noget musik
+vær vær så venlig at sænke lydstyrken med det samme,volumeDown,da,repetition,vær så venlig at sænke lydstyrken med det samme
+ville du sætte lydstyrken altså til 15,setVolume,da,filler,ville du sætte lydstyrken til 15
+ligesom kan du venligst gøre det højere,volumeUp,da,filler,kan du venligst gøre det højere
+ville ville du venligst sætte musik på,playDefault,da,repetition,ville du venligst sætte musik på
+real real quick show me my favorites,listFavorites,en,repetition,real quick show me my favorites
+hmm play favourite nine,playFavoriteByNumber,en,filler,play favourite nine
+bare bare tænd for lyden,unmute,da,repetition,bare tænd for lyden
+vær så venlig at sætte på paws,pause,da,mistranscription,vær så venlig at sætte på pause
+venligst læs list- op,listFavorites,da,partial_word,venligst læs listen op
+i i want you to play favorite 2,playFavoriteByNumber,en,repetition,i want you to play favorite 2
+bare bare vis mig mine favoritter,listFavorites,da,repetition,bare vis mig mine favoritter
+i i need you to resume,resume,en,repetition,i need you to resume
+ehm kan du venligst skrue op for lyden,volumeUp,da,filler,kan du venligst skrue op for lyden
+hmm skru ned med ti nu,volumeDown,da,filler,skru ned med ti nu
+right right now freeze playback,pause,en,repetition,right now freeze playback
+uh could you kindly join the kitchen,joinSpeaker,en,filler,could you kindly join the kitchen
+stop stop musikken,stop,da,repetition,stop musikken
+øh jeg vil bede dig om at tænde lyden igen,unmute,da,filler,jeg vil bede dig om at tænde lyden igen
+højere højere med femogtyve med det samme,volumeUp,da,repetition,højere med femogtyve med det samme
+please show me favorites,listFavorites,en,dropped_article,please show me my favorites
+sænk lydstyrk- med 5,volumeDown,da,partial_word,sænk lydstyrken med 5
+quickly separa-,leaveSpeaker,en,partial_word,quickly separate
+you know would you please mute the speaker,mute,en,filler,would you please mute the speaker
+would you mind to change the volume to you know 20,setVolume,en,filler,would you mind to change the volume to 20
+uhh now i need you to disconnect,leaveSpeaker,en,filler,now i need you to disconnect
+please hold the mus-,pause,en,partial_word,please hold the music
+sænk sænk lydstyrken med fem,volumeDown,da,repetition,sænk lydstyrken med fem
+må jeg bede dig om at ligesom spille favorit 4,playFavoriteByNumber,da,filler,må jeg bede dig om at spille favorit 4
+plea- mute,mute,en,partial_word,please mute
+vil vil du venligst fortælle mig mine favoritter,listFavorites,da,repetition,vil du venligst fortælle mig mine favoritter
+could could you show me my favorites,listFavorites,en,repetition,could you show me my favorites
+i i need you to put the volume at 1,setVolume,en,repetition,i need you to put the volume at 1
+favourite favourite one,playFavoriteByNumber,en,repetition,favourite one
+musik musik tak nu,playDefault,da,repetition,musik tak nu
+list list favourites right away,listFavorites,en,repetition,list favourites right away
+now show my favourit-,listFavorites,en,partial_word,now show my favourites
+vil vil du gruppere med entréen,joinSpeaker,da,repetition,vil du gruppere med entréen
+i'd i'd like you to play music right away,playDefault,en,repetition,i'd like you to play music right away
+uhh i want you to tell me my favorites,listFavorites,en,filler,i want you to tell me my favorites
+øhh lige hvilke favoritter har jeg,listFavorites,da,filler,lige hvilke favoritter har jeg
+kan du spille ligesom The Voice,playNamed,da,filler,kan du spille The Voice
+could could you please put on Genstart,playNamed,en,repetition,could you please put on Genstart
+pose the music,pause,en,mistranscription,pause the music
+real quick go ahead and shop,stop,en,mistranscription,real quick go ahead and stop
+pause pause the audio right now,pause,en,repetition,pause the audio right now
+lige lige fortæl en vittighed,unknown,da,repetition,lige fortæl en vittighed
+go ahead and lower volume right now,volumeDown,en,dropped_article,go ahead and lower the volume right now
+cou- you put on Taylor Swift,playNamed,en,partial_word,could you put on Taylor Swift
+i wou- like you to pause it,pause,en,partial_word,i would like you to pause it
+you know cut the audio real quick,mute,en,filler,cut the audio real quick
+jeg jeg vil gerne have at du vise mine favoritter,listFavorites,da,repetition,jeg vil gerne have at du vise mine favoritter
+nu højre med 15,volumeUp,da,mistranscription,nu højere med 15
+kindly kindly turn the sound back on,unmute,en,repetition,kindly turn the sound back on
+like leave the speakers real quick,leaveSpeaker,en,filler,leave the speakers real quick
+uh please play number 6,playFavoriteByNumber,en,filler,please play number 6
+would you mind um to lower the volume,volumeDown,en,filler,would you mind to lower the volume
+would you mind to change the column to forty,setVolume,en,mistranscription,would you mind to change the volume to forty
+kunne du ligesom slukke for lyden,mute,da,filler,kunne du slukke for lyden
+med hmm det samme sæt det på pause,pause,da,filler,med det samme sæt det på pause
+kunne kunne du venligst sætte Radio 100 på,playNamed,da,repetition,kunne du venligst sætte Radio 100 på
+hmm can you pause it,pause,en,filler,can you pause it
+vær så venlig at ehm tænde for lyden,unmute,da,filler,vær så venlig at tænde for lyden
+uhh i'd like you to play favorite nine,playFavoriteByNumber,en,filler,i'd like you to play favorite nine
+quickly lauder by 5,volumeUp,en,mistranscription,quickly louder by 5
+forbind forbind med badeværelset,joinSpeaker,da,repetition,forbind med badeværelset
+stands stands sangen nu,stop,da,repetition,stands sangen nu
+join join the group with the garden,joinSpeaker,en,repetition,join the group with the garden
+med med det samme frakobl højttaleren,leaveSpeaker,da,repetition,med det samme frakobl højttaleren
+i i want to pause right now,pause,en,repetition,i want to pause right now
+i'd i'd like you to put the volume at five,setVolume,en,repetition,i'd like you to put the volume at five
+kindly hold music,pause,en,dropped_article,kindly hold the music
+vær vær så venlig at fortælle mig mine favoritter,listFavorites,da,repetition,vær så venlig at fortælle mig mine favoritter
+nu nu ophæv grupperingen,leaveSpeaker,da,repetition,nu ophæv grupperingen
+what what stations are saved,listFavorites,en,repetition,what stations are saved
+right right away stop the song,stop,en,repetition,right away stop the song
+quickly assume from where it stopped,resume,en,mistranscription,quickly resume from where it stopped
+could you separate this speak-,leaveSpeaker,en,partial_word,could you separate this speaker
+jeg jeg vil bede dig om at forbinde med køkkenet,joinSpeaker,da,repetition,jeg vil bede dig om at forbinde med køkkenet
+just i'd like you to play somethi-,playDefault,en,partial_word,just i'd like you to play something
+hurtigt lav en pause it,pause,da,mistranscription,hurtigt lav en pause
+ligesom skru ned med tredive nu,volumeDown,da,filler,skru ned med tredive nu
+uhh i want you to group with the upstairs speaker,joinSpeaker,en,filler,i want you to group with the upstairs speaker
+uhh connect with the kitchen,joinSpeaker,en,filler,connect with the kitchen
+tilsl- til entréen,joinSpeaker,da,partial_word,tilslut til entréen
+altså vil du tilslutte kontoret,joinSpeaker,da,filler,vil du tilslutte kontoret
+nu spil altså igen,resume,da,filler,nu spil igen
+tag pausen hmm af,resume,da,filler,tag pausen af
+just just turn the volume down,volumeDown,en,repetition,just turn the volume down
+ligesom kan du venligst stoppe,stop,da,filler,kan du venligst stoppe
+what's on my favorit- list real quick,listFavorites,en,partial_word,what's on my favorites list real quick
+bare lad os tage pause,pause,da,dropped_article,bare lad os tage en pause
+freeze freeze playback,pause,en,repetition,freeze playback
+ville ville du venligst vise mine favoritter,listFavorites,da,repetition,ville du venligst vise mine favoritter
+kindly kindly stop,stop,en,repetition,kindly stop
+uhh real quick disconnect,leaveSpeaker,en,filler,real quick disconnect
+go go ahead and freeze the music now,pause,en,repetition,go ahead and freeze the music now
+kan du indstil- lydstyrken til 65,setVolume,da,partial_word,kan du indstille lydstyrken til 65
+kindly contin-,resume,en,partial_word,kindly continue
+skru skru ned med 15,volumeDown,da,repetition,skru ned med 15
+med med det samme mindre lyd,volumeDown,da,repetition,med det samme mindre lyd
+lige er du robot,unknown,da,dropped_article,lige er du en robot
+go ahead and put uhh on some music,playDefault,en,filler,go ahead and put on some music
+i would like you to plate number eight,playFavoriteByNumber,en,mistranscription,i would like you to play number eight
+i i need you to put on a song,playDefault,en,repetition,i need you to put on a song
+fil nummer 6,playFavoriteByNumber,da,mistranscription,spil nummer 6
+increase the valium,volumeUp,en,mistranscription,increase the volume
+start start favorite six,playFavoriteByNumber,en,repetition,start favorite six
+afspil nog- nu,playDefault,da,partial_word,afspil noget nu
+let's paws,pause,en,mistranscription,let's pause
+quickly bit louder,volumeUp,en,dropped_article,quickly a bit louder
+can can you please play Mads og Monopolet,playNamed,en,repetition,can you please play Mads og Monopolet
+right right away louder by twenty,volumeUp,en,repetition,right away louder by twenty
+can you please play favorite er 3,playFavoriteByNumber,en,filler,can you please play favorite 3
+shut it down right hmm away,stop,en,filler,shut it down right away
+right away loader by ten,volumeUp,en,mistranscription,right away louder by ten
+please please group with the office,joinSpeaker,en,repetition,please group with the office
+bare ligesom stop,stop,da,filler,bare stop
+med med det samme jeg vil høre noget igen,unmute,da,repetition,med det samme jeg vil høre noget igen
+sæt musikken på lydløs ehm med det samme,mute,da,filler,sæt musikken på lydløs med det samme
+kindly kindly kill the sound,mute,en,repetition,kindly kill the sound
+now kill um the audio,mute,en,filler,now kill the audio
+ehm bare tak,unknown,da,filler,bare tak
+could could you kindly restore the sound,unmute,en,repetition,could you kindly restore the sound
+like volume down 25,volumeDown,en,filler,volume down 25
+kunne kunne du venligst stoppe,stop,da,repetition,kunne du venligst stoppe
+altså lige stille,mute,da,filler,lige stille
+right hmm away stop the mute,unmute,en,filler,right away stop the mute
+låvere med ti nu,volumeDown,da,mistranscription,lavere med ti nu
+ville ville du venligst gruppere med badeværelset,joinSpeaker,da,repetition,ville du venligst gruppere med badeværelset
+just just when does the sun rise,unknown,en,repetition,just when does the sun rise
+quickly quickly stop playing,stop,en,repetition,quickly stop playing
+quickly unmute audio,unmute,en,dropped_article,quickly unmute the audio
+vil vil du indstille lydstyrken til tredive,setVolume,da,repetition,vil du indstille lydstyrken til tredive
+just just leave the cluster,leaveSpeaker,en,repetition,just leave the cluster
+moot the audio right away,mute,en,mistranscription,mute the audio right away
+real quick loader by five,volumeUp,en,mistranscription,real quick louder by five
+please unmu-,unmute,en,partial_word,please unmute
+could you please group with bathroom,joinSpeaker,en,dropped_article,could you please group with the bathroom
+hurtigt hurtigt genoptag nummeret,resume,da,repetition,hurtigt genoptag nummeret
+hmm unsync this,leaveSpeaker,en,filler,unsync this
+med med det samme vær så venlig at spille noget,playDefault,da,repetition,med det samme vær så venlig at spille noget
+now now quieter by twenty,volumeDown,en,repetition,now quieter by twenty
+kunne kunne du ændre lydstyrken til 1,setVolume,da,repetition,kunne du ændre lydstyrken til 1
+i would um like you to mute,mute,en,filler,i would like you to mute
+kunne kunne du fjerne lydløs,unmute,da,repetition,kunne du fjerne lydløs
+jeg jeg vil bede dig om at vise mine favoritter,listFavorites,da,repetition,jeg vil bede dig om at vise mine favoritter
+quickly a bit quiet-,volumeDown,en,partial_word,quickly a bit quieter
+right away i'd like you to uhh silence it,mute,en,filler,right away i'd like you to silence it
+quickly list favorites,listFavorites,en,dropped_article,quickly list the favorites
+just just increase volume by 5,volumeUp,en,repetition,just increase volume by 5
+begynd at spille altså hurtigt,playDefault,da,filler,begynd at spille hurtigt
+go ahead and group with patio,joinSpeaker,en,dropped_article,go ahead and group with the patio
+real quick valium up five,volumeUp,en,mistranscription,real quick volume up five
+altså vil du stoppe musikken,stop,da,filler,vil du stoppe musikken
+jeg jeg vil bede dig om at ændre lydstyrken til 80,setVolume,da,repetition,jeg vil bede dig om at ændre lydstyrken til 80
+ligesom hvilke favoritter er gemt med det samme,listFavorites,da,filler,hvilke favoritter er gemt med det samme
+tilslut tilslut haven,joinSpeaker,da,repetition,tilslut haven
+øh adskil nu,leaveSpeaker,da,filler,adskil nu
+ungroup ungroup the speakers,leaveSpeaker,en,repetition,ungroup the speakers
+now now kill the music,stop,en,repetition,now kill the music
+list favorit-,listFavorites,en,partial_word,list favorites
+real quick go ahead and car- on,resume,en,partial_word,real quick go ahead and carry on
+uhh would you make it louder,volumeUp,en,filler,would you make it louder
+vil du venlig- fjerne dæmpningen,unmute,da,partial_word,vil du venligst fjerne dæmpningen
+uhh quickly play alone,leaveSpeaker,en,filler,quickly play alone
+ville ville du stoppe,stop,da,repetition,ville du stoppe
+kan du venligst ehm fjerne lydløs,unmute,da,filler,kan du venligst fjerne lydløs
+real real quick halt the music,pause,en,repetition,real quick halt the music
+uhh just read my latest email,unknown,en,filler,just read my latest email
+øhh vil du venligst sætte afslapningsmusik på,playNamed,da,filler,vil du venligst sætte afslapningsmusik på
+lige lige hæv lydstyrken med femten,volumeUp,da,repetition,lige hæv lydstyrken med femten
+i i want you to silence it,mute,en,repetition,i want you to silence it
+cease playba-,stop,en,partial_word,cease playback
+quickly quickly more sound,volumeUp,en,repetition,quickly more sound
+um please play number six,playFavoriteByNumber,en,filler,please play number six
+kind- join the garden,joinSpeaker,en,partial_word,kindly join the garden
+just remo- this speaker,leaveSpeaker,en,partial_word,just remove this speaker
+right away paws the audio,pause,en,mistranscription,right away pause the audio
+vil- du fortsætte,resume,da,partial_word,ville du fortsætte
+i would like you to join the offi-,joinSpeaker,en,partial_word,i would like you to join the office
+restore audio rig- now,unmute,en,partial_word,restore audio right now
+uh right now i'd like you to unpause,resume,en,filler,right now i'd like you to unpause
+decrease volume um by 30 right away,volumeDown,en,filler,decrease volume by 30 right away
+kunne ligesom du venligst spille noget,playDefault,da,filler,kunne du venligst spille noget
+venligst tilbage til altså at have lyd,unmute,da,filler,venligst tilbage til at have lyd
+can you separa- this speaker,leaveSpeaker,en,partial_word,can you separate this speaker
+pause musikk-,pause,da,partial_word,pause musikken
+now loader by 15,volumeUp,en,mistranscription,now louder by 15
+venligst spil igen,resume,da,dropped_article,venligst spil det igen
+make the music shop now,stop,en,mistranscription,make the music stop now
+det det er nok,stop,da,repetition,det er nok
+could you please put volume at thirty,setVolume,en,dropped_article,could you please put the volume at thirty
+uh would you play number nine,playFavoriteByNumber,en,filler,would you play number nine
+would would you please put on Pink Floyd,playNamed,en,repetition,would you please put on Pink Floyd
+right right now lower the volume by 25,volumeDown,en,repetition,right now lower the volume by 25
+altså ville du sætte Mads og Monopolet på,playNamed,da,filler,ville du sætte Mads og Monopolet på
+afspil numm- fem,playFavoriteByNumber,da,partial_word,afspil nummer fem
+hmm jeg vil gerne have at du afspille Pink Floyd,playNamed,da,filler,jeg vil gerne have at du afspille Pink Floyd
+ville ville du venligst afspille favorit nummer 2,playFavoriteByNumber,da,repetition,ville du venligst afspille favorit nummer 2
+jeg jeg vil gerne have at du ophæve dæmpningen,unmute,da,repetition,jeg vil gerne have at du ophæve dæmpningen
+kunne kunne du venligst tilslutte ovenpå,joinSpeaker,da,repetition,kunne du venligst tilslutte ovenpå
+må må jeg bede dig om at sænke lydstyrken,volumeDown,da,repetition,må jeg bede dig om at sænke lydstyrken
+med samme fjern gruppering,leaveSpeaker,da,dropped_article,med det samme fjern gruppering
+right now leave group,leaveSpeaker,en,dropped_article,right now leave the group
+volume volume down five right now,volumeDown,en,repetition,volume down five right now
+uh can you kill the sound,mute,en,filler,can you kill the sound
+real real quick go ahead and kill the music,stop,en,repetition,real quick go ahead and kill the music
+med samme hæv lydstyrken med 20,volumeUp,da,dropped_article,med det samme hæv lydstyrken med 20
+kindly play numb- 3,playFavoriteByNumber,en,partial_word,kindly play number 3
+med med det samme fortæl mig mine favoritter,listFavorites,da,repetition,med det samme fortæl mig mine favoritter
+i would like you to plate pop,playNamed,en,mistranscription,i would like you to play pop
+tilføj hmm soveværelset,joinSpeaker,da,filler,tilføj soveværelset
+kindly plays favorite 9,playFavoriteByNumber,en,mistranscription,kindly play favorite 9
+uh i'd like you to play something right away,playDefault,en,filler,i'd like you to play something right away
+go ahead and group with hallway,joinSpeaker,en,dropped_article,go ahead and group with the hallway
+hmm mute real quick,mute,en,filler,mute real quick
+uh would you mind to play favorite 6,playFavoriteByNumber,en,filler,would you mind to play favorite 6
+øh sluk for sangen,stop,da,filler,sluk for sangen
+lyd altså igen,unmute,da,filler,lyd igen
+vil vil du spille favorit et,playFavoriteByNumber,da,repetition,vil du spille favorit et
+bare bare send en sms til min kone,unknown,da,repetition,bare send en sms til min kone
+i would like you to disconne- right now,leaveSpeaker,en,partial_word,i would like you to disconnect right now
+uhh play more,resume,en,filler,play more
+i i would like you to play Kim Larsen,playNamed,en,repetition,i would like you to play Kim Larsen
+join hallway,joinSpeaker,en,dropped_article,join the hallway
+hmm midlertidig stop nu,pause,da,filler,midlertidig stop nu
+i need you to shop playing right now,stop,en,mistranscription,i need you to stop playing right now
+would you please pause uh it,pause,en,filler,would you please pause it
+med med det samme stop musikken,stop,da,repetition,med det samme stop musikken
+vis vis listen,listFavorites,da,repetition,vis listen
+med øhh det samme stop nummeret,stop,da,filler,med det samme stop nummeret
+kindly change the valium to 95,setVolume,en,mistranscription,kindly change the volume to 95
+vær så venlig at pau-,pause,da,partial_word,vær så venlig at pause
+spil altså favorit ti tak,playFavoriteByNumber,da,filler,spil favorit ti tak
+lea- group,leaveSpeaker,en,partial_word,leave group
+i would like you to paws the music,pause,en,mistranscription,i would like you to pause the music
+could you please join the dini- room,joinSpeaker,en,partial_word,could you please join the dining room
+afbryd afbryd musikken med det samme,pause,da,repetition,afbryd musikken med det samme
+vær vær venlig at afspille favorit nummer tre,playFavoriteByNumber,da,repetition,vær venlig at afspille favorit nummer tre
+would you please um play number three,playFavoriteByNumber,en,filler,would you please play number three
+right right now resume,resume,en,repetition,right now resume
+i want you to change volume to ten,setVolume,en,dropped_article,i want you to change the volume to ten
+planlæg øh et møde i morgen,unknown,da,filler,planlæg et møde i morgen
+vær venlig at gøre det højde,volumeUp,da,mistranscription,vær venlig at gøre det højere
+uh right now goodbye,unknown,en,filler,right now goodbye
+begin begin the music,playDefault,en,repetition,begin the music
+could you plate number four,playFavoriteByNumber,en,mistranscription,could you play number four
+quickly turn on audio,unmute,en,dropped_article,quickly turn on the audio
+could you plays number 7,playFavoriteByNumber,en,mistranscription,could you play number 7
+bare bare vær så venlig at afslutte musikken,stop,da,repetition,bare vær så venlig at afslutte musikken
+can you put the column at one hundred,setVolume,en,mistranscription,can you put the volume at one hundred
+moot the audio,mute,en,mistranscription,mute the audio
+stop stop the audio right away,stop,en,repetition,stop the audio right away
+when is suns-,unknown,en,partial_word,when is sunset
+right right away increase volume,volumeUp,en,repetition,right away increase volume
+turn turn it down by five,volumeDown,en,repetition,turn it down by five
+altså hurtigt skru op 20,volumeUp,da,filler,hurtigt skru op 20
+venligst venligst hvad har jeg gemt,listFavorites,da,repetition,venligst hvad har jeg gemt
+ehm spil min favorit 9,playFavoriteByNumber,da,filler,spil min favorit 9
+i i want you to change the volume to 15,setVolume,en,repetition,i want you to change the volume to 15
+turn turn it down by twenty real quick,volumeDown,en,repetition,turn it down by twenty real quick
+just back to playi-,resume,en,partial_word,just back to playing
+sæt klassi- på,playNamed,da,partial_word,sæt klassisk på
+right away disconnect from group,leaveSpeaker,en,dropped_article,right away disconnect from the group
+make music stop right now,stop,en,dropped_article,make the music stop right now
+venligst venligst genoptag sangen,resume,da,repetition,venligst genoptag sangen
+øh kan du venligst indstille lydstyrken til 20,setVolume,da,filler,kan du venligst indstille lydstyrken til 20
+hurtigt oph- gruppen,leaveSpeaker,da,partial_word,hurtigt ophæv gruppen
+shop grouping,leaveSpeaker,en,mistranscription,stop grouping
+would would you put on Daft Punk,playNamed,en,repetition,would you put on Daft Punk
+altså skru op 25,volumeUp,da,filler,skru op 25
+vil vil du venligst holde op,stop,da,repetition,vil du venligst holde op
+øhh vil du afspille favorit nummer 6,playFavoriteByNumber,da,filler,vil du afspille favorit nummer 6
+favorit øhh 1,playFavoriteByNumber,da,filler,favorit 1
+could you kindly end music,stop,en,dropped_article,could you kindly end the music
+kunne kunne du venligst spille favorit tre,playFavoriteByNumber,da,repetition,kunne du venligst spille favorit tre
+hmm i would like you to unmute real quick,unmute,en,filler,i would like you to unmute real quick
+hold pose hurtigt,pause,da,mistranscription,hold pause hurtigt
+stop stop nu,stop,da,repetition,stop nu
+ehm kunne du afspille P4,playNamed,da,filler,kunne du afspille P4
+throw throw on some tunes,playDefault,en,repetition,throw on some tunes
+would hmm you list my favorites,listFavorites,en,filler,would you list my favorites
+hele favoritlist- nu,listFavorites,da,partial_word,hele favoritlisten nu
+quickly quickly good night,unknown,en,repetition,quickly good night
+what's the capital of uhh france,unknown,en,filler,what's the capital of france
+er real quick audio on,unmute,en,filler,real quick audio on
+stop stop gruppering,leaveSpeaker,da,repetition,stop gruppering
+i i want it muted,mute,en,repetition,i want it muted
+kan kan du læse mine favoritter op,listFavorites,da,repetition,kan du læse mine favoritter op
+tilslut til øh stuen,joinSpeaker,da,filler,tilslut til stuen
+venligst venligst hvordan var din dag,unknown,da,repetition,venligst hvordan var din dag
+right away go ahead and pause hmm the music,pause,en,filler,right away go ahead and pause the music
+read read out my favorites,listFavorites,en,repetition,read out my favorites
+altså sæt højttaleren på lydløs nu,mute,da,filler,sæt højttaleren på lydløs nu
+kindly play Coldpl-,playNamed,en,partial_word,kindly play Coldplay
+real quick i need er you to unmute,unmute,en,filler,real quick i need you to unmute
+lavere med 30 med samme,volumeDown,da,dropped_article,lavere med 30 med det samme
+you know now unmute the music,unmute,en,filler,now unmute the music
+turn turn it up by thirty right away,volumeUp,en,repetition,turn it up by thirty right away
+just let's plate chess,unknown,en,mistranscription,just let's play chess
+ligesom må jeg bede dig om at afspille Kim Larsen,playNamed,da,filler,må jeg bede dig om at afspille Kim Larsen
+mute mute the audio real quick,mute,en,repetition,mute the audio real quick
+hurtigt find kaffebar,unknown,da,dropped_article,hurtigt find en kaffebar
+now go er ahead and keep playing,resume,en,filler,now go ahead and keep playing
+real quick less column,volumeDown,en,mistranscription,real quick less volume
+lidt lidt musik tak nu,playDefault,da,repetition,lidt musik tak nu
+right right away freeze playback,pause,en,repetition,right away freeze playback
+hmm ville du spille rock,playNamed,da,filler,ville du spille rock
+would would you mind to kill the sound,mute,en,repetition,would you mind to kill the sound
+venligst forts- med musikken,resume,da,partial_word,venligst fortsæt med musikken
+quickly go ahead and top the music,stop,en,mistranscription,quickly go ahead and stop the music
+vær så venlig at hol- pause,pause,da,partial_word,vær så venlig at holde pause
+hold pause it,pause,da,mistranscription,hold pause
+skru ned 15 hurti-,volumeDown,da,partial_word,skru ned 15 hurtigt
+you know i'd like you to read out my favorites,listFavorites,en,filler,i'd like you to read out my favorites
+real real quick list my favourites,listFavorites,en,repetition,real quick list my favourites
+can you please shop,stop,en,mistranscription,can you please stop
+play by like yourself right now,leaveSpeaker,en,filler,play by yourself right now
+vil du forbin- med stuen,joinSpeaker,da,partial_word,vil du forbinde med stuen
+just go ahead and you know keep playing,resume,en,filler,just go ahead and keep playing
+i i would like you to turn the sound back on,unmute,en,repetition,i would like you to turn the sound back on
+i'd like you to set volu- to five,setVolume,en,partial_word,i'd like you to set volume to five
+resu- playback,resume,en,partial_word,resume playback
+vil du spille vide-,resume,da,partial_word,vil du spille videre
+real quick find restaurant nearby,unknown,en,dropped_article,real quick find a restaurant nearby
+kunne du holde pose,pause,da,mistranscription,kunne du holde pause
+hurtigt hurtigt sæt lidt musik på,playDefault,da,repetition,hurtigt sæt lidt musik på
+what statio- do i have real quick,listFavorites,en,partial_word,what stations do i have real quick
+you know i would like you to show me my favorites,listFavorites,en,filler,i would like you to show me my favorites
+ville du spille favoret otte,playFavoriteByNumber,da,mistranscription,ville du spille favorit otte
+real real quick turn it up by 30,volumeUp,en,repetition,real quick turn it up by 30
+real quick favorites list,listFavorites,en,dropped_article,real quick the favorites list
+like just which favorites are saved,listFavorites,en,filler,just which favorites are saved
+just pose,pause,en,mistranscription,just pause
+kan kan du venligst spille P6,playNamed,da,repetition,kan du venligst spille P6
+vær så venlig at afspille favoret nummer 8,playFavoriteByNumber,da,mistranscription,vær så venlig at afspille favorit nummer 8
+turn the audio back on rig- now,unmute,en,partial_word,turn the audio back on right now
+kunne du venligst sætte på pause it,pause,da,mistranscription,kunne du venligst sætte på pause
+hurtigt hurtigt stop pausen,resume,da,repetition,hurtigt stop pausen
+like flip a coin right now,unknown,en,filler,flip a coin right now
+sync to upstairs speaker,joinSpeaker,en,dropped_article,sync to the upstairs speaker
+bare genoptag sang-,resume,da,partial_word,bare genoptag sangen
+could could you kindly group with the upstairs speaker,joinSpeaker,en,repetition,could you kindly group with the upstairs speaker
+decrease volu- right now,volumeDown,en,partial_word,decrease volume right now
+um sound back on right now,unmute,en,filler,sound back on right now
+just i need you um to carry on,resume,en,filler,just i need you to carry on
+would you mind to put volume at eighty,setVolume,en,dropped_article,would you mind to put the volume at eighty
+sænk lydstyrk- med tyve nu,volumeDown,da,partial_word,sænk lydstyrken med tyve nu
+må må jeg bede dig om at indstille lydstyrken til fyrre,setVolume,da,repetition,må jeg bede dig om at indstille lydstyrken til fyrre
+real quick shut like up,mute,en,filler,real quick shut up
+play play my favorite 7,playFavoriteByNumber,en,repetition,play my favorite 7
+ville du venligst afspille favoret nummer seks,playFavoriteByNumber,da,mistranscription,ville du venligst afspille favorit nummer seks
+kunne ligesom du ændre lydstyrken til 45,setVolume,da,filler,kunne du ændre lydstyrken til 45
+skru ned øh med 30,volumeDown,da,filler,skru ned med 30
+now now how old are you,unknown,en,repetition,now how old are you
+hmm vær så venlig at pause hurtigt,pause,da,filler,vær så venlig at pause hurtigt
+uhh put on Adele,playNamed,en,filler,put on Adele
+please please put on The Beatles,playNamed,en,repetition,please put on The Beatles
+right right now volume up 30,volumeUp,en,repetition,right now volume up 30
+har har du en god opskrift på pasta,unknown,da,repetition,har du en god opskrift på pasta
+ligesom må jeg bede dig om at slukke for lyden,mute,da,filler,må jeg bede dig om at slukke for lyden
+vær vær så venlig at pause afspilningen,pause,da,repetition,vær så venlig at pause afspilningen
+venligst venligst vær så venlig at ophæve pausen,resume,da,repetition,venligst vær så venlig at ophæve pausen
+øh vælg et tilfældigt tal nu,unknown,da,filler,vælg et tilfældigt tal nu
+i i want you to play music,playDefault,en,repetition,i want you to play music
+øh hæv lydstyrken med 20 med det samme,volumeUp,da,filler,hæv lydstyrken med 20 med det samme
+resume resume the track right away,resume,en,repetition,resume the track right away
+hurtigt indstil termostaten ligesom til toogtyve grader,unknown,da,filler,hurtigt indstil termostaten til toogtyve grader
+dæmp dæmp lyden nu,mute,da,repetition,dæmp lyden nu
+hmm vis mine presets,listFavorites,da,filler,vis mine presets
+kunne du venligst afspille faborit nummer 9,playFavoriteByNumber,da,mistranscription,kunne du venligst afspille favorit nummer 9
+would you like play music,playDefault,en,filler,would you play music
+would would you mind to change the volume to 45,setVolume,en,repetition,would you mind to change the volume to 45
+transla- this to german,unknown,en,partial_word,translate this to german
+like would you mind to put the volume at fifty,setVolume,en,filler,would you mind to put the volume at fifty
+just mood the song,mute,en,mistranscription,just mute the song
+ville ville du liste mine favoritter,listFavorites,da,repetition,ville du liste mine favoritter
+ville du venlig- spille favorit seks,playFavoriteByNumber,da,partial_word,ville du venligst spille favorit seks
+uh where's the nearest grocery real quick,unknown,en,filler,where's the nearest grocery real quick
+you know right now i need you to stop playing,stop,en,filler,right now i need you to stop playing
+vær stil-,mute,da,partial_word,vær stille
+what- the news now,unknown,en,partial_word,what's the news now
+i i want you to carry on real quick,resume,en,repetition,i want you to carry on real quick
+sæt en timer til ti minutter med det øhh samme,unknown,da,filler,sæt en timer til ti minutter med det samme
+could could you kindly set volume to one hundred,setVolume,en,repetition,could you kindly set volume to one hundred
+ligesom vis hele listen,listFavorites,da,filler,vis hele listen
+hurtigt gør lidt lavere,volumeDown,da,dropped_article,hurtigt gør det lidt lavere
+now now go ahead and unpause,resume,en,repetition,now go ahead and unpause
+set alarm for seven am,unknown,en,dropped_article,set an alarm for seven am
+could you please assume,resume,en,mistranscription,could you please resume
+vær så venl- at tilslutte spisestuen,joinSpeaker,da,partial_word,vær så venlig at tilslutte spisestuen
+med det samme tilføj ehm æg til min indkøbsliste,unknown,da,filler,med det samme tilføj æg til min indkøbsliste
+hurtigt hurtigt stop afspilningen,stop,da,repetition,hurtigt stop afspilningen
+real qui- ungroup,leaveSpeaker,en,partial_word,real quick ungroup
+i'd like you to kill the mus-,stop,en,partial_word,i'd like you to kill the music
+adskil fra gruppen med samme,leaveSpeaker,da,dropped_article,adskil fra gruppen med det samme
+um now raise the volume by 15,volumeUp,en,filler,now raise the volume by 15
+i want you to play number uhh five,playFavoriteByNumber,en,filler,i want you to play number five
+quickly quickly kick off some music,playDefault,en,repetition,quickly kick off some music
+i would like you to er play Radio 24syv,playNamed,en,filler,i would like you to play Radio 24syv
+kan kan du venligst pause afspilningen,pause,da,repetition,kan du venligst pause afspilningen
+can you er put on Coldplay,playNamed,en,filler,can you put on Coldplay
+connect with living room,joinSpeaker,en,dropped_article,connect with the living room
+start start musikken nu,playDefault,da,repetition,start musikken nu
+fil alene hurtigt,leaveSpeaker,da,mistranscription,spil alene hurtigt
+real qui- lift mute,unmute,en,partial_word,real quick lift mute
+i would like you to group with hallway,joinSpeaker,en,dropped_article,i would like you to group with the hallway
+go ahead and change volume to 25,setVolume,en,dropped_article,go ahead and change the volume to 25
+real qui- volume up thirty,volumeUp,en,partial_word,real quick volume up thirty
+raise volume by 25 right away,volumeUp,en,dropped_article,raise the volume by 25 right away
+just just play my music,playDefault,en,repetition,just play my music
+venlig- stop deling,leaveSpeaker,da,partial_word,venligst stop deling
+kindly er play number nine,playFavoriteByNumber,en,filler,kindly play number nine
+could you kindly pose,pause,en,mistranscription,could you kindly pause
+hmm now go ahead and start playing,playDefault,en,filler,now go ahead and start playing
+just just throw on some tunes,playDefault,en,repetition,just throw on some tunes
+bare hvor gammel altså er du,unknown,da,filler,bare hvor gammel er du
+show me a map of paris real qui-,unknown,en,partial_word,show me a map of paris real quick
+go hmm ahead and mute the speaker,mute,en,filler,go ahead and mute the speaker
+can uhh you put on rock,playNamed,en,filler,can you put on rock
+skru skru ned med 10,volumeDown,da,repetition,skru ned med 10
+spil favorit numm- ni,playFavoriteByNumber,da,partial_word,spil favorit nummer ni
+join join the basement,joinSpeaker,en,repetition,join the basement
+quickly hmm unlink,leaveSpeaker,en,filler,quickly unlink
+would you group with office,joinSpeaker,en,dropped_article,would you group with the office
+start start favorite seven,playFavoriteByNumber,en,repetition,start favorite seven
+hurtigt unmu-,unmute,da,partial_word,hurtigt unmute
+i would like you to change volume to forty,setVolume,en,dropped_article,i would like you to change the volume to forty
+real quick uh go ahead and make it quieter,volumeDown,en,filler,real quick go ahead and make it quieter
+right uh away back to playing,resume,en,filler,right away back to playing
+unmu- the audio right now,unmute,en,partial_word,unmute the audio right now
+kan kan du gruppere med haven,joinSpeaker,da,repetition,kan du gruppere med haven
+ville du indstille lydstyrk- til nul,setVolume,da,partial_word,ville du indstille lydstyrken til nul
+lige lige mere lydstyrke,volumeUp,da,repetition,lige mere lydstyrke
+please tell me favorites,listFavorites,en,dropped_article,please tell me my favorites
+go go ahead and kill the music right now,stop,en,repetition,go ahead and kill the music right now
+med det samme mindre ehm lydstyrke,volumeDown,da,filler,med det samme mindre lydstyrke
+lige list mine favoritt-,listFavorites,da,partial_word,lige list mine favoritter
+just stop the er song,stop,en,filler,just stop the song
+i would like you like to mute now,mute,en,filler,i would like you to mute now
+quickly decrease valium by 30,volumeDown,en,mistranscription,quickly decrease volume by 30
+ville du venligst skrue op for øhh lyden,volumeUp,da,filler,ville du venligst skrue op for lyden
+dæmp dæmp lidt,volumeDown,da,repetition,dæmp lidt
+could you gro- with the patio,joinSpeaker,en,partial_word,could you group with the patio
+wait wait a moment now,pause,en,repetition,wait a moment now
+like play favorite number 7,playFavoriteByNumber,en,filler,play favorite number 7
+i want it to er stop,stop,en,filler,i want it to stop
+quickly restore sou-,unmute,en,partial_word,quickly restore sound
+vær vær så venlig at fortsætte musikken med det samme,resume,da,repetition,vær så venlig at fortsætte musikken med det samme
+vis mig favoritlist-,listFavorites,da,partial_word,vis mig favoritlisten
+altså nu skru ned,volumeDown,da,filler,nu skru ned
+sta- something now,playDefault,en,partial_word,start something now
+jeg vil gerne have at du sæt- lydstyrken til ti,setVolume,da,partial_word,jeg vil gerne have at du sætte lydstyrken til ti
+øh sæt favorit 3 på,playFavoriteByNumber,da,filler,sæt favorit 3 på
+ungroup ungroup real quick,leaveSpeaker,en,repetition,ungroup real quick
+lige list mine station-,listFavorites,da,partial_word,lige list mine stationer
+kunne kunne du venligst forbinde med entréen,joinSpeaker,da,repetition,kunne du venligst forbinde med entréen
+quickly like hold the song,pause,en,filler,quickly hold the song
+lower the column by 5,volumeDown,en,mistranscription,lower the volume by 5
+make the volume eigh-,setVolume,en,partial_word,make the volume eighty
+i want you to turn the sou- back on,unmute,en,partial_word,i want you to turn the sound back on
+right right away turn the audio back on,unmute,en,repetition,right away turn the audio back on
+vær vær venlig at ændre lydstyrken til 75,setVolume,da,repetition,vær venlig at ændre lydstyrken til 75
+ligesom lige vær så venlig at ophæve dæmpningen,unmute,da,filler,lige vær så venlig at ophæve dæmpningen
+ligesom må jeg bede dig om at ændre lydstyrken til 90,setVolume,da,filler,må jeg bede dig om at ændre lydstyrken til 90
+real quick volu- down thirty,volumeDown,en,partial_word,real quick volume down thirty
+med samme skru ned med 10,volumeDown,da,dropped_article,med det samme skru ned med 10
+i need you to change volume to 95,setVolume,en,dropped_article,i need you to change the volume to 95
+vær venlig at spille altså P6,playNamed,da,filler,vær venlig at spille P6
+jeg vil bede dig om at adskille altså højttaleren,leaveSpeaker,da,filler,jeg vil bede dig om at adskille højttaleren
+vær vær så venlig at vise mine favoritter,listFavorites,da,repetition,vær så venlig at vise mine favoritter
+øh venligst konverter ti dollar til kroner,unknown,da,filler,venligst konverter ti dollar til kroner
+bare skru op med femogty-,volumeUp,da,partial_word,bare skru op med femogtyve
+ville du spille hmm favorit 10,playFavoriteByNumber,da,filler,ville du spille favorit 10
+øhh list favoritterne,listFavorites,da,filler,list favoritterne
+nu mindre lystyrke,volumeDown,da,mistranscription,nu mindre lydstyrke
+ville du venligst spille faborit 2,playFavoriteByNumber,da,mistranscription,ville du venligst spille favorit 2
+med samme gør lyden højere,volumeUp,da,dropped_article,med det samme gør lyden højere
+hmm could you group with the garden,joinSpeaker,en,filler,could you group with the garden
+you know i need you to turn the sound back on,unmute,en,filler,i need you to turn the sound back on
+kunne du paws musikken,pause,da,mistranscription,kunne du pause musikken
+plate my 1 favorite,playFavoriteByNumber,en,mistranscription,play my 1 favorite
+join group with the office,joinSpeaker,en,dropped_article,join the group with the office
+right now read favorites,listFavorites,en,dropped_article,right now read the favorites
+let's hmm hear P6,playNamed,en,filler,let's hear P6
+er right away how do i bake a cake,unknown,en,filler,right away how do i bake a cake
+må må jeg bede dig om at indstille lydstyrken til 1,setVolume,da,repetition,må jeg bede dig om at indstille lydstyrken til 1
+please start playi-,playDefault,en,partial_word,please start playing
+øh bare luk for lyden,mute,da,filler,bare luk for lyden
+go go ahead and keep playing,resume,en,repetition,go ahead and keep playing
+contin- the song right now,resume,en,partial_word,continue the song right now
+could could you pause the music,pause,en,repetition,could you pause the music
+kan du ligesom venligst stoppe musikken,stop,da,filler,kan du venligst stoppe musikken
+må jeg bede dig om ligesom at indstille lydstyrken til 45,setVolume,da,filler,må jeg bede dig om at indstille lydstyrken til 45
+vil vil du venligst slukke for lyden,mute,da,repetition,vil du venligst slukke for lyden
+lige fort- mig favoritlisten,listFavorites,da,partial_word,lige fortæl mig favoritlisten
+øhh jeg vil bede dig om at fjerne dæmpningen,unmute,da,filler,jeg vil bede dig om at fjerne dæmpningen
+disconnect disconnect from the others right now,leaveSpeaker,en,repetition,disconnect from the others right now
+ligesom lige lavere med 30,volumeDown,da,filler,lige lavere med 30
+øh hvor er min telefon hurtigt,unknown,da,filler,hvor er min telefon hurtigt
+ville ville du afspille klassisk musik,playNamed,da,repetition,ville du afspille klassisk musik
+now now unpair this speaker,leaveSpeaker,en,repetition,now unpair this speaker
+real quick silence er it,mute,en,filler,real quick silence it
+lige lige favoritlisten,listFavorites,da,repetition,lige favoritlisten
+real quick uhh bring back the sound,unmute,en,filler,real quick bring back the sound
+i want to uh listen to music right now,playDefault,en,filler,i want to listen to music right now
+like goodbye,unknown,en,filler,goodbye
+kan kan du sætte musik på,playDefault,da,repetition,kan du sætte musik på
+would you mind to play you know Daft Punk,playNamed,en,filler,would you mind to play Daft Punk
+plays preset five,playFavoriteByNumber,en,mistranscription,play preset five
+right right now decrease volume,volumeDown,en,repetition,right now decrease volume
+play somethi- right away,playDefault,en,partial_word,play something right away
+kunne du venlig- ændre lydstyrken til tyve,setVolume,da,partial_word,kunne du venligst ændre lydstyrken til tyve
+right right now go ahead and hold the music,pause,en,repetition,right now go ahead and hold the music
+now um unpause,resume,en,filler,now unpause
+kunne du venligst ændre lydstyrk- til fem,setVolume,da,partial_word,kunne du venligst ændre lydstyrken til fem
+could could you please join the garden,joinSpeaker,en,repetition,could you please join the garden
+right right now go ahead and play music,playDefault,en,repetition,right now go ahead and play music
+real quick separa- this speaker,leaveSpeaker,en,partial_word,real quick separate this speaker
+ehm kunne du venligst sætte Volbeat på,playNamed,da,filler,kunne du venligst sætte Volbeat på
+you know just turn it down by twenty-five,volumeDown,en,filler,just turn it down by twenty-five
+med samme sluk,stop,da,dropped_article,med det samme sluk
+kan kan du venligst starte musikken,playDefault,da,repetition,kan du venligst starte musikken
+list my er presets,listFavorites,en,filler,list my presets
+can you plate morning playlist,playNamed,en,mistranscription,can you play morning playlist
+now list favorit-,listFavorites,en,partial_word,now list favorites
+hurtigt ophæv paws,resume,da,mistranscription,hurtigt ophæv pause
+altså gør lyden højere,volumeUp,da,filler,gør lyden højere
+please put the um volume at 50,setVolume,en,filler,please put the volume at 50
+ville ville du venligst indstille lydstyrken til 35,setVolume,da,repetition,ville du venligst indstille lydstyrken til 35
+kunne du afspille favorit øhh nummer 2,playFavoriteByNumber,da,filler,kunne du afspille favorit nummer 2
+could you please put volume at zero,setVolume,en,dropped_article,could you please put the volume at zero
+ehm skru lidt ned,volumeDown,da,filler,skru lidt ned
+plate favorite three,playFavoriteByNumber,en,mistranscription,play favorite three
+join join the patio,joinSpeaker,en,repetition,join the patio
+hvad er vejret i altså dag hurtigt,unknown,da,filler,hvad er vejret i dag hurtigt
+would you ungro-,leaveSpeaker,en,partial_word,would you ungroup
+vær vær så venlig at fjerne lydløs,unmute,da,repetition,vær så venlig at fjerne lydløs
+ligesom hurtigt spil det igen,resume,da,filler,hurtigt spil det igen
+please play number you know 4,playFavoriteByNumber,en,filler,please play number 4
+hurtigt syng sang,unknown,da,dropped_article,hurtigt syng en sang
+could you end music,stop,en,dropped_article,could you end the music
+altså tilknyt kælderen,joinSpeaker,da,filler,tilknyt kælderen
+kindly put volume at 35,setVolume,en,dropped_article,kindly put the volume at 35
+med samme hvilke stationer har jeg,listFavorites,da,dropped_article,med det samme hvilke stationer har jeg
+could you turn off music,stop,en,dropped_article,could you turn off the music
+vær vær venlig at indstille lydstyrken til tres,setVolume,da,repetition,vær venlig at indstille lydstyrken til tres
+now now volume down 5,volumeDown,en,repetition,now volume down 5
+nu øh lyd til,unmute,da,filler,nu lyd til
+er now i need you to resume,resume,en,filler,now i need you to resume
+i uhh want you to resume real quick,resume,en,filler,i want you to resume real quick
+hæv hmm lydstyrken med femogtyve nu,volumeUp,da,filler,hæv lydstyrken med femogtyve nu
+hvilke hvilke favoritter har jeg med det samme,listFavorites,da,repetition,hvilke favoritter har jeg med det samme
+rig- now what's today's date,unknown,en,partial_word,right now what's today's date
+kindly kindly group with the basement,joinSpeaker,en,repetition,kindly group with the basement
+vil vil du venligst ændre lydstyrken til 80,setVolume,da,repetition,vil du venligst ændre lydstyrken til 80
+lige lige mute,mute,da,repetition,lige mute
+paws for now,pause,en,mistranscription,pause for now
+farvel hurti-,unknown,da,partial_word,farvel hurtigt
+altså må jeg bede dig om at spille pop,playNamed,da,filler,må jeg bede dig om at spille pop
+right now go ahead and restore sound,unmute,en,dropped_article,right now go ahead and restore the sound
+drop drop the sound,mute,en,repetition,drop the sound
+altså lyd igen nu,unmute,da,filler,lyd igen nu
+vær så venlig at holde pose hurtigt,pause,da,mistranscription,vær så venlig at holde pause hurtigt
+vis vis mine presets med det samme,listFavorites,da,repetition,vis mine presets med det samme
+kunne kunne du pause afspilningen,pause,da,repetition,kunne du pause afspilningen
+now lauder by 30,volumeUp,en,mistranscription,now louder by 30
+ligesom ville du venligst sætte lydstyrken til tyve,setVolume,da,filler,ville du venligst sætte lydstyrken til tyve
+vil vil du venligst spille musik,playDefault,da,repetition,vil du venligst spille musik
+mood the speaker,mute,en,mistranscription,mute the speaker
+det det er nok hurtigt,stop,da,repetition,det er nok hurtigt
+kør kør videre hurtigt,resume,da,repetition,kør videre hurtigt
+i would like you to turn hmm off the music,stop,en,filler,i would like you to turn off the music
+nu nu hvordan er vejret,unknown,da,repetition,nu hvordan er vejret
+help me with my er homework real quick,unknown,en,filler,help me with my homework real quick
+hurtigt hurtigt afspil,playDefault,da,repetition,hurtigt afspil
+separa- this speaker,leaveSpeaker,en,partial_word,separate this speaker
+like i want you to stop real quick,stop,en,filler,i want you to stop real quick
+play play my usual right away,playDefault,en,repetition,play my usual right away
+ville ville du indstille lydstyrken til 35,setVolume,da,repetition,ville du indstille lydstyrken til 35
+altså sæt noget på nu,playDefault,da,filler,sæt noget på nu
+altså med det samme højere med 15,volumeUp,da,filler,med det samme højere med 15
+ehm må jeg bede dig om at spille favorit tre,playFavoriteByNumber,da,filler,må jeg bede dig om at spille favorit tre
+i'd i'd like you to play Volbeat,playNamed,en,repetition,i'd like you to play Volbeat
+kunne du tilslut- ovenpå,joinSpeaker,da,partial_word,kunne du tilslutte ovenpå
+quickly give me sou- back,unmute,en,partial_word,quickly give me sound back
+right now loader by 20,volumeUp,en,mistranscription,right now louder by 20
+kindly paws it,pause,en,mistranscription,kindly pause it
+can you please plays favorite 8,playFavoriteByNumber,en,mistranscription,can you please play favorite 8
+i would um like you to resume right now,resume,en,filler,i would like you to resume right now
+skift skift til lydstyrke 90,setVolume,da,repetition,skift til lydstyrke 90
+can can you please put the volume at 80,setVolume,en,repetition,can you please put the volume at 80
+dæmp dæmp musikken med det samme,mute,da,repetition,dæmp musikken med det samme
+øhh lige vis favoritterne,listFavorites,da,filler,lige vis favoritterne
+quickly i would like you to paws,pause,en,mistranscription,quickly i would like you to pause
+how far uhh is copenhagen right away,unknown,en,filler,how far is copenhagen right away
+uh go ahead and group with the upstairs speaker,joinSpeaker,en,filler,go ahead and group with the upstairs speaker
+now now what's the temperature outside,unknown,en,repetition,now what's the temperature outside
+now resto- the sound,unmute,en,partial_word,now restore the sound
+go go ahead and turn it up right away,volumeUp,en,repetition,go ahead and turn it up right away
+can you please turn sound back on,unmute,en,dropped_article,can you please turn the sound back on
+right now hold audio,pause,en,dropped_article,right now hold the audio
+like go ahead and turn it up,volumeUp,en,filler,go ahead and turn it up
+med samme vær så venlig at skrue ned,volumeDown,da,dropped_article,med det samme vær så venlig at skrue ned
+favoritlisten favoritlisten med det samme,listFavorites,da,repetition,favoritlisten med det samme
+lige sæt på lydl-,mute,da,partial_word,lige sæt på lydløs
+cut audio now,mute,en,dropped_article,cut the audio now
+um play my songs real quick,playDefault,en,filler,play my songs real quick
+niveau niveau 15,setVolume,da,repetition,niveau 15
+now cut audio,mute,en,dropped_article,now cut the audio
+ligesom hæv lydstyrken med fem,volumeUp,da,filler,hæv lydstyrken med fem
+quickly what does like bonjour mean,unknown,en,filler,quickly what does bonjour mean
+i i want you to start playing real quick,playDefault,en,repetition,i want you to start playing real quick
+altså nu sæt en alarm til klokken syv,unknown,da,filler,nu sæt en alarm til klokken syv
+quickly quickly go solo,leaveSpeaker,en,repetition,quickly go solo
+can you plays number 8,playFavoriteByNumber,en,mistranscription,can you play number 8
+er give me Radio 100,playNamed,en,filler,give me Radio 100
+ophæv mute hurti-,unmute,da,partial_word,ophæv mute hurtigt
+øhh kunne du venligst sætte BBC Radio 4 på,playNamed,da,filler,kunne du venligst sætte BBC Radio 4 på
+kindly kindly play BBC Radio 1,playNamed,en,repetition,kindly play BBC Radio 1
+would would you put on The Voice,playNamed,en,repetition,would you put on The Voice
+i want you to like unpause,resume,en,filler,i want you to unpause
+um just what's two plus two,unknown,en,filler,just what's two plus two
+uh now what stations are saved,listFavorites,en,filler,now what stations are saved
+show me what's saved rig- away,listFavorites,en,partial_word,show me what's saved right away
+stop music right away,stop,en,dropped_article,stop the music right away
+i need you to plays favorite six,playFavoriteByNumber,en,mistranscription,i need you to play favorite six
+go go ahead and hold the music,pause,en,repetition,go ahead and hold the music
+hmm må jeg bede dig om at tænde lyden igen,unmute,da,filler,må jeg bede dig om at tænde lyden igen
+vil hmm du dæmpe lyden,mute,da,filler,vil du dæmpe lyden
+forlad de andre med samme,leaveSpeaker,da,dropped_article,forlad de andre med det samme
+ville ville du spille classical,playNamed,da,repetition,ville du spille classical
+can can you carry on,resume,en,repetition,can you carry on
+quickly separate hmm this speaker,leaveSpeaker,en,filler,quickly separate this speaker
+would you you know mind to put on P5,playNamed,en,filler,would you mind to put on P5
+right right now i want you to mute,mute,en,repetition,right now i want you to mute
+turn music off,stop,en,dropped_article,turn the music off
+would you plays favorite 3,playFavoriteByNumber,en,mistranscription,would you play favorite 3
+play the The Voi-,playNamed,en,partial_word,play the The Voice
+resu- the track,resume,en,partial_word,resume the track
+ville du venlig- gøre det lavere,volumeDown,da,partial_word,ville du venligst gøre det lavere
+spil hmm bare her nu,leaveSpeaker,da,filler,spil bare her nu
+luk ligesom lyden,mute,da,filler,luk lyden
+uhh real quick lock the door,unknown,en,filler,real quick lock the door
+hmm vær venlig at indstille lydstyrken til tyve,setVolume,da,filler,vær venlig at indstille lydstyrken til tyve
+enough enough already,stop,en,repetition,enough already
+please kill sound,mute,en,dropped_article,please kill the sound
+uhh play alone real quick,leaveSpeaker,en,filler,play alone real quick
+kindly put volume at seventy-five,setVolume,en,dropped_article,kindly put the volume at seventy-five
+venligst vær så venlig at fjer- dæmpningen,unmute,da,partial_word,venligst vær så venlig at fjerne dæmpningen
+which favorit- are saved right away,listFavorites,en,partial_word,which favorites are saved right away
+volume down like 30,volumeDown,en,filler,volume down 30
+jeg vil ger- have at du tilslutte haven,joinSpeaker,da,partial_word,jeg vil gerne have at du tilslutte haven

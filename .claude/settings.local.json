@@ -26,7 +26,15 @@
       "WebFetch(domain:api.github.com)",
       "Bash(xcodebuild -project iOS/Voxio.xcodeproj -scheme Voxio -destination \"generic/platform=iOS Simulator\" -quiet build)",
       "mcp__ide__getDiagnostics",
-      "Bash(xargs ls *)"
+      "Bash(xargs ls *)",
+      "Bash(xcodebuild *)",
+      "Bash(/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild *)",
+      "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -list -project /Users/mrandersen/Projects/SwftExperiments-usability/iOS/Voxio.xcodeproj)",
+      "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/mrandersen/Projects/SwftExperiments-usability/iOS/Voxio.xcodeproj -scheme Voxio -destination \"generic/platform=iOS Simulator\" -configuration Debug build)",
+      "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/mrandersen/Projects/SwftExperiments-usability/iOS/Voxio.xcodeproj -scheme Voxio -destination \"generic/platform=iOS Simulator\" -configuration Debug clean build)",
+      "Bash(git stash *)",
+      "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project iOS/Voxio.xcodeproj -scheme Voxio -destination \"generic/platform=iOS Simulator\" -configuration Debug build)",
+      "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild *)"
     ]
   }
 }
