@@ -47,7 +47,7 @@ struct TwoStageFallbackParser {
 
     // ── Stage 1: Deterministic Regex ─────────────────────────────────────────
 
-    private func parseStage1(_ text: String, raw: String) -> ParsedCommand? {
+    func parseStage1(_ text: String, raw: String) -> ParsedCommand? {
         // confirm / cancel  (anchored — must be the whole utterance)
         if text.matches(of: /^(yes|yeah|correct|do it|confirm|ja|jo)$/).count > 0 {
             return ParsedCommand(intent: .confirm)

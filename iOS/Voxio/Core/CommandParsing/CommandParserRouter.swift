@@ -28,9 +28,17 @@ final class CommandParserRouter {
     // ── Public API ────────────────────────────────────────────────────────────
 
     /// Parses a transcript string into a `VoiceCommand`.
-    /// Tries Tier 1 → Tier 2 → Tier 3 in order, returning the first confident result.
+    /// Stage 1 regex runs first on all devices — if it matches, returns immediately
+    /// without touching Foundation Models. Unmatched utterances proceed to
+    /// Tier 1 (Foundation Models) → Tier 2 (NLModel) → Tier 3 (regex full pass).
     func parse(_ transcript: String) async -> VoiceCommand {
         Log.info("[CommandParserRouter] parsing: \"\(transcript)\"")
+        let text = transcript.trimmingCharacters(in: .whitespaces).lowercased()
+        if let fast = fallback.parseStage1(text, raw: transcript) {
+            let result = toVoiceCommand(fast)
+            Log.info("[CommandParserRouter] result: \(result) (Stage1-fast)")
+            return result
+        }
 #if canImport(FoundationModels)
         if #available(iOS 26, *) {
             if let result = await tryFoundationModel(transcript) { return result }

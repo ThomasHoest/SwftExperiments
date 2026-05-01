@@ -30,7 +30,7 @@ class AVService {
 
     // T-0303 — silence gate
     private let silenceThreshold: Float        = 0.01
-    private let silenceDuration:  TimeInterval = 1.5
+    private let silenceDuration:  TimeInterval = 0.8
 
     var onTranscription: ((_ text: String, _ isFinal: Bool) -> Void)?
     var onAudioLevel:    ((Float) -> Void)?

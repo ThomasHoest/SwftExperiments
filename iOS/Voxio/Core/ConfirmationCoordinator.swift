@@ -24,7 +24,7 @@ class ConfirmationCoordinator: ObservableObject {
     private var countdownTask: Task<Void, Never>?
     private var pendingOnResolved: ((Resolution) -> Void)?
 
-    /// Starts a 2-second countdown, then fires `action` unless cancelled first.
+    /// Starts a 1-second countdown, then fires `action` unless cancelled first.
     /// Returns immediately; `onResolved` is called with `.fired` or `.cancelled`.
     func startCountdown(
         action: @escaping () async -> Void,
@@ -36,19 +36,17 @@ class ConfirmationCoordinator: ObservableObject {
         countdownTask = nil
         pendingOnResolved = nil
 
-        secondsRemaining = 2
+        secondsRemaining = 1
         state = .countdown(readBack: readBack)
         pendingOnResolved = onResolved
 
         countdownTask = Task { [weak self] in
             guard let self else { return }
 
-            // Tick from 2 down to 1 (display each value for 1 second)
-            for tick in stride(from: 2, through: 1, by: -1) {
-                await MainActor.run { self.secondsRemaining = tick }
-                try? await Task.sleep(for: .seconds(1))
-                if Task.isCancelled { return }
-            }
+            // Show 1 for 1 second then fire
+            await MainActor.run { self.secondsRemaining = 1 }
+            try? await Task.sleep(for: .seconds(1))
+            if Task.isCancelled { return }
 
             if Task.isCancelled { return }
 
