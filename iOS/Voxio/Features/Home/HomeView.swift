@@ -440,8 +440,10 @@ struct HomeView: View {
                 handleError(.speakerNotFound(spoken: targetName, available: allSpeakers.map(\.name)))
                 return false
             }
-            return await perform(speaker: speaker) {
-                try await speaker.client.join(peer: target.identifier)
+            // Master-side expand: tell the target (currently broadcasting) to add the
+            // command-issuing speaker as a listener.
+            return await perform(speaker: target) {
+                try await target.client.join(peer: speaker.identifier)
                 discovery.mergeIntoSpeakerGroup(source: speaker, target: target)
             }
         case .leaveSpeaker:

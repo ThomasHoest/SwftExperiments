@@ -25,7 +25,7 @@ random.seed(42)
 TARGET_PER_INTENT = 500
 NOISE_FRACTION = 0.20  # of TARGET_PER_INTENT — so ~100 noise examples per intent
 
-OUT_DIR = Path("/home/claude/corpus")
+OUT_DIR = Path(__file__).resolve().parent
 OUT_DIR.mkdir(exist_ok=True)
 
 # ---------------------------------------------------------------------------
@@ -922,8 +922,11 @@ def gen_join_speaker():
         "group with {room}", "sync with {room}", "sync to {room}",
         "pair with {room}", "link to {room}", "link with {room}",
         "play together with {room}", "play with {room}",
+        "play it with {room}", "play along with {room}",
+        "play in {room} too", "play here and in {room}",
         "merge with {room}", "join the group with {room}",
         "add me to {room}", "add {room} to the group",
+        "follow {room}", "match {room}",
     ]
     en_no_room = [
         "join the speaker", "join the speakers", "join the group",
@@ -932,14 +935,20 @@ def gen_join_speaker():
         "play in sync", "play everywhere", "play in all rooms",
     ]
     en_polite = [f"{p} join {{room}}" for p in EN_POLITE] + \
-                [f"{p} group with {{room}}" for p in EN_POLITE]
+                [f"{p} group with {{room}}" for p in EN_POLITE] + \
+                [f"{p} play with {{room}}" for p in EN_POLITE]
 
     da_templates = [
-        "tilslut {room}", "tilslut til {room}", "forbind med {room}",
-        "forbind til {room}", "tilføj {room}", "grupper med {room}",
-        "synkroniser med {room}", "spil sammen med {room}",
-        "spil samtidig med {room}", "join {room}",
-        "kobl sammen med {room}", "tilknyt {room}",
+        "tilslut {room}", "tilslut til {room}", "tilslut med {room}",
+        "forbind med {room}", "forbind til {room}",
+        "tilføj {room}", "grupper med {room}",
+        "synkroniser med {room}", "synkroniser til {room}",
+        "spil sammen med {room}", "spil samtidig med {room}",
+        "spil med {room}", "spille med {room}",
+        "spil også i {room}", "spil her og i {room}",
+        "join {room}",
+        "kobl sammen med {room}", "kobl med {room}", "tilknyt {room}",
+        "følg {room}", "match {room}",
     ]
     da_no_room = [
         "tilslut højttaleren", "tilslut højttalerne", "tilslut gruppen",
@@ -949,7 +958,8 @@ def gen_join_speaker():
     ]
     da_polite = [f"{p} tilslutte {{room}}" for p in DA_POLITE] + \
                 [f"{p} forbinde med {{room}}" for p in DA_POLITE] + \
-                [f"{p} gruppere med {{room}}" for p in DA_POLITE]
+                [f"{p} gruppere med {{room}}" for p in DA_POLITE] + \
+                [f"{p} spille med {{room}}" for p in DA_POLITE]
 
     en = expand(en_templates + en_polite, {"room": ROOM_NAMES_EN}) + en_no_room
     da = expand(da_templates + da_polite, {"room": ROOM_NAMES_DA}) + da_no_room

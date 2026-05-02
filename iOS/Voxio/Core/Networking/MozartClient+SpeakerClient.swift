@@ -80,15 +80,27 @@ extension MozartClient: SpeakerClient {
     func join(peer: SpeakerIdentifier) async throws {
         do {
             if let jid = peer.jid {
+                Log.info("[\(host)] join → expand to jid:\(jid)")
                 try await beolinkExpand(jid: jid)
             } else {
+                Log.info("[\(host)] join → beolinkJoin (no jid for peer \(peer.host))")
                 try await beolinkJoin()
             }
-        } catch let e as MozartError { throw SpeakerError.from(e) }
+            Log.info("[\(host)] join OK")
+        } catch let e as MozartError {
+            Log.error("[\(host)] join failed: \(e)")
+            throw SpeakerError.from(e)
+        }
     }
 
     func leave() async throws {
-        do { try await beolinkLeave() }
-        catch let e as MozartError { throw SpeakerError.from(e) }
+        do {
+            Log.info("[\(host)] leave → beolinkLeave")
+            try await beolinkLeave()
+            Log.info("[\(host)] leave OK")
+        } catch let e as MozartError {
+            Log.error("[\(host)] leave failed: \(e)")
+            throw SpeakerError.from(e)
+        }
     }
 }

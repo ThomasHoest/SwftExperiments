@@ -11,7 +11,20 @@ extension BNRClient: SpeakerClient {
         }
     }
 
+    /// Master-side join: this BNR device adds `peer` as a listener of its primary experience.
+    /// Requires the listener to expose a JID (Mozart and BNR speakers both qualify).
     func join(peer: SpeakerIdentifier) async throws {
-        try await join()
+        guard let listenerJid = peer.jid else {
+            Log.error("[BNR:\(host)] join: peer \(peer.host) has no JID — cannot expand")
+            throw SpeakerError.invalidResponse
+        }
+        Log.info("[BNR:\(host)] join → expandExperience listener:\(listenerJid)")
+        do {
+            try await expandExperience(listenerJid: listenerJid)
+            Log.info("[BNR:\(host)] join OK")
+        } catch {
+            Log.error("[BNR:\(host)] join failed: \(error)")
+            throw error
+        }
     }
 }

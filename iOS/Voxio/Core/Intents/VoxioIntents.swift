@@ -131,11 +131,12 @@ struct JoinSpeakerIntent: AudioPlaybackIntent {
             throw VoxioIntentError(errorDescription: IntentStrings.speakerNotFound(target.name, lang))
         }
         do {
-            try await sourceSpeaker.client.join(peer: await targetSpeaker.identifier)
+            // Master-side expand: target (broadcasting) adds source as a listener.
+            try await targetSpeaker.client.join(peer: await sourceSpeaker.identifier)
             let msg = IntentStrings.joined(await sourceSpeaker.name, await targetSpeaker.name, lang)
             return .result(dialog: IntentDialog(stringLiteral: msg))
         } catch _ as SpeakerError {
-            throw VoxioIntentError(errorDescription: IntentStrings.speakerUnreachable(await sourceSpeaker.name, lang))
+            throw VoxioIntentError(errorDescription: IntentStrings.speakerUnreachable(await targetSpeaker.name, lang))
         }
     }
 }

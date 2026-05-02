@@ -142,6 +142,11 @@ struct TwoStageFallbackParser {
             let target = String(match.1).trimmingCharacters(in: .whitespaces)
             return ParsedCommand(intent: .joinSpeaker, targetSpeakerName: target.isEmpty ? nil : target)
         }
+        // join speaker — natural-language "play with X" / "spil med X"
+        if let match = text.firstMatch(of: TwoStageFallbackParser.playWithRegex) {
+            let target = String(match.1).trimmingCharacters(in: .whitespaces)
+            return ParsedCommand(intent: .joinSpeaker, targetSpeakerName: target.isEmpty ? nil : target)
+        }
 
         return nil
     }
@@ -149,6 +154,7 @@ struct TwoStageFallbackParser {
     // ── Shared patterns ───────────────────────────────────────────────────────
 
     static let joinTriggerRegex = /\b(?:join|connect|merge|sync|link|pair|group|add|saml|forbind|tilslut|synkroniser)\b\s+(?:(?:to|with|til|og|med)\s+)?(.+)/
+    static let playWithRegex    = /\b(?:play|spil|afspil|start)\s+(?:with|together\s+with|med|sammen\s+med)\s+(.+)/
 
     // ── Stage 2: NLModel Classifier ───────────────────────────────────────────
 
@@ -187,6 +193,9 @@ struct TwoStageFallbackParser {
         }
         if intent == .joinSpeaker {
             if let match = text.firstMatch(of: TwoStageFallbackParser.joinTriggerRegex) {
+                let t = String(match.1).trimmingCharacters(in: .whitespaces)
+                targetSpeakerName = t.isEmpty ? nil : t
+            } else if let match = text.firstMatch(of: TwoStageFallbackParser.playWithRegex) {
                 let t = String(match.1).trimmingCharacters(in: .whitespaces)
                 targetSpeakerName = t.isEmpty ? nil : t
             }

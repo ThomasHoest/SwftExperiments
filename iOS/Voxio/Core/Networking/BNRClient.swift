@@ -1,7 +1,7 @@
 import Foundation
 
 class BNRClient {
-    private let host: String
+    let host: String
     private let port: Int
     private let baseUrl: String
     private let session: URLSession
@@ -10,6 +10,10 @@ class BNRClient {
     // Cached from the first volume fetch; default protects against races before first fetch.
     private var storedMaximum: Int = 9000
     private var maximumFetched = false
+
+    // Captured from the Device-Jid response header on every successful response.
+    // BNR products identify themselves via this header (see BNR API spec §Identity and Routing).
+    private var cachedJid: String?
 
     init(host: String, port: Int = 8080) {
         self.host = host
@@ -62,7 +66,11 @@ class BNRClient {
         }
         do {
             let (data, response) = try await session.data(for: req)
-            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            let http = response as? HTTPURLResponse
+            let status = http?.statusCode ?? 0
+            if let jid = http?.value(forHTTPHeaderField: "Device-Jid"), !jid.isEmpty {
+                cachedJid = jid
+            }
 
             // 501 on write operations: soft warning, return empty data
             if status == 501 {
@@ -169,6 +177,15 @@ class BNRClient {
         return response.beoDevice.productFriendlyName.productFriendlyName
     }
 
+    /// Returns the JID captured from the `Device-Jid` response header.
+    /// Issues a `/BeoDevice` request if the cache is empty, to populate it.
+    func getJid() async throws -> String? {
+        if cachedJid == nil {
+            _ = try? await send("/BeoDevice", method: "GET")
+        }
+        return cachedJid
+    }
+
     // MARK: - Sources
 
     func getSources() async throws -> [Favorite] {
@@ -195,7 +212,20 @@ class BNRClient {
 
     // MARK: - Session management
 
-    func join() async throws {
+    /// Master-side multi-room join: adds a listener to this device's primary experience.
+    /// This device must be the broadcasting source; the listener is identified by their JID.
+    /// Maps to the C# `BuildExpandExperienceRequest(listenerJid)` builder.
+    func expandExperience(listenerJid: String) async throws {
+        struct Body: Encodable { let jid: String }
+        try await postVoid("/BeoZone/Zone/ActiveSources/primaryExperience",
+                           body: try encode(Body(jid: listenerJid)))
+    }
+
+    /// Listener-side legacy "Join" button: this device joins whatever the network advertises
+    /// as the active broadcast experience. No peer parameter — equivalent to pressing the
+    /// physical Join key on a Beo remote. Kept for completeness; multi-room voice "join"
+    /// goes through `expandExperience(listenerJid:)` instead.
+    func legacyJoin() async throws {
         try await postVoid("/BeoZone/Zone/Device/OneWayJoin")
     }
 
