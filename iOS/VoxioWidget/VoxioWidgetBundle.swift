@@ -5,6 +5,7 @@ import SwiftUI
 struct VoxioWidgetBundle: WidgetBundle {
     var body: some Widget {
         VoxioPlayerWidget()
-        VoxioWidgetControl()
+        VoxioPlayPauseControl()
+        VoxioMuteControl()
     }
 }
