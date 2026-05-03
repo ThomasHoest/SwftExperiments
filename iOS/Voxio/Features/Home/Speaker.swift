@@ -75,6 +75,7 @@ class Speaker: Identifiable {
         }
         startEventLoop()
         Log.info("[\(name)] initial state — state:\(state.rawValue) vol:\(volume.map(String.init) ?? "?")")
+        WidgetStateWriter.write(speaker: self, appRunning: true)
     }
 
     private func startEventLoop() {
@@ -139,6 +140,7 @@ class Speaker: Identifiable {
             Log.verbose("[\(name)] source → \(sourceName ?? "?")")
             if let n = sourceName { source = n }
         }
+        WidgetStateWriter.write(speaker: self, appRunning: true)
     }
 
     func dispose() {

@@ -122,6 +122,7 @@ class SpeakerDiscoveryService: ObservableObject {
             return SpeakerGroup(members: members, hostSpeaker: host)
         }
         Log.info("[SDS] \(groups.count) group(s) from \(speakers.count) speaker(s)")
+        WidgetStateWriter.writeDiscoveredSpeakers(speakers)
     }
 
     // Group state mutations (called from E-32 join/leave dispatch)

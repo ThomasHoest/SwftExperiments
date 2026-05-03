@@ -8,10 +8,21 @@ import SwiftUI
 
 @main
 struct VoxioApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some Scene {
         WindowGroup {
             HomeView()
                 .preferredColorScheme(.dark)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background {
+                Task { @MainActor in
+                    if let speaker = SpeakerStore.shared.activeSpeaker {
+                        WidgetStateWriter.write(speaker: speaker, appRunning: false)
+                    }
+                }
+            }
         }
     }
 }
