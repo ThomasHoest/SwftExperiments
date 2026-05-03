@@ -120,7 +120,7 @@ struct VoxioWidgetMediumView: View {
     @ViewBuilder
     private var playPauseButton: some View {
         if entry.playbackState == "loading" {
-            Button(intent: PlaybackToggleIntent()) {
+            Button(intent: makePlaybackToggle(host: entry.host)) {
                 HStack(spacing: WidgetButtonToken.iconGap) {
                     Image(systemName: "ellipsis")
                         .foregroundStyle(BeoColor.labelSecondary)
@@ -144,7 +144,7 @@ struct VoxioWidgetMediumView: View {
                 ? "Pause \(entry.speakerName)"
                 : "Play \(entry.speakerName)"
 
-            Button(intent: PlaybackToggleIntent()) {
+            Button(intent: makePlaybackToggle(host: entry.host)) {
                 HStack(spacing: WidgetButtonToken.iconGap) {
                     Image(systemName: icon)
                         .foregroundStyle(tint)
@@ -166,6 +166,13 @@ struct VoxioWidgetMediumView: View {
     private func makeAdjustVolume(delta: Int) -> AdjustVolumeIntent {
         let intent = AdjustVolumeIntent()
         intent.delta = delta
+        intent.targetHost = entry.host
+        return intent
+    }
+
+    private func makePlaybackToggle(host: String?) -> PlaybackToggleIntent {
+        let intent = PlaybackToggleIntent()
+        intent.targetHost = host
         return intent
     }
 

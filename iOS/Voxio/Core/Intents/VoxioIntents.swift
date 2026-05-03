@@ -36,15 +36,28 @@ struct SpeakerEntityQuery: EntityQuery {
     }
 }
 
+// MARK: - Speaker resolution helper
+
+@MainActor
+private func resolveSpeaker(host: String?) -> Speaker? {
+    if let host {
+        return SpeakerStore.shared.allSpeakers.first { $0.host == host }
+    }
+    return SpeakerStore.shared.activeSpeaker
+}
+
 // MARK: - PlaybackToggleIntent
 
 struct PlaybackToggleIntent: AudioPlaybackIntent {
     static var title: LocalizedStringResource = "Play/Pause Voxio"
     static var description = IntentDescription("Toggles play/pause on your active B&O speaker.")
 
+    @Parameter(title: "Speaker host")
+    var targetHost: String?
+
     func perform() async throws -> some IntentResult {
         let lang = await MainActor.run { LanguageService.shared.activeLanguage }
-        guard let speaker = await SpeakerStore.shared.activeSpeaker else {
+        guard let speaker = await MainActor.run(body: { resolveSpeaker(host: targetHost) }) else {
             throw VoxioIntentError(errorDescription: IntentStrings.appNotRunning(lang))
         }
         do {
@@ -69,9 +82,12 @@ struct AdjustVolumeIntent: AudioPlaybackIntent {
     @Parameter(title: "Delta", default: 10)
     var delta: Int
 
+    @Parameter(title: "Speaker host")
+    var targetHost: String?
+
     func perform() async throws -> some IntentResult {
         let lang = await MainActor.run { LanguageService.shared.activeLanguage }
-        guard let speaker = await SpeakerStore.shared.activeSpeaker else {
+        guard let speaker = await MainActor.run(body: { resolveSpeaker(host: targetHost) }) else {
             throw VoxioIntentError(errorDescription: IntentStrings.appNotRunning(lang))
         }
         do {
@@ -92,9 +108,12 @@ struct MuteIntent: AudioPlaybackIntent {
     static var title: LocalizedStringResource = "Mute Voxio"
     static var description = IntentDescription("Toggles mute on your active B&O speaker.")
 
+    @Parameter(title: "Speaker host")
+    var targetHost: String?
+
     func perform() async throws -> some IntentResult {
         let lang = await MainActor.run { LanguageService.shared.activeLanguage }
-        guard let speaker = await SpeakerStore.shared.activeSpeaker else {
+        guard let speaker = await MainActor.run(body: { resolveSpeaker(host: targetHost) }) else {
             throw VoxioIntentError(errorDescription: IntentStrings.appNotRunning(lang))
         }
         do {

@@ -5,6 +5,7 @@ import Foundation
 
 struct VoxioWidgetEntry: TimelineEntry {
     let date: Date
+    let host: String?           // The speaker host the widget is currently displaying
     let speakerName: String
     let trackTitle: String?
     let sourceName: String?
@@ -18,6 +19,7 @@ struct VoxioWidgetEntry: TimelineEntry {
 
     static let placeholder = VoxioWidgetEntry(
         date: Date(),
+        host: nil,
         speakerName: "Beosound Stage",
         trackTitle: "Jazz Radio",
         sourceName: "TuneIn",
@@ -27,11 +29,12 @@ struct VoxioWidgetEntry: TimelineEntry {
         appRunning: true,
         isEmpty: false,
         lastWrittenAt: Date(),
-        dataVersion: 1
+        dataVersion: 2
     )
 
     static let empty = VoxioWidgetEntry(
         date: Date(),
+        host: nil,
         speakerName: "No speaker found",
         trackTitle: nil,
         sourceName: nil,
@@ -41,7 +44,7 @@ struct VoxioWidgetEntry: TimelineEntry {
         appRunning: false,
         isEmpty: true,
         lastWrittenAt: nil,
-        dataVersion: 1
+        dataVersion: 2
     )
 }
 
@@ -52,7 +55,7 @@ struct VoxioWidgetProvider: AppIntentTimelineProvider {
     typealias Entry = VoxioWidgetEntry
 
     private static let suiteName = "group.T-Creative.Voxio"
-    private static let currentDataVersion = 1
+    private static let currentDataVersion = 2
 
     func placeholder(in context: Context) -> VoxioWidgetEntry {
         .placeholder
@@ -74,37 +77,58 @@ struct VoxioWidgetProvider: AppIntentTimelineProvider {
             return .empty
         }
 
-        let dataVersion = defaults.integer(forKey: "widget_data_version")
+        let dataVersion = defaults.integer(forKey: WidgetStateKeys.dataVersion)
         guard dataVersion == Self.currentDataVersion else {
             return .empty
         }
 
-        guard let speakerName = defaults.string(forKey: "widget_speaker_name") else {
+        let configuredId = configuration.speakerPicker?.id
+        let host: String
+        if let configuredId, configuredId != "auto" {
+            host = configuredId
+        } else if let auto = pickAutoHost(in: defaults) {
+            host = auto
+        } else {
             return .empty
         }
 
-        // If a specific speaker is configured (not "auto"), filter by host
-        let configuredHost = configuration.speakerPicker?.id
-        let storedHost = defaults.string(forKey: "widget_speaker_host") ?? ""
-        if let host = configuredHost, host != "auto", host != storedHost {
+        guard let name = defaults.string(forKey: WidgetStateKeys.name(host)) else {
             return .empty
         }
 
-        let rawTimestamp = defaults.double(forKey: "widget_last_written_at")
-        let lastWrittenAt = rawTimestamp > 0 ? Date(timeIntervalSince1970: rawTimestamp) : nil
+        let writtenAt = defaults.double(forKey: WidgetStateKeys.writtenAt(host))
+        let lastWrittenAt = writtenAt > 0 ? Date(timeIntervalSince1970: writtenAt) : nil
 
         return VoxioWidgetEntry(
             date: Date(),
-            speakerName: speakerName,
-            trackTitle: defaults.string(forKey: "widget_track_title"),
-            sourceName: defaults.string(forKey: "widget_source_name"),
-            playbackState: defaults.string(forKey: "widget_playback_state") ?? "stopped",
-            volume: defaults.integer(forKey: "widget_volume"),
-            isMuted: defaults.bool(forKey: "widget_muted"),
-            appRunning: defaults.bool(forKey: "widget_app_running"),
+            host: host,
+            speakerName: name,
+            trackTitle: defaults.string(forKey: WidgetStateKeys.trackTitle(host)),
+            sourceName: defaults.string(forKey: WidgetStateKeys.sourceName(host)),
+            playbackState: defaults.string(forKey: WidgetStateKeys.playbackState(host)) ?? "stopped",
+            volume: defaults.integer(forKey: WidgetStateKeys.volume(host)),
+            isMuted: defaults.bool(forKey: WidgetStateKeys.muted(host)),
+            appRunning: defaults.bool(forKey: WidgetStateKeys.appRunning),
             isEmpty: false,
             lastWrittenAt: lastWrittenAt,
             dataVersion: dataVersion
         )
+    }
+
+    /// Pick the best speaker to display when the widget is set to "Automatic".
+    /// Priority: any speaker currently playing → most recently written.
+    /// Tie-break by most recent `written_at` timestamp.
+    private func pickAutoHost(in defaults: UserDefaults) -> String? {
+        let hosts = (defaults.array(forKey: WidgetStateKeys.knownHosts) as? [String]) ?? []
+        guard !hosts.isEmpty else { return nil }
+
+        let playing = hosts.filter {
+            defaults.string(forKey: WidgetStateKeys.playbackState($0)) == "playing"
+        }
+        let candidates = playing.isEmpty ? hosts : playing
+        return candidates.max {
+            defaults.double(forKey: WidgetStateKeys.writtenAt($0))
+                < defaults.double(forKey: WidgetStateKeys.writtenAt($1))
+        }
     }
 }

@@ -73,7 +73,7 @@ struct VoxioWidgetSmallView: View {
     @ViewBuilder
     private var primaryButton: some View {
         if entry.playbackState == "loading" {
-            Button(intent: PlaybackToggleIntent()) {
+            Button(intent: makePlaybackToggle(host: entry.host)) {
                 buttonLabel(icon: "ellipsis", label: "—", iconTint: BeoColor.labelSecondary)
             }
             .disabled(true)
@@ -88,7 +88,7 @@ struct VoxioWidgetSmallView: View {
                 ? "Pause \(entry.speakerName)"
                 : "Play \(entry.speakerName)"
 
-            Button(intent: PlaybackToggleIntent()) {
+            Button(intent: makePlaybackToggle(host: entry.host)) {
                 buttonLabel(icon: icon, label: label, iconTint: tint)
             }
             .glassButtonStyle()
@@ -140,6 +140,12 @@ struct VoxioWidgetSmallView: View {
     }
 
     // MARK: - Helpers
+
+    private func makePlaybackToggle(host: String?) -> PlaybackToggleIntent {
+        let intent = PlaybackToggleIntent()
+        intent.targetHost = host
+        return intent
+    }
 
     private func buttonLabel(icon: String, label: String, iconTint: Color) -> some View {
         HStack(spacing: WidgetButtonToken.iconGap) {

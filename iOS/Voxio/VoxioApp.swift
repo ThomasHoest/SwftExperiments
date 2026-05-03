@@ -16,12 +16,13 @@ struct VoxioApp: App {
                 .preferredColorScheme(.dark)
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background {
-                Task { @MainActor in
-                    if let speaker = SpeakerStore.shared.activeSpeaker {
-                        WidgetStateWriter.write(speaker: speaker, appRunning: false)
-                    }
-                }
+            switch phase {
+            case .background, .inactive:
+                Task { @MainActor in WidgetStateWriter.markAppRunning(false) }
+            case .active:
+                Task { @MainActor in WidgetStateWriter.markAppRunning(true) }
+            @unknown default:
+                break
             }
         }
     }

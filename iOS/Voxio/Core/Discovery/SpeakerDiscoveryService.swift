@@ -58,6 +58,7 @@ class SpeakerDiscoveryService: ObservableObject {
         let speaker = allSpeakers.remove(at: idx)
         SpeakerStore.shared.allSpeakers = allSpeakers
         speaker.dispose()
+        WidgetStateWriter.removeSpeaker(host: ip)
         Log.info("[SDS] removed \(speaker.name) (\(ip))")
         // Remove from its group
         for (gi, group) in groups.enumerated() {
