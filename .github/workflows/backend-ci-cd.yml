@@ -2,13 +2,13 @@ name: Voxio Telemetry Backend — CI/CD
 
 on:
   push:
-    branches: [main, voxio-1.3]
+    branches: [main, develop]
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci-cd.yml'
   pull_request:
     types: [opened, synchronize, reopened, closed]
-    branches: [main]
+    branches: [main, develop]
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci-cd.yml'
@@ -95,6 +95,30 @@ jobs:
       static_web_app_url: ${{ steps.deploy.outputs.static_web_app_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Deploy to Azure Static Web Apps
+        id: deploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: backend
+          api_location: ""
+          output_location: ""
+          deployment_environment: >-
+            ${{
+              github.ref == 'refs/heads/main'    && 'production' ||
+              github.ref == 'refs/heads/develop' && 'staging'    ||
+              ''
+            }}
+
+  migrate:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    name: Run migrations
+    steps:
+      - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
           version: 9
@@ -106,27 +130,32 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         working-directory: ${{ env.WORKING_DIR }}
-      - name: Build
-        run: pnpm build
+      - name: Run migrations
+        run: |
+          # Only migrate on direct branch pushes — not on PR events.
+          # PRs deploy to ephemeral SWA preview environments which share
+          # the staging DB; running migrations there would affect staging.
+          if [ "$GITHUB_EVENT_NAME" != "push" ]; then
+            echo "Skipping migrations for pull_request event"
+            exit 0
+          fi
+          if [ -z "$DATABASE_URL" ]; then
+            echo "DATABASE_URL not configured — skipping (set GitHub secret after T-4104)"
+            exit 0
+          fi
+          pnpm migrate:up
         working-directory: ${{ env.WORKING_DIR }}
-      - name: Deploy to Azure Static Web Apps
-        id: deploy
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: upload
-          app_location: backend
-          output_location: backend/.next
-          deployment_environment: >-
+        env:
+          DATABASE_URL: >-
             ${{
-              github.ref == 'refs/heads/main' && 'production' ||
+              github.ref == 'refs/heads/main'    && secrets.DATABASE_URL         ||
+              github.ref == 'refs/heads/develop' && secrets.STAGING_DATABASE_URL ||
               ''
             }}
 
   e2e:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
-    needs: [deploy]
+    needs: [migrate]
     runs-on: ubuntu-latest
     name: E2E tests
     steps:
