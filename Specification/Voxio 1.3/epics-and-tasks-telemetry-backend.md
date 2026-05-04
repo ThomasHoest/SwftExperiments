@@ -44,7 +44,7 @@ The SWA region and matching Neon region are a **blocking pre-provisioning prereq
 
 ### Repository bootstrap
 
-- [ ] **T-4101** Create a new GitHub repository `voxio-telemetry` (or the team's preferred name) under the Voxio team's GitHub organisation. Initialise with `.gitignore` for Node + Next.js, an MIT or proprietary licence file as the team prefers, and a `README.md` that links to `spec-telemetry-backend-admin.md` and this epics document. Default branch: `main`. Configure branch protection: require PR review, require status checks (`lint`, `unit`, `build`, `e2e`) before merge.
+- [x] **T-4101** Create a new GitHub repository `voxio-telemetry` (or the team's preferred name) under the Voxio team's GitHub organisation. Initialise with `.gitignore` for Node + Next.js, an MIT or proprietary licence file as the team prefers, and a `README.md` that links to `spec-telemetry-backend-admin.md` and this epics document. Default branch: `main`. Configure branch protection: require PR review, require status checks (`lint`, `unit`, `build`, `e2e`) before merge.
 
   Initialise the project with Next.js 15 in hybrid mode:
   ```
@@ -83,7 +83,7 @@ The SWA region and matching Neon region are a **blocking pre-provisioning prereq
 
 ### CI/CD pipeline
 
-- [ ] **T-4106** Create `.github/workflows/ci-cd.yml` following the TheCheapPowerCompany pattern. Triggers: `push` to `main`, `pull_request` to `main`. Jobs:
+- [x] **T-4106** Create `.github/workflows/ci-cd.yml` following the TheCheapPowerCompany pattern. Triggers: `push` to `main`, `pull_request` to `main`. Jobs:
   1. **lint** — `npm ci` then `npm run lint` (ESLint default Next.js config).
   2. **unit** — `npm ci` then `npm run test:unit` (vitest, exit code 0 required).
   3. **build** — `npm ci` then `npm run build`. Required to confirm the Next.js standalone build succeeds.
@@ -95,7 +95,7 @@ The SWA region and matching Neon region are a **blocking pre-provisioning prereq
   TypeScript interface for the workflow shape is documented inline. Use `actions/setup-node@v4` with Node 20 (Next.js 15 supported runtime).
   *Depends on: T-4101, T-4103.*
 
-- [ ] **T-4107** Configure `.env.local.example` at the repo root with the development environment variable names (no values):
+- [x] **T-4107** Configure `.env.local.example` at the repo root with the development environment variable names (no values):
   ```
   # Database (Neon connection string for local dev — see runbook-local-dev.md)
   DATABASE_URL=
@@ -124,7 +124,7 @@ The SWA region and matching Neon region are a **blocking pre-provisioning prereq
 
 ### Verification
 
-- [ ] **T-4109** End-to-end pipeline smoke test. Push a trivial change (e.g. a typo fix in `README.md`) on a branch, open a PR, observe the CI pipeline run lint → unit → build → deploy (to preview) → e2e. Confirm the SWA preview URL is reachable and returns the Next.js default page. Merge the PR; confirm production deploy succeeds. Record the elapsed time of each step in `docs/runbook-cicd.md` for future regression detection.
+- [x] **T-4109** End-to-end pipeline smoke test. Push a trivial change (e.g. a typo fix in `README.md`) on a branch, open a PR, observe the CI pipeline run lint → unit → build → deploy (to preview) → e2e. Confirm the SWA preview URL is reachable and returns the Next.js default page. Merge the PR; confirm production deploy succeeds. Record the elapsed time of each step in `docs/runbook-cicd.md` for future regression detection.
   *Depends on: T-4106.*
 
 ---

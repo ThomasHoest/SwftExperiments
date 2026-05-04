@@ -216,7 +216,7 @@ None.
 
 ### `GET /api/health`
 
-Unauthenticated keep-alive ping. Used by the GitHub Actions cron job (every 5 minutes) to prevent the SWA-managed App Service from going idle.
+Unauthenticated keep-alive ping. Used by the UptimeRobot free-tier monitor (every 5 minutes) to prevent the SWA-managed App Service from going idle.
 
 **Authentication**
 
@@ -452,7 +452,7 @@ The admin layout includes a top navigation bar with links to Events, Stats, Expo
 | GDPR deletion semantics | Hard delete with cascade; no soft delete or grace period |
 | Are admin endpoints behind SWA role auth or app code? | SWA role auth (`allowedRoles: ["admin"]` in `staticwebapp.config.json`); zero application auth code |
 | Should the iOS deletion endpoint require admin auth? | No — it is gated by the same `X-Api-Key` as ingest, because the iOS app initiates deletion on the user's behalf |
-| Cold-start mitigation | Scheduled `GET /api/health` ping every 5 minutes via GitHub Actions cron |
+| Cold-start mitigation | UptimeRobot free-tier monitor hitting `GET /api/health` every 5 minutes — NOT a GitHub Actions cron (cron on a private repo costs ~$18/month overage; see ADR-001 §8 Item 1) |
 | CSV format | UTF-8 with BOM, RFC 4180 quoting, LF line endings, columns as specified in US-A3 |
 | Label model | One `labels` row per (event, admin); most-recent overwrite wins; previous label retained in audit column |
 | Rate limit | 1 batch per `deviceId` per 60 seconds at ingest |
