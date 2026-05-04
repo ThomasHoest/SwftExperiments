@@ -328,24 +328,31 @@ Each source entry is a two-element array: `[sourceId, sourceObject]`.
 
 Returns the currently active (playing or selected) source.
 
-**Response `200 OK`:**
+**Response `200 OK` (observed shape on production firmware — BeoPlay A9, BeoSound Stage, BeoSound 1):**
 ```json
 {
-  "activeSources": {
-    "primaryExperience": {
-      "source": {
-        "id": "radio:2714.1200304.28096178@products.bang-olufsen.com",
-        "friendlyName": "B&O Radio",
-        "category": "RADIO",
-        "sourceType": { "type": "RADIO" }
-      },
-      "state": "play"
+  "primaryExperience": {
+    "source": {
+      "id": "radio:2714.1200304.28096178@products.bang-olufsen.com",
+      "friendlyName": "B&O Radio",
+      "category": "RADIO",
+      "inUse": true,
+      "sourceType": { "type": "RADIO" }
     }
+  },
+  "activeSources": {
+    "primary": "radio:2714.1200304.28096178@products.bang-olufsen.com",
+    "primaryJid": "2714.1200304.28096178@products.bang-olufsen.com"
   }
 }
 ```
 
-`state` values: `"play"` | `"pause"` | `"stop"` | `"buffering"`
+**Important shape notes confirmed against real firmware:**
+- `primaryExperience` and `activeSources` are **sibling top-level keys** — `primaryExperience` is **not** nested inside `activeSources`.
+- The REST response carries **no `state` field**. Play state is inferred from `primaryExperience.source.inUse` (true → playing) and is otherwise delivered via long-poll `PROGRESS_INFORMATION` notifications.
+- The `state` field shown in some BNR documentation only appears in the **notification stream** (`SOURCE` and `PROGRESS_INFORMATION` events), never in this REST response.
+
+State values seen in the notification stream: `"play"` | `"pause"` | `"stop"` | `"buffering"` | `"completed"`.
 
 ---
 
