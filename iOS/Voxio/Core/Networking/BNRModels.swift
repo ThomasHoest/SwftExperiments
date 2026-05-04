@@ -92,7 +92,7 @@ func normalise(_ notification: BNRNotification) -> BNREvent? {
     case "PROGRESS_INFORMATION":
         let raw = data.state ?? ""
         let state = mapPlaybackState(raw)
-        Log.info("[BNR-norm] PROGRESS_INFORMATION → raw:\"\(raw)\" → \(state)")
+        Log.verbose("[BNR-norm] PROGRESS_INFORMATION → raw:\"\(raw)\" → \(state)")
         return .playbackState(state)
 
     case "NOW_PLAYING_NET_RADIO":
