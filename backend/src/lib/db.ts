@@ -12,8 +12,8 @@ function getClient(): NeonQueryFunction<false, false> {
   return _neon
 }
 
-export const sql: NeonQueryFunction<false, false> = (...args) =>
-  (getClient() as (...a: typeof args) => ReturnType<NeonQueryFunction<false, false>>)(...args)
+export const sql = ((...args: Parameters<NeonQueryFunction<false, false>>) =>
+  getClient()(...args)) as NeonQueryFunction<false, false>
 
 export async function query<T = Record<string, unknown>>(
   text: string,
