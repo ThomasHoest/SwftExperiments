@@ -41,7 +41,11 @@
       "WebFetch(domain:developer.spotify.com)",
       "WebFetch(domain:support.bang-olufsen.com)",
       "WebFetch(domain:techcrunch.com)",
-      "WebFetch(domain:www.home-assistant.io)"
+      "WebFetch(domain:www.home-assistant.io)",
+      "Bash(curl -s \"https://api.github.com/repos/ThomasHoest/TheCheapPowerCompany/contents/apps/marketing-site\")",
+      "Bash(python3 -c \"import sys,json; [print\\(f['name']\\) for f in json.load\\(sys.stdin\\)]\")",
+      "Bash(curl -s \"https://api.github.com/repos/ThomasHoest/TheCheapPowerCompany/contents/.github/workflows\")",
+      "Bash(curl -s \"https://api.github.com/repos/ThomasHoest/TheCheapPowerCompany/contents/infrastructure\")"
     ]
   }
 }
