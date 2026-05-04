@@ -59,7 +59,7 @@ The SWA region and matching Neon region are a **blocking pre-provisioning prereq
 
 ### Cloud provisioning
 
-- [ ] **T-4102** **Pre-provisioning: confirm SWA region.** The engineering lead must record the SWA deployment region (West Europe or East US) in `docs/decisions/region.md`. This decision is irreversible without recreating the Neon project and losing all data. Once the region is confirmed in writing, T-4103 and T-4104 may proceed.
+- [x] **T-4102** **Pre-provisioning: confirm SWA region — DECIDED: West Europe.** Region recorded: `West Europe`. Neon project must be created in `aws-eu-central-1`. This decision is irreversible without recreating the Neon project and losing all data. T-4103 and T-4104 may proceed.
   *Depends on: T-4101.*
 
 - [ ] **T-4103** Create the Azure Static Web Apps resource in the confirmed region (T-4102) on the **Standard plan** (~$9/month). Standard plan is required for custom auth roles (`admin`) and for preview environments per PR. Configure:
@@ -73,9 +73,7 @@ The SWA region and matching Neon region are a **blocking pre-provisioning prereq
   After creation, retrieve the SWA deployment token from the Azure portal (Manage deployment token). Store it as the GitHub Actions secret `AZURE_STATIC_WEB_APPS_API_TOKEN` on the `voxio-telemetry` repository. Note the SWA hostname (e.g. `https://voxio-telemetry-<random>.<region>.azurestaticapps.net`) and record it in `docs/decisions/region.md`.
   *Depends on: T-4102.*
 
-- [ ] **T-4104** Create the Neon Postgres project in the **matching region** as confirmed in T-4102:
-  - West Europe SWA → `aws-eu-central-1`
-  - East US SWA → `aws-us-east-1`
+- [ ] **T-4104** Create the Neon Postgres project in region **`aws-eu-central-1`** (matching the West Europe SWA region confirmed in T-4102).
 
   Project name: `voxio-telemetry`. Plan: Free tier (0.5 GB storage, 100 CU-hours/month, scale-to-zero). Default database: `voxio` (or the Neon-default `neondb` — record the choice). Capture the connection string from the Neon dashboard in the form `postgres://<user>:<password>@<host>/<database>?sslmode=require`. Store it as the SWA Application Setting `DATABASE_URL` (Standard plan SWA → Configuration blade in Azure portal). The string is encrypted at rest by SWA and only injected into the managed runtime — never log it, never commit it.
   *Depends on: T-4102, T-4103.*

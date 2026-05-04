@@ -15,6 +15,7 @@
 | 1.3.2 | 2026-05-04 | Amendment: Streaming service integrations (Spotify, Deezer, Tidal) deferred to v1.4. Research docs moved to `Specification/Voxio 1.4/`. |
 | 1.3.3 | 2026-05-04 | Amendment: Feature 3 — General UI improvements. First-boot onboarding screen, Settings sheet (hosts Flow A/B controls and language), and redesigned help screen with grouped command examples. New US-60–US-66, E-38–E-40. |
 | 1.3.4 | 2026-05-04 | Amendment: Epic dependency blocks added to E-33–E-40. Alias deletion acceptance criteria strengthened in US-49; new T-3405 specifies deletion UX (swipe, confirmation, bulk delete, empty state). |
+| 1.3.5 | 2026-05-04 | Amendment: Staging backend support — `TELEMETRY_BASE_URL` xcconfig build setting added to technical context; new T-3509 in E-35. Six design/infrastructure decisions recorded: SWA region (West Europe), admin site CTA contrast (keep white on gold, accepted deviation), alias duplicate phrase (block), alias Voxio wake word (block), speaker selector overflow (Menu at >3), edit-mode speaker switch (show warning). |
 
 ---
 
@@ -63,6 +64,7 @@ What v1.3 changes:
 | Flow A audio | Never collected — transcription strings only. Favorite names hashed, speaker names stripped from transcription position. | Maintains the v1 privacy guarantee. |
 | Flow A model update mechanism | New `.mlmodel` bundled with app releases. No over-the-air model swap in v1.3. | Over-the-air model swap adds infrastructure cost without proportional value at current user scale. |
 | Flow A anonymous device ID | Randomly generated UUID, regenerated on personalisation clear or app reinstall. | Stable enough to support server-side deletion requests; not stable enough to correlate across reinstalls. |
+| Flow A endpoint configuration | `TELEMETRY_BASE_URL` build setting in xcconfig. `Debug.xcconfig` → staging backend URL; `Release.xcconfig` → production URL. `TelemetryUploader` reads the value at init from `Bundle.main.infoDictionary` — never hardcoded. | Prevents development traffic from polluting production telemetry data. Each PR also gets a SWA preview environment, giving a per-branch staging target. |
 | Telemetry event structure | `(transcriptionAnonymised, intent, slots, parserPath, outcome, appVersion, modelVersion, locale, timestamp, flags)` | See A-1 for full field spec. No audio, no raw favorite names, no raw speaker names. |
 | Onboarding persistence | `@AppStorage("hasCompletedOnboarding")` boolean, set to `true` on dismiss. Replaces the existing `hasSeenHint` key. | Single flag; the onboarding screen subsumes the current `HintCardView` first-launch role. |
 | Settings presentation | Modal `.sheet` anchored to an icon button in the `HomeView` toolbar. Full-height sheet, `DarkGlass` aesthetic. | Sheet is dismissible by swipe or a close button — consistent with `LanguagePickerSheet`. No separate navigation stack needed at this scale. |
@@ -267,6 +269,7 @@ The two flows are independent. A user can opt out of Flow A entirely and still b
 | T-3506 | Add "Help improve voice control" toggle to Settings (off by default). Wire to `TelemetryUploader.isEnabled`. Add first-time prompt shown after 50 confirmed commands. |
 | T-3507 | Implement anonymous device ID: `UUID` stored in Keychain, regenerated on personalisation-data clear or app reinstall. Included in each upload batch header. |
 | T-3508 | Implement "Delete previously shared data" — `DELETE /telemetry/{deviceId}` request to the backend. Show pending/success/failed state in the "Shared data" settings screen. |
+| T-3509 | Add `TELEMETRY_BASE_URL` build setting to `Debug.xcconfig` and `Release.xcconfig`. `TelemetryUploader` reads `Bundle.main.infoDictionary["TELEMETRY_BASE_URL"]` at init — never hardcode the production URL. `Debug.xcconfig` points to the SWA preview/staging URL; `Release.xcconfig` points to the production URL. Document the staging URL in `docs/decisions/region.md` in the backend repo once T-4103 is complete. |
 
 #### E-36 — Shared Data Settings Screen
 

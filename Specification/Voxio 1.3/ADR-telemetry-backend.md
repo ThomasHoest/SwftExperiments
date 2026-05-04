@@ -82,7 +82,7 @@ Option B is documented as the concrete fallback if the hybrid preview status cau
 |---|---|---|
 | Next.js 15 hybrid on Azure SWA is "preview" | Medium | Microsoft's tutorial covers this path; community use in production confirmed. Fallback: Option B (static export + Azure Functions v4), no database or auth changes needed. |
 | Cold-start latency (5+ seconds after idle) | Low | iOS app tolerates with exponential backoff (US-54). Admin UI acceptable for internal tool. UptimeRobot free tier pings `GET /api/health` every 5 minutes to prevent idle. |
-| Neon region must match SWA region at provisioning | Medium | **Blocking prerequisite** — cannot be changed post-provisioning without recreating the database and losing all data. Must be resolved before any infrastructure is provisioned. |
+| Neon region must match SWA region at provisioning | ~~Medium~~ **Resolved** | **Decided:** SWA → West Europe; Neon → `aws-eu-central-1`. No action required before provisioning. |
 | SWA Standard plan required for custom roles | Low | $9/month; within the $10 ceiling. |
 | Neon free tier storage ceiling (0.5 GB) | Low | ~5 million events fit in 0.5 GB at ~100 bytes/event. At ≤100k events/month: ~50 months headroom. Manual export-and-prune is the v1 archiving strategy. |
 
@@ -125,7 +125,7 @@ Option B is documented as the concrete fallback if the hybrid preview status cau
 5. The rate-limit check must be inside the same database transaction as the ingest write, using `UPDATE devices … RETURNING`.
 6. The Next.js app must use `output: 'standalone'` in `next.config.js`. `navigationFallback` must not be used in `staticwebapp.config.json`.
 7. CI/CD follows the TheCheapPowerCompany pattern: lint → vitest → `next build` → `Azure/static-web-apps-deploy@v1` → Playwright E2E against the deployed preview URL.
-8. The Neon project region must match the SWA region. **This must be confirmed before any infrastructure is provisioned.**
+8. The Neon project region must match the SWA region. **Decided: SWA = West Europe, Neon = `aws-eu-central-1`.**
 
 ---
 

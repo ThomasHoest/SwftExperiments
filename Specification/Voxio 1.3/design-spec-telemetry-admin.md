@@ -760,13 +760,7 @@ All text/background combinations meet WCAG 2.1 AA (4.5:1 for body text, 3:1 for 
 | `danger.fg` on `danger.bg` | 7.2:1 | AAA |
 | `info.fg` on `info.bg` | 8.1:1 | AAA |
 
-**Outstanding contrast issue:** The white-on-gold combination on the primary CTA button fails AA at the current `accent.gold` value of `#C8A97E`. Three resolution paths:
-
-1. Darken the accent gold to `#A48355` (reaches 4.5:1 with white). Visually deviates from the iOS app accent.
-2. Use `text.primary` (dark) on `accent.gold` instead of white. Reaches 6.0:1. Visually unconventional for a primary CTA but readable.
-3. Add a subtle 1 px `text.primary @ 0.6` text shadow to the button label to improve perceived contrast without changing the colour. WCAG does not formally credit text shadows; this is a workaround for visual feel, not for compliance.
-
-**Recommendation:** Use option 2 (dark text on gold). The button still reads as a primary action because of size, position, and the gold accent; legibility wins. Document in §8 as a flagged decision that may revisit in v1.4 once the team has had the site open for a week.
+**Known deviation — accepted:** The white-on-gold combination (`#FFFFFF` on `#C8A97E`) on the primary CTA button fails WCAG 2.1 AA at 2.7:1. **Decision (2026-05-04): keep white on gold.** This is a deliberate visual choice accepted as a known non-conformance for v1. The site is internal (1–5 admins); a formal AA audit is not required. Revisit in v1.4 if the team reports legibility issues in practice.
 
 ### 7.6 What is NOT covered in v1
 

@@ -390,10 +390,10 @@ A single inline message line appears between the phrase field and the Continue b
 | Trigger | Glyph | Colour | Message |
 |---|---|---|---|
 | Phrase is empty (Continue tapped) | `exclamationmark.circle` | system red | "Enter a phrase first." (EN) / "Indtast en sætning først." (DA) |
-| Phrase already exists for the same speaker | `exclamationmark.triangle` | system orange | "Already used for `<existing-resolved-command>`." (EN) / "Allerede brugt til `<existing-resolved-command>`." (DA) |
-| Phrase contains the trigger word "Voxio" | `exclamationmark.triangle` | system orange | "Avoid using \"Voxio\" — it's the app's wake word." (EN) — *flagged as Open Question §4.* |
+| Phrase already exists for the same speaker | `exclamationmark.circle` | system red | "A phrase already exists for this action. Delete the existing alias first." (EN) / "En sætning findes allerede for denne handling. Slet det eksisterende alias først." (DA) |
+| Phrase contains the trigger word "Voxio" | `exclamationmark.circle` | system red | "Phrases cannot contain \"Voxio\" — it's the app's wake word." (EN) / "Sætninger må ikke indeholde \"Voxio\" — det er appens aktiveringsord." (DA) |
 
-Empty-phrase error blocks Continue. Duplicate-phrase warning does not block Continue (the user may want to overwrite); when the user proceeds, the original alias is updated rather than a duplicate created — this needs confirmation (Open Question §4).
+Empty-phrase, duplicate-phrase, and Voxio-containing errors all block Continue — the user must resolve the issue before proceeding.
 
 The message uses `BeoType.caption` and animates in with `BeoAnimation.toast`. Top padding `Spacing.s8` from the field.
 
@@ -461,7 +461,7 @@ Step 2 is denser than Step 1: the user makes three nested decisions (speaker, co
 | Empty state | When the user has not yet picked a command type, the bottom line reads "Pick a command below" / "Vælg en kommando nedenfor" in `BeoColor.muted` italic |
 | Update | Live — every selection change re-renders the preview with `BeoAnimation.toast` cross-fade |
 
-The preview panel is the headline element of Step 2. It sits directly under the step heading and remains visible as the user scrolls down through the form (positioned in a non-scrolling region above the scrollable form, OR repeated at the bottom near the CTA — Open Question §4).
+The preview panel is the headline element of Step 2. It sits directly under the step heading in a non-scrolling region above the scrollable form, remaining visible as the user scrolls through the command picker and detail controls.
 
 #### 2.5.2 Speaker selector
 
@@ -476,6 +476,8 @@ A segmented control listing every discovered speaker by name, scoped to the spea
 | Overflow behaviour | If more than 3 speakers are discovered, switch to a `Menu`-style picker showing the selected speaker and a chevron; the menu opens to a list of all speakers |
 
 When the speaker changes, the live preview's "on `<SpeakerName>`" trailing clause updates immediately. If switching speakers would invalidate the current detail-control selection (e.g. picked Favourite 5 on Beolab, switched to Beosound which has no Favourite 5), the detail control resets to its empty state and the CTA disables until re-selected.
+
+**Edit mode only:** when the user selects a different speaker than the alias was originally created on, a `BeoType.caption` / `BeoColor.muted` annotation renders directly below the selector: *"This will move the alias from `<originalSpeaker>`."* The annotation persists until the user either reverts to the original speaker or saves. No additional confirmation is shown at save time — the inline annotation is sufficient.
 
 #### 2.5.3 Command-type picker
 
@@ -638,13 +640,9 @@ The `<N>` count is the live count at the time the button was tapped — recomput
 
 ## Section 4 — UX/UI Issues and Open Questions
 
-### Issue 1 — Duplicate phrase: warn vs block vs overwrite
+### Issue 1 — Duplicate phrase: warn vs block vs overwrite — **RESOLVED**
 
-**Description:** US-49 requires that aliases survive add/edit/delete and that the parser uses exact-match. The spec is silent on what happens when the user creates an alias with a phrase already used by another alias on the same speaker. Three behaviours are reasonable: (a) block creation with an error; (b) warn and let the user proceed, overwriting silently; (c) warn and offer "Replace existing" / "Cancel" dialog.
-
-**Recommendation:** Option (c). The Step 1 inline warning ("Already used for `→ Volume 35`") informs the user; on Continue tap, if the phrase is a duplicate, an alert asks "Replace existing alias?" with actions "Replace" (destructive) / "Cancel". This avoids accidental overwrite while keeping the path to fix-a-typo simple.
-
-**Decision needed from:** Designer + product.
+**Decision (2026-05-04): Block.** A duplicate phrase on the same speaker is an error. Continue is disabled until the user changes the phrase or deletes the existing alias first. Error message updated in §2.4.5 accordingly.
 
 ### Issue 2 — Live preview position when content scrolls
 
@@ -654,13 +652,9 @@ The `<N>` count is the live count at the time the button was tapped — recomput
 
 **Decision needed from:** Designer + iOS engineer.
 
-### Issue 3 — Reserved-word filter for the phrase ("Voxio")
+### Issue 3 — Reserved-word filter for the phrase ("Voxio") — **RESOLVED**
 
-**Description:** Voxio's wake word is "Voxio". An alias phrase containing "Voxio" would compete with the wake-word detector and produce strange behaviour (the user says "Voxio, voxio playlist" and the parser sees "voxio playlist"). Should the form block such phrases, warn but allow, or ignore the issue?
-
-**Recommendation:** Warn but allow in v1.3 (inline warning at §2.4.5). Block only when user testing demonstrates real confusion. Document in T-3402 that the parser treats trigger-word stripping the same way for aliases as for non-alias commands.
-
-**Decision needed from:** Voice-pipeline engineer + product.
+**Decision (2026-05-04): Block.** Phrases containing "Voxio" (case-insensitive) are rejected at Step 1 with an error. Continue is disabled. Error message updated in §2.4.5 accordingly. `PersonalisationStore.saveAlias()` must also enforce this server-side to guard against direct API calls.
 
 ### Issue 4 — Mic-button waveform animation budget
 
@@ -670,21 +664,13 @@ The `<N>` count is the live count at the time the button was tapped — recomput
 
 **Decision needed from:** iOS engineer — confirm performance.
 
-### Issue 5 — Speaker selector overflow at 4+ speakers
+### Issue 5 — Speaker selector overflow at 4+ speakers — **RESOLVED**
 
-**Description:** The segmented control reads beautifully with 2–3 speakers but breaks down at 4+ — segment widths shrink below their label text and the control becomes unreadable. The fallback Menu-style picker (§2.5.2) works, but the threshold for switching is arbitrary.
+**Decision (2026-05-04): Switch to Menu at > 3 speakers.** Character-length threshold not used. The spec at §2.5.2 already reflects this: "If more than 3 speakers are discovered, switch to a Menu-style picker."
 
-**Recommendation:** Switch to the Menu-style picker when the speaker count is **> 3** OR when any speaker name is longer than 10 characters (the segmented control cannot fit a 14-character "Beolab Stage" label across three segments on iPhone SE width). Document the heuristic in code; verify against the longest plausible B&O speaker name.
+### Issue 6 — Edit mode: changing the speaker re-categorises the alias — **RESOLVED**
 
-**Decision needed from:** Designer.
-
-### Issue 6 — Edit mode: changing the speaker re-categorises the alias
-
-**Description:** In Edit mode, switching the speaker selector moves the alias from one speaker group to another in the list. This is a legitimate edit but a destructive one — the user may have expected the speaker selector to be visual context, not an editable field.
-
-**Recommendation:** Allow the change but treat it explicitly: when the user taps a different speaker in Edit mode, render a small `BeoColor.muted` annotation under the selector reading "This will move the alias from `<originalSpeaker>`." If the user proceeds and saves, no further confirmation. The list animates the row from the old section to the new section on save completion.
-
-**Decision needed from:** Designer + product.
+**Decision (2026-05-04): Show warning annotation.** When the user picks a different speaker in Edit mode, render the `BeoColor.muted` annotation "This will move the alias from `<originalSpeaker>`." No further confirmation at save time. Spec at §2.5.2 updated accordingly.
 
 ### Issue 7 — Empty state per-speaker after bulk delete
 
