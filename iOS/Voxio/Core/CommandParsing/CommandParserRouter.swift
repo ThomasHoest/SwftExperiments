@@ -70,6 +70,8 @@ final class CommandParserRouter {
         case .volumeDown:           return .adjustVolume(-(parsed.volumeDelta ?? 10))
         case .mute:                 return .mute
         case .unmute:               return .unmute
+        case .joinSpeaker:          return .joinSpeaker(targetName: parsed.targetSpeakerName ?? "")
+        case .leaveSpeaker:         return .leaveSpeaker
         case .confirm:              return .confirm
         case .cancel:               return .cancel
         case .unknown:              return .unknown(parsed.rawText ?? "")

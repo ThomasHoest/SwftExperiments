@@ -33,8 +33,13 @@ struct SpeakerCard: View {
     }
 
     private var accessibilityDescription: String {
+        let p = speaker.nowPlaying
         var parts = [speaker.name, speaker.stateDisplay]
-        if speaker.isPlaying, !speaker.trackDisplay.isEmpty { parts.append(speaker.trackDisplay) }
+        if p.isPlaying {
+            if let primary = p.primaryLine, !primary.isEmpty { parts.append(primary) }
+            if let secondary = p.secondaryLine, !secondary.isEmpty { parts.append(secondary) }
+            if let badge = p.sourceBadge, !badge.isEmpty { parts.append(badge) }
+        }
         if let vol = speaker.volume { parts.append("Volume \(vol)") }
         return parts.joined(separator: ", ")
     }
@@ -56,14 +61,33 @@ struct SpeakerCard: View {
     }
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(speaker.name)
-                .font(BeoType.speakerName)
-                .foregroundStyle(.primary)
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(speaker.name)
+                    .font(BeoType.speakerName)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
 
-            Text(speaker.stateDisplay)
-                .font(BeoType.body)
-                .foregroundStyle(.secondary)
+                Text(speaker.stateDisplay)
+                    .font(BeoType.body)
+                    .foregroundStyle(.secondary)
+            }
+            .layoutPriority(1)
+
+            Spacer()
+
+            if let badge = speaker.nowPlaying.sourceBadge, !badge.isEmpty {
+                Text(badge)
+                    .font(BeoType.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(.white.opacity(0.07), in: Capsule())
+                    .fixedSize(horizontal: true, vertical: false)
+                    .accessibilityHidden(true)
+            }
         }
         .padding(.horizontal, 24)
         .padding(.top, 28)
@@ -71,18 +95,20 @@ struct SpeakerCard: View {
     }
 
     private var nowPlayingPanel: some View {
-        HStack(alignment: .center, spacing: 12) {
+        let p = speaker.nowPlaying
+        return HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                if !speaker.trackDisplay.isEmpty {
-                    Text(speaker.trackDisplay)
+                if let primary = p.primaryLine, !primary.isEmpty {
+                    Text(primary)
                         .font(BeoType.nowPlaying)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                 }
-                if let src = speaker.source, !src.isEmpty {
-                    Text(src)
+                if let secondary = p.secondaryLine, !secondary.isEmpty {
+                    Text(secondary)
                         .font(BeoType.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
 

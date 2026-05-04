@@ -22,6 +22,8 @@ final class FoundationModelParser {
         var volumeValue: Int?
         /// Relative volume step when intent is volumeUp or volumeDown.
         var volumeDelta: Int?
+        /// Spoken target speaker name when intent is joinSpeaker.
+        var targetSpeakerName: String?
     }
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -69,12 +71,13 @@ final class FoundationModelParser {
         let intent = CommandIntent(rawValue: cmd.intent) ?? .unknown
 
         let result = ParsedCommand(
-            intent:        intent,
-            favoriteName:  cmd.favoriteName,
-            favoriteIndex: cmd.favoriteIndex,
-            volumeValue:   cmd.volumeValue.map { max(0, min(100, $0)) },
-            volumeDelta:   cmd.volumeDelta,
-            rawText:       remainder
+            intent:            intent,
+            favoriteName:      cmd.favoriteName,
+            favoriteIndex:     cmd.favoriteIndex,
+            volumeValue:       cmd.volumeValue.map { max(0, min(100, $0)) },
+            volumeDelta:       cmd.volumeDelta,
+            targetSpeakerName: cmd.targetSpeakerName,
+            rawText:           remainder
         )
         Log.info("[FoundationModelParser] \"\(remainder)\" → \(result)")
         return result
@@ -103,6 +106,8 @@ final class FoundationModelParser {
             - For playFavoriteByNumber, set favoriteIndex to the spoken ordinal (1 for "one"/"en"/"et", 2 for "two"/"to", 3 for "three"/"tre", 4 for "four"/"fire"). Danish trigger words include "start" in addition to "afspil"/"spil".
             - For setVolume, extract volumeValue (0–100). For volumeUp/volumeDown, extract
               volumeDelta if a number is spoken; omit it if no number is given.
+            - For joinSpeaker, set targetSpeakerName to the spoken name of the target speaker
+              the user wants to join to. Match against available speakers if possible.
             - "Yes", "yeah", "correct", "ja", "jo" → confirm.
             - "No", "cancel", "nej", "annuller" → cancel.
             - If no clear intent is recognised, use "unknown".

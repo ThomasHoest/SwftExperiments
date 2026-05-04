@@ -128,8 +128,33 @@ struct TwoStageFallbackParser {
             return ParsedCommand(intent: .playDefault)
         }
 
+        // leave group — check before join so "leave" doesn't partially match join patterns
+        if text.contains(/\b(leave|separate|forlad|adskil|afkobl|frakobl|unpair|unsync)\b/)
+            || text.contains(/\bplay alone\b/)
+            || text.contains(/\bspil alene\b/)
+            || text.contains(/\bstop sync/)
+            || text.contains(/\bgå solo\b/) {
+            return ParsedCommand(intent: .leaveSpeaker)
+        }
+
+        // join speaker — extract target name after trigger + optional preposition
+        if let match = text.firstMatch(of: TwoStageFallbackParser.joinTriggerRegex) {
+            let target = String(match.1).trimmingCharacters(in: .whitespaces)
+            return ParsedCommand(intent: .joinSpeaker, targetSpeakerName: target.isEmpty ? nil : target)
+        }
+        // join speaker — natural-language "play with X" / "spil med X"
+        if let match = text.firstMatch(of: TwoStageFallbackParser.playWithRegex) {
+            let target = String(match.1).trimmingCharacters(in: .whitespaces)
+            return ParsedCommand(intent: .joinSpeaker, targetSpeakerName: target.isEmpty ? nil : target)
+        }
+
         return nil
     }
+
+    // ── Shared patterns ───────────────────────────────────────────────────────
+
+    static let joinTriggerRegex = /\b(?:join|connect|merge|sync|link|pair|group|add|saml|forbind|tilslut|synkroniser)\b\s+(?:(?:to|with|til|og|med)\s+)?(.+)/
+    static let playWithRegex    = /\b(?:play|spil|afspil|start)\s+(?:with|together\s+with|med|sammen\s+med)\s+(.+)/
 
     // ── Stage 2: NLModel Classifier ───────────────────────────────────────────
 
@@ -151,12 +176,12 @@ struct TwoStageFallbackParser {
             return nil
         }
 
-        // Extract slots for play-named and volume intents
+        // Extract slots for play-named, volume, and join intents
         var favoriteName: String?
         var volumeDelta: Int?
+        var targetSpeakerName: String?
 
         if intent == .playNamed {
-            // Trailing phrase after "play" / "afspil" / "spil"
             if let match = text.firstMatch(of: /(?:play|afspil|spil)\s+(.+)$/) {
                 favoriteName = String(match.1)
             }
@@ -166,12 +191,22 @@ struct TwoStageFallbackParser {
                 volumeDelta = Int(match.1)
             }
         }
+        if intent == .joinSpeaker {
+            if let match = text.firstMatch(of: TwoStageFallbackParser.joinTriggerRegex) {
+                let t = String(match.1).trimmingCharacters(in: .whitespaces)
+                targetSpeakerName = t.isEmpty ? nil : t
+            } else if let match = text.firstMatch(of: TwoStageFallbackParser.playWithRegex) {
+                let t = String(match.1).trimmingCharacters(in: .whitespaces)
+                targetSpeakerName = t.isEmpty ? nil : t
+            }
+        }
 
         return ParsedCommand(
-            intent:       intent,
-            favoriteName: favoriteName,
-            volumeDelta:  volumeDelta,
-            rawText:      raw
+            intent:            intent,
+            favoriteName:      favoriteName,
+            volumeDelta:       volumeDelta,
+            targetSpeakerName: targetSpeakerName,
+            rawText:           raw
         )
     }
 }

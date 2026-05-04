@@ -26,6 +26,12 @@ struct CommandStrings {
     var muted:            (_ speaker: String) -> String
     var unmuted:          (_ speaker: String) -> String
 
+    // ── Grouping ──────────────────────────────────────────────────────────────
+    var joinSpeakers:  (_ source: String, _ target: String) -> String
+    var leaveSpeaker:  (_ speaker: String) -> String
+    var joined:        (_ source: String, _ target: String) -> String
+    var leftGroup:     (_ speaker: String) -> String
+
     // ── Favorites listing ─────────────────────────────────────────────────────
     var listFavoritesResult: (_ speaker: String, _ list: String) -> String
 
@@ -51,6 +57,10 @@ struct CommandStrings {
         volumeAdjusted:   { s in "\(s) volume adjusted" },
         muted:            { s in "\(s) muted" },
         unmuted:          { s in "\(s) unmuted" },
+        joinSpeakers:     { src, tgt in "Joining \(src) to \(tgt)" },
+        leaveSpeaker:     { s in "Disconnecting \(s) from its group" },
+        joined:           { src, tgt in "\(src) joined \(tgt)" },
+        leftGroup:        { s in "\(s) is now playing alone" },
         listFavoritesResult: { s, list in "Favorites on \(s): \(list)" },
         actionCancelled:  "Action cancelled"
     )
@@ -74,6 +84,10 @@ struct CommandStrings {
         volumeAdjusted:   { s in "\(s) lydstyrke justeret" },
         muted:            { s in "\(s) slået fra" },
         unmuted:          { s in "\(s) slået til" },
+        joinSpeakers:     { src, tgt in "Tilslutter \(src) til \(tgt)" },
+        leaveSpeaker:     { s in "Afkobler \(s) fra gruppen" },
+        joined:           { src, tgt in "\(src) tilsluttet \(tgt)" },
+        leftGroup:        { s in "\(s) spiller nu alene" },
         listFavoritesResult: { s, list in "Favoritter på \(s): \(list)" },
         actionCancelled:  "Handling annulleret"
     )

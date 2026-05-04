@@ -9,7 +9,7 @@ import Foundation
 /// Spec:   https://bang-olufsen.github.io/mozart-open-api/
 /// GitHub: https://github.com/bang-olufsen/mozart-open-api
 class MozartClient {
-    private let host: String
+    let host: String
     private let baseUrl: String
     private let session: URLSession
     private let decoder = JSONDecoder()
@@ -108,7 +108,7 @@ class MozartClient {
 
     /// Returns battery state for portable devices (e.g. Beosound A1).
     /// Mains-powered speakers return `batteryLevel: 0, isCharging: false` — callers should ignore that case.
-    func getBattery() async throws -> Battery {
+    func getMozartBattery() async throws -> Battery {
         try await get("/battery")
     }
 
@@ -116,7 +116,7 @@ class MozartClient {
 
     /// Returns the current playback state (`playing`, `paused`, `stopped`, `buffering`, `unknown`).
     /// Note: real devices may also emit `started`, which is treated as equivalent to `playing`.
-    func getPlaybackState() async throws -> PlaybackState {
+    func getMozartPlaybackState() async throws -> PlaybackState {
         let response: PlaybackResponse = try await get("/playback/state")
         return response.state
     }
@@ -134,17 +134,17 @@ class MozartClient {
     }
 
     /// Starts or resumes playback on the active source.
-    func play() async throws {
+    func mozartPlay() async throws {
         try await postVoid("/playback/command/play")
     }
 
-    /// Pauses playback. Resumable with ``play()``.
-    func pause() async throws {
+    /// Pauses playback. Resumable with ``mozartPlay()``.
+    func mozartPause() async throws {
         try await postVoid("/playback/command/pause")
     }
 
     /// Stops playback and clears the active stream.
-    func stop() async throws {
+    func mozartStop() async throws {
         try await postVoid("/playback/command/stop")
     }
 
@@ -208,15 +208,15 @@ class MozartClient {
     // ── Volume ────────────────────────────────────────────────────────────────
 
     /// Returns the current volume state, including level, maximum, and mute status.
-    func getVolume() async throws -> VolumeResponse {
+    func getMozartVolume() async throws -> VolumeResponse {
         try await get("/sound/volume")
     }
 
     /// Sets the volume level.
     /// - Parameter level: Integer 0–100.
-    func setVolume(_ level: Int) async throws {
-        struct Body: Encodable { let volumeLevel: Int }
-        try await putVoid("/sound/volume/level", body: try encode(Body(volumeLevel: level)))
+    func mozartSetVolume(_ level: Int) async throws {
+        struct Body: Encodable { let level: Int }
+        try await putVoid("/sound/volume/level", body: try encode(Body(level: level)))
     }
 
     /// Mutes or unmutes the speaker without changing the stored volume level.
@@ -235,8 +235,15 @@ class MozartClient {
     }
 
     /// Returns the currently active input source.
-    func getActiveSource() async throws -> Source {
-        try await get("/playback/sources/active")
+    func getMozartActiveSource() async throws -> Source {
+        let data = try await send("/playback/sources/active", method: "GET")
+        let raw = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+        Log.info("[\(host)] /playback/sources/active raw: \(raw)")
+        do { return try decoder.decode(Source.self, from: data) }
+        catch {
+            Log.error("[\(host)] decode Source failed: \(error)")
+            throw MozartError.invalidResponse
+        }
     }
 
     /// Activates a specific source by its ID.

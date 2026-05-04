@@ -6,11 +6,100 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		E1A598BE2FA7A2EE00269C7A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A598BD2FA7A2EE00269C7A /* WidgetKit.framework */; };
+		E1A598C02FA7A2EE00269C7A /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A598BF2FA7A2EE00269C7A /* SwiftUI.framework */; };
+		E1A598CD2FA7A2EF00269C7A /* VoxioWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E1A598BB2FA7A2EE00269C7A /* VoxioWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E1A598CB2FA7A2EF00269C7A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E7B0416F2ED825090000F56C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A598BA2FA7A2EE00269C7A;
+			remoteInfo = VoxioWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E1A598D22FA7A2EF00269C7A /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E1A598CD2FA7A2EF00269C7A /* VoxioWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		E1A598BB2FA7A2EE00269C7A /* VoxioWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VoxioWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1A598BD2FA7A2EE00269C7A /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		E1A598BF2FA7A2EE00269C7A /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		E1A598D32FA7A32C00269C7A /* VoxioWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VoxioWidgetExtension.entitlements; sourceTree = "<group>"; };
 		E7B041772ED825090000F56C /* Voxio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Voxio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E1A598D12FA7A2EF00269C7A /* Exceptions for "VoxioWidget" folder in "VoxioWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E1A598BA2FA7A2EE00269C7A /* VoxioWidgetExtension */;
+		};
+		E1A598E22FA7A66700269C7A /* Exceptions for "Voxio" folder in "VoxioWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Core/Errors/SpeakerError.swift,
+				Core/Intents/IntentStrings.swift,
+				Core/Intents/SpeakerStore.swift,
+				Core/Intents/VoxioIntents.swift,
+				Core/Language/Language.swift,
+				Core/Language/LanguageService.swift,
+				Core/Logger.swift,
+				Core/Models/Battery.swift,
+				Core/Models/BeoEvent.swift,
+				Core/Models/BeolinkPeer.swift,
+				Core/Models/BeoSelf.swift,
+				Core/Models/Favorite.swift,
+				Core/Models/Group.swift,
+				Core/Models/Playback.swift,
+				Core/Models/Power.swift,
+				Core/Models/Scene.swift,
+				Core/Models/Source.swift,
+				Core/Models/SpeakerEvent.swift,
+				Core/Models/SpeakerIdentifier.swift,
+				Core/Models/SpeakerSource.swift,
+				Core/Models/VoiceCommand.swift,
+				Core/Models/Volume.swift,
+				Core/Networking/BNRClient.swift,
+				"Core/Networking/BNRClient+SpeakerClient.swift",
+				Core/Networking/BNREvents.swift,
+				"Core/Networking/BNREvents+SpeakerEventSource.swift",
+				Core/Networking/BNRModels.swift,
+				Core/Networking/MozartClient.swift,
+				"Core/Networking/MozartClient+SpeakerClient.swift",
+				Core/Networking/MozartError.swift,
+				Core/Networking/MozartEvents.swift,
+				"Core/Networking/MozartEvents+SpeakerEventSource.swift",
+				Core/Networking/SpeakerClientFactory.swift,
+				Core/Presentation/NowPlayingPresentation.swift,
+				Core/Presentation/NowPlayingPresenter.swift,
+				Core/Protocols/SpeakerClient.swift,
+				Core/Protocols/SpeakerEventSource.swift,
+				Core/Widget/WidgetStateWriter.swift,
+				DesignSystem/BeoColor.swift,
+				DesignSystem/DarkGlassButton.swift,
+				DesignSystem/DesignTokens.swift,
+				Features/Home/Speaker.swift,
+			);
+			target = E1A598BA2FA7A2EE00269C7A /* VoxioWidgetExtension */;
+		};
 		E76750152EFACE8B00DCEB12 /* Exceptions for "Voxio" folder in "Voxio" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -21,10 +110,19 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		E1A598C12FA7A2EE00269C7A /* VoxioWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E1A598D12FA7A2EF00269C7A /* Exceptions for "VoxioWidget" folder in "VoxioWidgetExtension" target */,
+			);
+			path = VoxioWidget;
+			sourceTree = "<group>";
+		};
 		E7B041792ED825090000F56C /* Voxio */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				E76750152EFACE8B00DCEB12 /* Exceptions for "Voxio" folder in "Voxio" target */,
+				E1A598E22FA7A66700269C7A /* Exceptions for "Voxio" folder in "VoxioWidgetExtension" target */,
 			);
 			path = Voxio;
 			sourceTree = "<group>";
@@ -32,6 +130,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		E1A598B82FA7A2EE00269C7A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1A598C02FA7A2EE00269C7A /* SwiftUI.framework in Frameworks */,
+				E1A598BE2FA7A2EE00269C7A /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E7B041742ED825090000F56C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -42,10 +149,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		E1A598BC2FA7A2EE00269C7A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				E1A598BD2FA7A2EE00269C7A /* WidgetKit.framework */,
+				E1A598BF2FA7A2EE00269C7A /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		E7B0416E2ED825090000F56C = {
 			isa = PBXGroup;
 			children = (
+				E1A598D32FA7A32C00269C7A /* VoxioWidgetExtension.entitlements */,
 				E7B041792ED825090000F56C /* Voxio */,
+				E1A598C12FA7A2EE00269C7A /* VoxioWidget */,
+				E1A598BC2FA7A2EE00269C7A /* Frameworks */,
 				E7B041782ED825090000F56C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +173,7 @@
 			isa = PBXGroup;
 			children = (
 				E7B041772ED825090000F56C /* Voxio.app */,
+				E1A598BB2FA7A2EE00269C7A /* VoxioWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -61,6 +181,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		E1A598BA2FA7A2EE00269C7A /* VoxioWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E1A598CE2FA7A2EF00269C7A /* Build configuration list for PBXNativeTarget "VoxioWidgetExtension" */;
+			buildPhases = (
+				E1A598B72FA7A2EE00269C7A /* Sources */,
+				E1A598B82FA7A2EE00269C7A /* Frameworks */,
+				E1A598B92FA7A2EE00269C7A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E1A598C12FA7A2EE00269C7A /* VoxioWidget */,
+			);
+			name = VoxioWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = VoxioWidgetExtension;
+			productReference = E1A598BB2FA7A2EE00269C7A /* VoxioWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		E7B041762ED825090000F56C /* Voxio */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E7B041842ED8250B0000F56C /* Build configuration list for PBXNativeTarget "Voxio" */;
@@ -68,10 +210,12 @@
 				E7B041732ED825090000F56C /* Sources */,
 				E7B041742ED825090000F56C /* Frameworks */,
 				E7B041752ED825090000F56C /* Resources */,
+				E1A598D22FA7A2EF00269C7A /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E1A598CC2FA7A2EF00269C7A /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				E7B041792ED825090000F56C /* Voxio */,
@@ -90,9 +234,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2610;
+				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
+					E1A598BA2FA7A2EE00269C7A = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
 					E7B041762ED825090000F56C = {
 						CreatedOnToolsVersion = 26.1.1;
 					};
@@ -113,11 +260,19 @@
 			projectRoot = "";
 			targets = (
 				E7B041762ED825090000F56C /* Voxio */,
+				E1A598BA2FA7A2EE00269C7A /* VoxioWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		E1A598B92FA7A2EE00269C7A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E7B041752ED825090000F56C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -128,6 +283,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		E1A598B72FA7A2EE00269C7A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E7B041732ED825090000F56C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -137,7 +299,79 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		E1A598CC2FA7A2EF00269C7A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A598BA2FA7A2EE00269C7A /* VoxioWidgetExtension */;
+			targetProxy = E1A598CB2FA7A2EF00269C7A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		E1A598CF2FA7A2EF00269C7A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = VoxioWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PDS954CY3Y;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VoxioWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = VoxioWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "T-Creative.Voxio.VoxioWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E1A598D02FA7A2EF00269C7A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = VoxioWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PDS954CY3Y;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VoxioWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = VoxioWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "T-Creative.Voxio.VoxioWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		E7B041822ED8250B0000F56C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -262,6 +496,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Voxio/Voxio.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = PDS954CY3Y;
@@ -273,8 +508,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -297,6 +532,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Voxio/Voxio.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = PDS954CY3Y;
@@ -308,8 +544,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -330,6 +566,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		E1A598CE2FA7A2EF00269C7A /* Build configuration list for PBXNativeTarget "VoxioWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1A598CF2FA7A2EF00269C7A /* Debug */,
+				E1A598D02FA7A2EF00269C7A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		E7B041722ED825090000F56C /* Build configuration list for PBXProject "Voxio" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

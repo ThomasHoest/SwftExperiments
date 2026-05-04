@@ -8,10 +8,22 @@ import SwiftUI
 
 @main
 struct VoxioApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some Scene {
         WindowGroup {
             HomeView()
                 .preferredColorScheme(.dark)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .background, .inactive:
+                Task { @MainActor in WidgetStateWriter.markAppRunning(false) }
+            case .active:
+                Task { @MainActor in WidgetStateWriter.markAppRunning(true) }
+            @unknown default:
+                break
+            }
         }
     }
 }

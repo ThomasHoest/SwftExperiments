@@ -56,6 +56,25 @@ enum BeoType {
     static let speakerName    = Font.system(size: 34, weight: .semibold, design: .default)
     static let nowPlaying     = Font.system(size: 22, weight: .regular,  design: .default)
     static let confirmation   = Font.system(size: 17, weight: .regular,  design: .default)
+    // body: SF Pro Text 15 pt — UI labels. Distinct from widgetTrack (SF Pro Display/rounded at 15 pt).
     static let body           = Font.system(size: 15, weight: .regular,  design: .default)
     static let caption        = Font.system(size: 12, weight: .medium,   design: .default)
+}
+
+extension BeoType {
+    // Widget extension only — not used in the main app target.
+    static let widgetSpeakerName = Font.system(size: 12, weight: .semibold, design: .default)
+    // Widget extension only — not used in the main app target.
+    // Uses .rounded design for SF Pro Display warmth at small sizes; distinct from BeoType.body (.default).
+    static let widgetTrack       = Font.system(size: 15, weight: .regular,  design: .rounded)
+    // Widget extension only — not used in the main app target.
+    static let widgetCaption     = Font.system(size: 11, weight: .regular,  design: .default)
+}
+
+// Widget canvas-sized button padding — do not use in main app. See DarkGlassButtonTokens for main app values.
+enum WidgetButtonToken {
+    static let paddingV:     CGFloat = 8
+    static let paddingH:     CGFloat = 12
+    static let iconGap:      CGFloat = 6   // same as DarkGlassButtonTokens.iconGap
+    static let iconOnlySize: CGFloat = 36  // same as DarkGlassButtonTokens.iconOnlySize
 }

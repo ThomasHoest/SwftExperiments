@@ -22,6 +22,10 @@ enum VoiceCommand: Equatable {
     case mute
     /// Unmute the speaker.
     case unmute
+    /// Join the resolved speaker into the named target speaker's group.
+    case joinSpeaker(targetName: String)
+    /// Remove the resolved speaker from its current group.
+    case leaveSpeaker
     /// Affirmative response to a pending confirmation prompt.
     case confirm
     /// Negative response or explicit cancellation of a pending prompt.
@@ -43,6 +47,8 @@ extension VoiceCommand: CustomStringConvertible {
         case .adjustVolume(let d): return "adjustVolume(\(d > 0 ? "+\(d)" : "\(d)"))"
         case .mute:                return "mute"
         case .unmute:              return "unmute"
+        case .joinSpeaker(let t):  return "joinSpeaker(\"\(t)\")"
+        case .leaveSpeaker:        return "leaveSpeaker"
         case .confirm:             return "confirm"
         case .cancel:              return "cancel"
         case .unknown(let s):      return "unknown(\"\(s)\")"

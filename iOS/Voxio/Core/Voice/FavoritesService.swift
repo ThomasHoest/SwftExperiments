@@ -16,7 +16,7 @@ class FavoritesService {
             cache[speaker.host] = list
             Log.info("[Favorites] cached \(list.count) favorites for \(speaker.name): \(list.map(\.displayName))")
             return list
-        } catch MozartError.notFound {
+        } catch SpeakerError.httpError(404) {
             cache[speaker.host] = []
             Log.info("[Favorites] \(speaker.name) has no favorites stored (404)")
             return []
