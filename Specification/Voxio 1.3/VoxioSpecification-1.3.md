@@ -14,6 +14,7 @@
 | 1.3.1 | 2026-05-04 | Amendment: Feature 2 — Broadcast commands. New `VoiceCommand` cases and Stage 1 regex patterns for system-wide playback control ("stop everything", "volume down everywhere"). Executes in parallel across all active speakers. New US-56–US-59, E-37. |
 | 1.3.2 | 2026-05-04 | Amendment: Streaming service integrations (Spotify, Deezer, Tidal) deferred to v1.4. Research docs moved to `Specification/Voxio 1.4/`. |
 | 1.3.3 | 2026-05-04 | Amendment: Feature 3 — General UI improvements. First-boot onboarding screen, Settings sheet (hosts Flow A/B controls and language), and redesigned help screen with grouped command examples. New US-60–US-66, E-38–E-40. |
+| 1.3.4 | 2026-05-04 | Amendment: Epic dependency blocks added to E-33–E-40. Alias deletion acceptance criteria strengthened in US-49; new T-3405 specifies deletion UX (swipe, confirmation, bulk delete, empty state). |
 
 ---
 
@@ -128,7 +129,11 @@ The two flows are independent. A user can opt out of Flow A entirely and still b
 - Alias targets in v1.3 cover: a specific favorite by name, a specific favorite by number, a specific speaker for join, and a fixed volume value.
 - Aliases are scoped per addressed speaker.
 - Aliases survive app restart and update; wiped on app deletion.
-- Aliases can be edited and deleted from the same settings screen.
+- Aliases can be edited and deleted from the alias management screen.
+- Deleting an alias requires a confirmation prompt ("Delete alias?" with a destructive "Delete" action) — deletion is permanent and cannot be undone.
+- A swipe-to-delete gesture triggers the same confirmation prompt as the explicit delete button.
+- A "Delete all aliases for [Speaker]" bulk action is available per speaker group, with its own confirmation prompt naming the speaker and alias count ("Delete all 3 aliases for Beolab?").
+- After all aliases for a speaker are deleted the speaker group is removed from the list; if no aliases remain, an empty-state illustration and "Add your first alias" prompt are shown.
 - The parser checks aliases before invoking any other parsing layer; an alias hit short-circuits to the resolved intent.
 - An alias hit routes through the same confirmation-before-execution step as any other command.
 
@@ -219,6 +224,10 @@ The two flows are independent. A user can opt out of Flow A entirely and still b
 
 #### E-33 — PersonalisationParser and Core Data schema
 
+**Depends on:** v1.2 voice pipeline (shipped) — `CommandParserRouter`, `TwoStageFallbackParser`, existing Core Data stack.
+**Unlocks:** E-34 (PersonalisationStore API must exist before the Settings UI can bind to it), E-35 (shared PersistenceController and Core Data container must be established before TelemetryBuffer entity is added).
+**Runs in parallel with:** E-37, E-38, E-40.
+
 | Task | Description |
 |---|---|
 | T-3301 | Define `Alias` and `ConfirmedCommand` Core Data entities. `Alias`: `id`, `speakerId`, `phrase`, `intent`, `slots` (JSON blob), `createdAt`. `ConfirmedCommand`: `id`, `speakerId`, `transcription`, `intent`, `slots` (JSON blob), `lastUsedAt`, `useCount`. |
@@ -230,14 +239,23 @@ The two flows are independent. A user can opt out of Flow A entirely and still b
 
 #### E-34 — Personalisation Settings UI
 
+**Depends on:** E-33 (PersonalisationStore and PersonalisationParser must exist before Settings UI can bind to them).
+**Unlocks:** E-39 T-3904 (Settings sheet wires "Aliases" and "Learned phrases" rows to screens built here).
+**Runs in parallel with:** E-35, E-36, E-37, E-38, E-40.
+
 | Task | Description |
 |---|---|
 | T-3401 | Add a "Voice control" section to Settings. Contains "Personalise voice control" toggle (default on), "Learned phrases" row, and "Aliases" row. |
-| T-3402 | Implement "Aliases" screen: list of aliases grouped by speaker, add/edit/delete affordances. Alias edit form: phrase text field, intent picker, slot fields. |
+| T-3402 | Implement "Aliases" list screen: aliases grouped by speaker, showing phrase and resolved intent for each entry. Add (`+` toolbar button) and edit (tap row) affordances. See design spec `design-spec-alias-management.md` for layout. |
 | T-3403 | Implement "Learned phrases" screen: list of confirmed-command entries grouped by speaker, showing phrase, intent, date last used, delete affordance. "Clear all" action with confirmation prompt. |
 | T-3404 | Wire "Personalise voice control" toggle to `PersonalisationStore.isEnabled`. When toggled off, `PersonalisationParser` returns `nil` for all inputs. |
+| T-3405 | Implement alias deletion UX as specified in US-49: swipe-to-delete on each alias row triggers a confirmation alert ("Delete alias?" / destructive "Delete" / "Cancel"); tapping "Delete" calls `PersonalisationStore.deleteAlias(_:)`. Add a "Delete all aliases for [Speaker]" button at the bottom of each speaker section; this confirmation alert names the speaker and alias count. After deletion, collapse the speaker group if empty; show the empty-state view if no aliases remain at all. |
 
 #### E-35 — Telemetry Buffer and Consent
+
+**Depends on:** E-33 T-3301 (shared Core Data container must exist before `TelemetryBuffer` entity is added to it).
+**Unlocks:** E-36 (Shared Data screen depends on `TelemetryUploader`), telemetry backend work (E-41+, separate repo).
+**Runs in parallel with:** E-34, E-37, E-38, E-40.
 
 | Task | Description |
 |---|---|
@@ -251,6 +269,10 @@ The two flows are independent. A user can opt out of Flow A entirely and still b
 | T-3508 | Implement "Delete previously shared data" — `DELETE /telemetry/{deviceId}` request to the backend. Show pending/success/failed state in the "Shared data" settings screen. |
 
 #### E-36 — Shared Data Settings Screen
+
+**Depends on:** E-35 (`TelemetryUploader.isEnabled` toggle and `DELETE` request from T-3508 must exist before this screen can bind to them).
+**Unlocks:** E-39 T-3903 (Settings "Shared data" navigation row wires to the screen built here).
+**Runs in parallel with:** E-34, E-37, E-38, E-40.
 
 | Task | Description |
 |---|---|
@@ -387,6 +409,10 @@ The UI shows a brief non-blocking toast naming how many speakers were affected: 
 ### Implementation Epics and Tasks
 
 #### E-37 — Broadcast command parsing and execution
+
+**Depends on:** v1.2 voice pipeline (shipped) — `CommandParserRouter`, `TwoStageFallbackParser`, `VoiceCommand` enum, `SpeakerDiscoveryService`.
+**Unlocks:** nothing further in v1.3 (self-contained feature).
+**Runs in parallel with:** all other v1.3 epics (E-33–E-36, E-38–E-40). No shared dependencies — can begin immediately.
 
 | Task | Description |
 |---|---|
@@ -547,6 +573,10 @@ Three related screens that make the app approachable for first-time users, surfa
 
 #### E-38 — First-boot onboarding screen
 
+**Depends on:** none — standalone new screen against the existing app entry point.
+**Unlocks:** E-39 T-3906 ("Show introduction again" row requires `OnboardingView` to exist).
+**Runs in parallel with:** E-33–E-37, E-40. Can begin immediately.
+
 | Task | Description |
 |---|---|
 | T-3801 | Implement `OnboardingView`: full-screen cover, dark background, Voxio wordmark or orb graphic, headline, body copy (2–3 sentences), 2–3 starter example rows, "Get started" `DarkGlassButton`. EN + DA strings. |
@@ -556,6 +586,10 @@ Three related screens that make the app approachable for first-time users, surfa
 | T-3805 | Expose onboarding as a re-showable `.sheet` from Settings (US-66). |
 
 #### E-39 — Settings sheet
+
+**Depends on:** E-34 (alias and learned-phrases screens), E-36 (Shared Data screen), E-38 (`OnboardingView` re-show), E-40 (`HelpView`). Also depends on E-33/E-35 indirectly via the toggles wired in T-3903/T-3904. The sheet container (T-3901 + T-3902) can be scaffolded with stub rows early; individual rows cannot be fully wired until their target screens exist.
+**Unlocks:** nothing further — this is the integration epic that ties all Feature 1 and Feature 3 screens together.
+**Recommended order:** scaffold T-3901 + T-3902 first; complete T-3903–T-3907 after E-34, E-36, E-38, E-40 are done.
 
 | Task | Description |
 |---|---|
@@ -568,6 +602,10 @@ Three related screens that make the app approachable for first-time users, surfa
 | T-3907 | "About" row: shows app version and build number. |
 
 #### E-40 — Redesigned help screen
+
+**Depends on:** none — standalone new screen.
+**Unlocks:** E-39 T-3906 (Settings "Help" row requires `HelpView` to exist).
+**Runs in parallel with:** all other v1.3 epics (E-33–E-39). Can begin immediately.
 
 | Task | Description |
 |---|---|
