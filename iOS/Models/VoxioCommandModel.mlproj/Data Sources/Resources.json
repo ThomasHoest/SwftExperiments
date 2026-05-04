@@ -1,0 +1,31 @@
+{
+  "activityEntities" : [
+    "dataSourceCreated",
+    [
+      {
+        "createdDate" : "2026-05-01T17:56:40Z",
+        "event" : "dataSourceCreated",
+        "id" : "B86F7758-9627-4358-960E-D3129A0947C6",
+        "subtitle" : "Resources",
+        "title" : "Data Source Created"
+      }
+    ]
+  ],
+  "createdDate" : "2026-05-01T17:56:40Z",
+  "dataPathRelativeToProjectURL" : "../../../../SwftExperiments-usability/Resources/",
+  "dataResult" : {
+    "createdDate" : "2026-05-01T17:56:40Z",
+    "dataSourceID" : "C5B0BC06-D36B-4165-BE1D-09ADA52BC049",
+    "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments-usability/Resources/"
+  },
+  "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments-usability/Resources/",
+  "experimentIDs" : [
+    "F15856F6-7950-43F7-860D-968EFC9C105D"
+  ],
+  "id" : "C5B0BC06-D36B-4165-BE1D-09ADA52BC049",
+  "modifiedDate" : "2026-05-01T17:56:40Z",
+  "pathType" : 0,
+  "preferredFilename" : "Resources",
+  "title" : "Resources",
+  "version" : "1.0"
+}

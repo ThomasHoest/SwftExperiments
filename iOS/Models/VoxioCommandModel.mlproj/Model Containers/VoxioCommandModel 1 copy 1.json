@@ -1,0 +1,201 @@
+{
+  "activityEntities" : [
+    "trainingDataAdded",
+    [
+      {
+        "createdDate" : "2026-05-01T17:56:25Z",
+        "event" : "trainingDataAdded",
+        "id" : "11E1274B-73BE-4C13-BF6E-501A0757DCBD",
+        "subtitle" : "corpus-training.csv",
+        "title" : "Training Data Added"
+      }
+    ],
+    "experimentCreated",
+    [
+      {
+        "createdDate" : "2026-05-01T17:56:25Z",
+        "event" : "experimentCreated",
+        "id" : "27D9BFED-067E-4E69-897E-6CA4D355027C",
+        "subtitle" : "VoxioCommandModel 1 copy 1",
+        "title" : "Model Source Created"
+      }
+    ]
+  ],
+  "contentDataResult" : {
+    "createdDate" : "2026-04-30T15:17:19Z"
+  },
+  "createdDate" : "2026-05-01T17:56:25Z",
+  "evaluationContainerEntity" : {
+    "createdDate" : "2026-05-01T17:56:25Z",
+    "evaluationEntities" : [
+
+    ],
+    "id" : "daea6fc9-5972-4602-9491-18072dedc2d6",
+    "modifiedDate" : "2026-05-01T17:56:25Z",
+    "previewType" : "textClassifier",
+    "testingEvaluationEntity" : {
+      "analysedDataType" : "none",
+      "createdDate" : "2026-05-01T17:56:25Z",
+      "dataResult" : {
+        "createdDate" : "2026-05-01T17:56:25Z"
+      },
+      "id" : "b3e2b753-da4b-41d3-800b-f8fa0928e88b"
+    },
+    "trainingEvaluationEntity" : {
+      "analysedDataType" : "none",
+      "createdDate" : "2026-05-01T17:56:25Z",
+      "dataResult" : {
+        "createdDate" : "2026-05-01T17:56:25Z",
+        "dataSourceID" : "5CE13A3C-E38C-4884-8AAB-F12ABC056E5F",
+        "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments-usability/Resources/parsing/corpus-training.csv"
+      },
+      "dataSourceID" : "5CE13A3C-E38C-4884-8AAB-F12ABC056E5F",
+      "id" : "51176056-1787-42e8-8e3b-03b744e09c81"
+    },
+    "validationEvaluationEntity" : {
+      "analysedDataType" : "auto",
+      "createdDate" : "2026-05-01T17:56:25Z",
+      "dataResult" : {
+        "createdDate" : "2026-05-01T17:56:25Z"
+      },
+      "id" : "b8aa9f02-eb2c-4d4f-8445-8a964639753f"
+    }
+  },
+  "evaluationEntity" : {
+    "analysedDataType" : "none",
+    "dataResult" : {
+
+    },
+    "id" : "cd04accc-62cf-49f2-b234-ec0890a911bf"
+  },
+  "evaluationState" : "uninitialized",
+  "id" : "A47B3808-B893-4809-A942-DD0C7D209195",
+  "modelEntity" : {
+    "createdDate" : "2026-05-01T17:56:25Z",
+    "experimentID" : "A7DA7059-CC08-434E-B020-380A7E1D393D",
+    "id" : "95539413-5CE1-4D42-A68F-F3BAC9921A31",
+    "modifiedDate" : "2026-05-01T17:56:25Z",
+    "title" : "",
+    "version" : "1.0"
+  },
+  "modifiedDate" : "2026-05-01T17:56:25Z",
+  "preferredFilename" : "VoxioCommandModel 1 copy 1",
+  "settingEntity" : {
+    "algorithmType" : "maxEnt",
+    "augmentations" : [
+
+    ],
+    "featureNames" : [
+
+    ],
+    "handActionClassifierAugmentations" : [
+
+    ],
+    "handPoseClassifierAugmentations" : [
+
+    ],
+    "harVideoAugmentations" : 0,
+    "iterationCount" : 10,
+    "seedType" : "default",
+    "styleTransferAlgorithmType" : "image",
+    "taskType" : "textClassifier",
+    "textClassifierArabicLanguage" : "automatic",
+    "textClassifierCJKLanguage" : "automatic",
+    "textClassifierCyrillicLanguage" : "automatic",
+    "textClassifierIndicLanguage" : "automatic",
+    "textClassifierLatin" : "automatic",
+    "textClassifierScript" : "latin",
+    "textClassifierThaiLanguage" : "automatic"
+  },
+  "snapshotRole" : {
+    "withoutSnapshots" : 0
+  },
+  "state" : "ready",
+  "title" : "VoxioCommandModel 1 copy 1",
+  "trainingEntity" : {
+    "analysedDataType" : "datasource",
+    "checkpointMetrics" : {
+
+    },
+    "dataResult" : {
+      "classesCount" : 17,
+      "createdDate" : "2026-05-01T17:56:25Z",
+      "dataAnalysis" : {
+        "classifierAnalysis" : {
+          "labelStats" : {
+            "cancel" : 56,
+            "confirm" : 63,
+            "joinSpeaker" : 25,
+            "leaveSpeaker" : 22,
+            "listFavorites" : 66,
+            "mute" : 62,
+            "pause" : 76,
+            "playDefault" : 76,
+            "playFavoriteByNumber" : 88,
+            "playNamed" : 51,
+            "resume" : 74,
+            "setVolume" : 78,
+            "stop" : 98,
+            "unknown" : 54,
+            "unmute" : 55,
+            "volumeDown" : 79,
+            "volumeUp" : 84
+          }
+        },
+        "issues" : [
+          {
+            "description" : "17 classes found, including stop, playFavoriteByNumber, volumeUp",
+            "severity" : "debug"
+          },
+          {
+            "description" : "1107 texts found, automatically creating validation set",
+            "severity" : "good"
+          },
+          {
+            "description" : "Smallest class is \"leaveSpeaker\" with 22 texts",
+            "severity" : "debug"
+          },
+          {
+            "description" : "Largest class is \"stop\" with 98 text",
+            "severity" : "debug"
+          }
+        ],
+        "objectDetectorAnalysis" : {
+          "details" : {
+
+          }
+        },
+        "summary" : {
+          "canUseValidation" : 1,
+          "classCount" : 17,
+          "sampleCount" : 1107
+        }
+      },
+      "dataSourceID" : "5CE13A3C-E38C-4884-8AAB-F12ABC056E5F",
+      "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments-usability/Resources/parsing/corpus-training.csv",
+      "itemsCount" : 1107
+    },
+    "dataSourceID" : "5CE13A3C-E38C-4884-8AAB-F12ABC056E5F",
+    "featureExtractionCheckpointMayBeAvailable" : false,
+    "progress" : [
+
+    ],
+    "snapshottableCheckpoints" : {
+
+    }
+  },
+  "validationEntity" : {
+    "analysedDataType" : "auto",
+    "dataResult" : {
+      "createdDate" : "2026-05-01T17:56:25Z"
+    },
+    "splitOptions" : {
+      "strategy" : {
+        "automatic" : {
+
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
