@@ -11,6 +11,10 @@ extension BNRClient: SpeakerClient {
         }
     }
 
+    func getActiveSource() async throws -> SpeakerSource? {
+        try await getBNRActiveSource()
+    }
+
     /// Master-side join: this BNR device adds `peer` as a listener of its primary experience.
     /// Requires the listener to expose a JID (Mozart and BNR speakers both qualify).
     func join(peer: SpeakerIdentifier) async throws {

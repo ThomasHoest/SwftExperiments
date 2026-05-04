@@ -571,15 +571,34 @@ Epics and tasks are broken down in the sibling document `epics-and-tasks-voxio-1
 | Join confirmation strategy | 3-second auto-execute countdown (per E-25 flow). Consistent with all other potentially destructive voice commands. Siri-invoked join skips the countdown (Siri confirmation is implicit). |
 | Leave confirmation strategy | Leave (voice and tap) is immediate — no countdown. Leave is recoverable by re-issuing the join command. |
 | Join API choice — Mozart→Mozart | `beolinkExpand(jid: source.jid)` called on the target speaker. Deterministic targeting vs. the ambiguity of `beolinkJoin()` when multiple sessions exist. |
-| Join API choice — BNR→Any | `POST /BeoZone/Zone/Device/OneWayJoin` on the source speaker. Only join option available on BNR; broadcast join is accepted as best-effort. |
+| Join API choice — BNR→Any | **Revised during implementation** (2026-05-02): `POST /BeoZone/Zone/ActiveSources/primaryExperience` with `{"jid": "<listenerJid>"}` on the *target* (broadcasting) speaker — the master-side `BuildExpandExperienceRequest` from the BNR client reference. The original `OneWayJoin` (listener-side, no peer parameter) returned 2xx but produced no audible sync — it's the legacy "press the Join button" remote-control primitive, not a peer-targeted call. New direction: `target.client.join(peer: source.identifier)`, semantically "I am master, peer joins as listener." See `api-reference-bnr-client.md` §ActiveSourcesResource. |
 | Top-level UI entity | `Group` (1–N speakers). A group-of-1 renders identically to the current speaker card — no UI regression for single-speaker users. |
 | Group identity algorithm | Sorted-member JID/serial concatenation. Stable across restarts for unchanged sessions. Reconstructed fresh each launch via `GET /beolink/peers` and BNR sources. |
+
+### Decisions resolved during implementation (added 2026-05-04)
+
+| Question | Decision |
+|---|---|
+| ASE long-poll transport | `URLSession.bytes(for:).lines` rather than `URLSession.data(for:)`. Each NDJSON line is decoded and emitted to `onEvent` as soon as the speaker pushes it. Buffered `data(for:)` accumulated up to ~55s of events into a single delayed batch — unusable for live state display. The `?timeout=55` query param keeps the speaker holding the connection inside our 60s URLSession budget. |
+| ASE REST `/BeoZone/Zone/ActiveSources` shape | Real firmware returns `primaryExperience` and `activeSources` as **sibling top-level keys** (not nested per the early api-spec). REST also carries **no `state` field** — play state is inferred from `primaryExperience.source.inUse` (true → playing) plus `activeSources.primary` non-empty. Genuine state changes flow via long-poll `PROGRESS_INFORMATION` and `SOURCE` notifications. See `api-spec-beonetremote.md` (corrected). |
+| ASE play-state notification mapping | `mapPlaybackState` accepts `play\|playing\|started`, `pause\|paused`, `stop\|stopped`, `buffering`, `completed\|ended`. Wider vocabulary than originally specced; firmware variants observed. |
+| Source-aware presentation layer | New `NowPlayingPresentation` value type and `NowPlayingPresenter.make` pure function sit between `Speaker` and views. Source category (19 cases — radio, streaming, casting, local, passthrough, special) derived from source-id prefix with `typeHint` fallback. Card and widget consume only the resolved value type — no source-routing logic in views. See **ADR-002**. |
+| `SpeakerClient.getActiveSource()` | Returns a unified `SpeakerSource { id, friendlyName, typeHint }` value type rather than a Mozart-specific `Source`. Replaces the narrower `getActiveSourceName()` introduced earlier in the iteration. The protocol method MUST be in the requirement list (not extension-only) for existential dispatch to reach the platform overrides. |
+| Widget speaker selection | Per-host key namespace (`widget_speaker_<host>_…`) plus `widget_known_hosts` index. Auto-pick prefers any speaker with `playback_state == "playing"`, tie-broken by most recent `written_at`; otherwise most recent overall. Single-key approach was discarded — every speaker's events overwrote every other speaker's state. `widget_data_version` is now 3. |
+| Widget intent → speaker routing | Each widget button passes its displayed host to the intent via a new `targetHost: String?` `@Parameter` on `PlaybackToggleIntent`/`AdjustVolumeIntent`/`MuteIntent`. The intent resolves the speaker by host first, falls back to `SpeakerStore.activeSpeaker` for Siri/Shortcuts (no `targetHost` available there). Without this, taps on a widget displaying speaker A could fire on speaker B. |
+| Initial speaker auto-selection | `SpeakerDiscoveryService.didSettle` (`@Published Bool`) fires once after a 2-second quiet window in speaker additions. `HomeView.onChange(didSettle)` then picks the playing speaker (first match), falling back to first available. The pre-settle "select first" fallback was removed because it ignored playback state. |
+| Mozart `mozartSetVolume` body | `{"level": Int}` (not `{"volumeLevel": Int}`). Earlier draft used the wrong key — server returned 400. |
+| `stop` / `pause` guards | `guard speaker.isPlaying` removed in `HomeView.dispatch`. Stale BNR state caused silent no-ops. The API handles idempotency. |
+| App orientation | Portrait only on both iPhone and iPad. Landscape was not designed for. |
 
 ---
 
 ## References
 
 - `Specification/Voxio 1.2/epics-and-tasks-voxio-1.2.md` — sibling document; v1.2 epic and task breakdown (E-27–E-32, tasks T-2701–T-2XXX).
+- `Specification/Voxio 1.2/ADR-001-v1.2-speaker-abstraction-and-widget.md` — speaker-abstraction & widget architecture decisions.
+- `Specification/Voxio 1.2/ADR-002-now-playing-presentation.md` — source-aware now-playing presentation layer (added during implementation).
+- `Specification/Voxio 1.2/api-reference-bnr-client.md` — authoritative BNR HTTP client reference; clarifies `BuildExpandExperienceRequest` is the master-side multi-room primitive.
 - `Specification/Voxio 1.1/VoxioSpecification-1.1.md` — v1.1 functional specification.
 - `Specification/Voxio 1.1/epics-and-tasks-voxio-1.1.md` — v1.1 epics and tasks (E-20–E-26, T-2001–T-2610).
 - `Specification/Voxio 1.2/research-findings-voxio-1.2.md` — RESEARCHER findings on shared speaker abstraction and iOS widget/voice options.

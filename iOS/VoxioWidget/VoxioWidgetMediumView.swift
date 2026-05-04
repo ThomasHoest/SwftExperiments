@@ -58,13 +58,13 @@ struct VoxioWidgetMediumView: View {
         VStack(alignment: .leading, spacing: Spacing.s4) {
             if entry.appRunning {
                 trackRow
-                Text("\(entry.sourceName ?? "—") · \(entry.volume)")
+                Text("\(entry.sourceBadge ?? "—") · \(entry.volume)")
                     .font(BeoType.widgetCaption)
                     .foregroundStyle(BeoColor.labelSecondary)
                     .lineLimit(1)
             } else {
                 trackRow
-                Text("\(entry.sourceName ?? "—") · \(entry.volume)")
+                Text("\(entry.sourceBadge ?? "—") · \(entry.volume)")
                     .font(BeoType.widgetCaption)
                     .foregroundStyle(BeoColor.labelSecondary)
                     .lineLimit(1)
@@ -85,13 +85,13 @@ struct VoxioWidgetMediumView: View {
                     .font(.system(size: 12))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(BeoColor.accent)
-                Text(entry.trackTitle ?? "—")
+                Text(entry.primaryLine ?? "—")
                     .font(BeoType.widgetTrack)
                     .foregroundStyle(BeoColor.labelPrimary)
                     .lineLimit(2)
             }
         } else {
-            Text(entry.trackTitle ?? "—")
+            Text(entry.primaryLine ?? "—")
                 .font(BeoType.widgetTrack)
                 .foregroundStyle(BeoColor.labelPrimary)
                 .lineLimit(2)

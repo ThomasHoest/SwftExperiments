@@ -43,15 +43,16 @@ class BNREvents {
 
     private func pollLoop() async {
         var backoffSeconds: Double = 1
+        Log.info("[BNR-LP:\(host)] pollLoop started")
 
         while !cancelled && !Task.isCancelled {
             do {
-                let notifications = try await fetchNotifications()
+                let count = try await streamNotifications()
                 backoffSeconds = 1
-                for notification in notifications {
-                    if let event = normalise(notification) {
-                        onEvent?(event)
-                    }
+                Log.info("[BNR-LP:\(host)] stream ended after \(count) notification(s) — re-issuing")
+                if count == 0 {
+                    // Empty stream — small pause to avoid hot loop if speaker misbehaves.
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
                 }
             } catch {
                 guard !cancelled && !Task.isCancelled else { return }
@@ -60,37 +61,56 @@ class BNREvents {
                 backoffSeconds = min(backoffSeconds * 2, 30)
             }
         }
+        Log.info("[BNR-LP:\(host)] pollLoop exited (cancelled=\(cancelled))")
     }
 
-    private func fetchNotifications() async throws -> [BNRNotification] {
-        guard let url = URL(string: "http://\(host):\(port)/BeoNotify/Notifications") else {
+    /// Streams newline-delimited JSON notifications from `/BeoNotify/Notifications`.
+    /// Each line is decoded and emitted to `onEvent` as soon as it arrives — no waiting
+    /// for the response to close. Returns the count of decoded notifications when the
+    /// server closes the stream (or `?timeout=` fires).
+    private func streamNotifications() async throws -> Int {
+        // ?timeout=55 keeps the speaker holding the connection for up to 55s of idle time.
+        // Headers per BeoNetRemote reference (api-reference-bnr-client.md §Connection model).
+        guard let url = URL(string: "http://\(host):\(port)/BeoNotify/Notifications?timeout=55") else {
             throw SpeakerError.invalidResponse
         }
-        Log.verbose("[BNR-LP:\(host)] GET /BeoNotify/Notifications")
+        Log.info("[BNR-LP:\(host)] fetch start (streaming)")
         var req = URLRequest(url: url)
         req.httpMethod = "GET"
+        req.setValue("keep-alive", forHTTPHeaderField: "Connection")
+        req.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
 
         do {
-            let (data, response) = try await pollSession.data(for: req)
+            let (bytes, response) = try await pollSession.bytes(for: req)
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
             guard (200..<300).contains(status) else {
+                Log.info("[BNR-LP:\(host)] fetch returned status:\(status)")
                 throw SpeakerError.httpError(status)
             }
-            // The endpoint returns one or more newline-delimited JSON objects per response.
-            let lines = (String(data: data, encoding: .utf8) ?? "")
-                .components(separatedBy: "\n")
-                .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
-            let results: [BNRNotification] = lines.compactMap { line in
-                guard let lineData = line.data(using: .utf8) else { return nil }
+
+            var count = 0
+            for try await line in bytes.lines {
+                if cancelled || Task.isCancelled { break }
+                let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty, let lineData = trimmed.data(using: .utf8) else { continue }
                 do {
-                    return try decoder.decode(BNRNotification.self, from: lineData)
+                    let n = try decoder.decode(BNRNotification.self, from: lineData)
+                    let type = n.notification.type
+                    let isNoisy = type == "SOFTWARE_UPDATE_STATE" || type == "PROGRESS_INFORMATION"
+                    if isNoisy {
+                        Log.verbose("[BNR-LP:\(host)] notification \(type) | raw: \(trimmed)")
+                    } else {
+                        Log.info("[BNR-LP:\(host)] notification \(type) | raw: \(trimmed)")
+                    }
+                    count += 1
+                    if let event = normalise(n) {
+                        onEvent?(event)
+                    }
                 } catch {
-                    Log.error("[BNR-LP:\(host)] decode error: \(error) | raw: \(line)")
-                    return nil
+                    Log.error("[BNR-LP:\(host)] decode error: \(error) | raw: \(trimmed)")
                 }
             }
-            guard !results.isEmpty else { throw SpeakerError.invalidResponse }
-            return results
+            return count
         } catch let error as SpeakerError {
             throw error
         } catch let urlError as URLError {

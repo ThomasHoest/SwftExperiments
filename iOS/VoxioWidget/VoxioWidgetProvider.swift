@@ -5,15 +5,17 @@ import Foundation
 
 struct VoxioWidgetEntry: TimelineEntry {
     let date: Date
-    let host: String?           // The speaker host the widget is currently displaying
+    let host: String?           // Speaker host the entry represents
     let speakerName: String
-    let trackTitle: String?
-    let sourceName: String?
+    let primaryLine: String?    // station for radio, track title for music
+    let secondaryLine: String?  // live program for radio, artist for music
+    let sourceBadge: String?    // "B&O Radio", "Spotify", "Bluetooth"
+    let category: String        // raw SourceCategory enum case name
     let playbackState: String   // "playing" | "paused" | "stopped" | "loading"
     let volume: Int
     let isMuted: Bool
     let appRunning: Bool
-    let isEmpty: Bool           // true when no speaker state is in the shared container
+    let isEmpty: Bool
     let lastWrittenAt: Date?
     let dataVersion: Int
 
@@ -21,30 +23,34 @@ struct VoxioWidgetEntry: TimelineEntry {
         date: Date(),
         host: nil,
         speakerName: "Beosound Stage",
-        trackTitle: "Jazz Radio",
-        sourceName: "TuneIn",
+        primaryLine: "DR P6 BEAT",
+        secondaryLine: "Forhåbningsholms Allé",
+        sourceBadge: "B&O Radio",
+        category: "beoRadio",
         playbackState: "playing",
         volume: 40,
         isMuted: false,
         appRunning: true,
         isEmpty: false,
         lastWrittenAt: Date(),
-        dataVersion: 2
+        dataVersion: 3
     )
 
     static let empty = VoxioWidgetEntry(
         date: Date(),
         host: nil,
         speakerName: "No speaker found",
-        trackTitle: nil,
-        sourceName: nil,
+        primaryLine: nil,
+        secondaryLine: nil,
+        sourceBadge: nil,
+        category: "unknown",
         playbackState: "stopped",
         volume: 0,
         isMuted: false,
         appRunning: false,
         isEmpty: true,
         lastWrittenAt: nil,
-        dataVersion: 2
+        dataVersion: 3
     )
 }
 
@@ -55,7 +61,7 @@ struct VoxioWidgetProvider: AppIntentTimelineProvider {
     typealias Entry = VoxioWidgetEntry
 
     private static let suiteName = "group.T-Creative.Voxio"
-    private static let currentDataVersion = 2
+    private static let currentDataVersion = 3
 
     func placeholder(in context: Context) -> VoxioWidgetEntry {
         .placeholder
@@ -103,8 +109,10 @@ struct VoxioWidgetProvider: AppIntentTimelineProvider {
             date: Date(),
             host: host,
             speakerName: name,
-            trackTitle: defaults.string(forKey: WidgetStateKeys.trackTitle(host)),
-            sourceName: defaults.string(forKey: WidgetStateKeys.sourceName(host)),
+            primaryLine: defaults.string(forKey: WidgetStateKeys.primaryLine(host)),
+            secondaryLine: defaults.string(forKey: WidgetStateKeys.secondaryLine(host)),
+            sourceBadge: defaults.string(forKey: WidgetStateKeys.sourceBadge(host)),
+            category: defaults.string(forKey: WidgetStateKeys.category(host)) ?? "unknown",
             playbackState: defaults.string(forKey: WidgetStateKeys.playbackState(host)) ?? "stopped",
             volume: defaults.integer(forKey: WidgetStateKeys.volume(host)),
             isMuted: defaults.bool(forKey: WidgetStateKeys.muted(host)),

@@ -11,7 +11,9 @@ class Speaker: Identifiable {
     var metadata: PlaybackMetadata?
     var volume: Int?
     var isMuted: Bool = false
-    var source: String?
+    var source: String?            // human-readable source name ("B&O Radio")
+    var sourceID: String?          // raw wire id ("beoradio:JID@..."); drives category detection
+    var sourceTypeHint: String?    // BNR sourceType.type or Mozart Source.type, when available
     var batteryLevel: Int?
 
     var isPlaying: Bool { state == .playing || state == .started }
@@ -34,13 +36,22 @@ class Speaker: Identifiable {
         }
     }
 
+    /// Source-aware now-playing presentation. Card and widget consume this.
+    var nowPlaying: NowPlayingPresentation {
+        NowPlayingPresenter.make(
+            state:      playbackState,
+            metadata:   metadata,
+            sourceID:   sourceID,
+            sourceName: source,
+            typeHint:   sourceTypeHint
+        )
+    }
+
+    /// Deprecated single-line display kept until SpeakerCard migrates fully.
+    @available(*, deprecated, message: "Use nowPlaying.primaryLine / nowPlaying.secondaryLine")
     var trackDisplay: String {
         guard isPlaying else { return "" }
-        let parts = [metadata?.artist, metadata?.title].compactMap { $0 }.filter { !$0.isEmpty }
-        if !parts.isEmpty { return parts.joined(separator: " – ") }
-        if let g = metadata?.genre, !g.isEmpty { return g }
-        if let a = metadata?.album, !a.isEmpty { return a }
-        return source ?? ""
+        return nowPlaying.primaryLine ?? source ?? ""
     }
 
     var volumeDisplay: String  { volume.map      { "Vol \($0)" } ?? "" }
@@ -72,6 +83,7 @@ class Speaker: Identifiable {
             g.addTask { await self.loadPlaybackState() }
             g.addTask { await self.loadVolume() }
             g.addTask { await self.loadBattery() }
+            g.addTask { await self.loadSource() }
         }
         startEventLoop()
         Log.info("[\(name)] initial state — state:\(state.rawValue) vol:\(volume.map(String.init) ?? "?")")
@@ -113,6 +125,22 @@ class Speaker: Identifiable {
         if bat.batteryLevel > 0 || bat.isCharging { batteryLevel = bat.batteryLevel }
     }
 
+    private func loadSource() async {
+        do {
+            guard let s = try await client.getActiveSource() else {
+                Log.info("[\(host)] loadSource: nil")
+                return
+            }
+            sourceID       = s.id
+            sourceTypeHint = s.typeHint
+            if let name = s.friendlyName, !name.isEmpty { source = name }
+            Log.info("[\(host)] loadSource: id=\(s.id) name=\(s.friendlyName ?? "nil") hint=\(s.typeHint ?? "nil")")
+        } catch {
+            Log.error("[\(host)] loadSource failed: \(error)")
+        }
+    }
+
+
     private func handleEvent(_ event: SpeakerEvent) {
         switch event {
         case .playbackState(let ps):
@@ -136,9 +164,12 @@ class Speaker: Identifiable {
                 Log.verbose("[\(name)] battery → \(b.batteryLevel)%")
                 batteryLevel = b.batteryLevel
             }
-        case .source(let sourceName, _):
-            Log.verbose("[\(name)] source → \(sourceName ?? "?")")
+        case .source(let sourceName, let id):
+            Log.verbose("[\(name)] source → \(sourceName ?? "?") id:\(id ?? "?")")
+            // Source change invalidates current track metadata.
+            if id != sourceID { metadata = nil }
             if let n = sourceName { source = n }
+            sourceID = id
         }
         WidgetStateWriter.write(speaker: self)
     }

@@ -21,7 +21,7 @@ struct VoxioWidgetSmallView: View {
         VStack(alignment: .leading, spacing: Spacing.s4) {
             speakerHeader
             trackRow
-            Text(entry.sourceName ?? "—")
+            Text(entry.sourceBadge ?? "—")
                 .font(BeoType.widgetCaption)
                 .foregroundStyle(BeoColor.labelSecondary)
                 .lineLimit(1)
@@ -55,13 +55,13 @@ struct VoxioWidgetSmallView: View {
                     .font(.system(size: 14))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(BeoColor.accent)
-                Text(entry.trackTitle ?? "—")
+                Text(entry.primaryLine ?? "—")
                     .font(BeoType.widgetTrack)
                     .foregroundStyle(BeoColor.labelPrimary)
                     .lineLimit(2)
             }
         } else {
-            Text(entry.trackTitle ?? "—")
+            Text(entry.primaryLine ?? "—")
                 .font(BeoType.widgetTrack)
                 .foregroundStyle(BeoColor.labelPrimary)
                 .lineLimit(2)
@@ -102,7 +102,7 @@ struct VoxioWidgetSmallView: View {
         VStack(alignment: .leading, spacing: Spacing.s4) {
             speakerHeader
             trackRow
-            Text(entry.sourceName ?? "—")
+            Text(entry.sourceBadge ?? "—")
                 .font(BeoType.widgetCaption)
                 .foregroundStyle(BeoColor.labelSecondary)
                 .lineLimit(1)
