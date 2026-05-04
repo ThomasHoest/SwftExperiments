@@ -25,4 +25,8 @@ protocol SpeakerClient: AnyObject {
 extension SpeakerClient {
     func getJid() async throws -> String? { nil }
     func getPeers() async throws -> [BeolinkPeer] { [] }
+    /// Optional: return the current source's friendlyName (e.g. "B&O Radio", "Spotify").
+    /// Used by `Speaker.initialize()` to populate `speaker.source` before any push event arrives.
+    /// Default returns nil — implementors that have a REST surface for this should override.
+    func getActiveSourceName() async throws -> String? { nil }
 }

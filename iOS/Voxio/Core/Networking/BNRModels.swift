@@ -46,6 +46,7 @@ struct BNRVolumeRange: Decodable {
 
 struct BNRPrimaryExperience: Decodable {
     let source: BNRSourceRef?
+    let state: String?      // per spec, SOURCE notifications include state here
 }
 
 struct BNRSourceRef: Decodable {
@@ -84,34 +85,54 @@ func normalise(_ notification: BNRNotification) -> BNREvent? {
 
     case "SOURCE":
         let src = data.primaryExperience?.source
+        let embeddedState = data.primaryExperience?.state
+        Log.info("[BNR-norm] SOURCE → name:\(src?.friendlyName ?? "nil") id:\(src?.id ?? "nil") embeddedState:\(embeddedState ?? "nil")")
         return .source(name: src?.friendlyName, id: src?.id)
 
     case "PROGRESS_INFORMATION":
-        let state = mapPlaybackState(data.state ?? "")
+        let raw = data.state ?? ""
+        let state = mapPlaybackState(raw)
+        Log.info("[BNR-norm] PROGRESS_INFORMATION → raw:\"\(raw)\" → \(state)")
         return .playbackState(state)
 
     case "NOW_PLAYING_NET_RADIO":
+        Log.info("[BNR-norm] NOW_PLAYING_NET_RADIO → title:\(data.name ?? "nil") artist:\(data.liveDescription ?? "nil")")
         return .metadata(title: data.name, artist: data.liveDescription, album: nil)
 
     case "NOW_PLAYING_STORED_MUSIC":
+        Log.info("[BNR-norm] NOW_PLAYING_STORED_MUSIC → title:\(data.name ?? "nil") artist:\(data.artist ?? "nil") album:\(data.album ?? "nil")")
         return .metadata(title: data.name, artist: data.artist, album: data.album)
+
+    case "NOW_PLAYING_ENDED":
+        Log.info("[BNR-norm] NOW_PLAYING_ENDED (state mapping not currently emitted)")
+        return nil
+
+    case "STREAMING_STATUS":
+        Log.info("[BNR-norm] STREAMING_STATUS data.state:\(data.state ?? "nil") — not currently mapped")
+        return nil
+
+    case "SOURCE_EXPERIENCE_CHANGED":
+        Log.info("[BNR-norm] SOURCE_EXPERIENCE_CHANGED data.state:\(data.state ?? "nil") primary.state:\(data.primaryExperience?.state ?? "nil") — not currently mapped")
+        return nil
 
     case "SOFTWARE_UPDATE_STATE":
         return nil
 
     default:
-        Log.verbose("[BNR] unknown notification type: \(envelope.type)")
+        Log.info("[BNR-norm] unhandled notification type: \(envelope.type)")
         return nil
     }
 }
 
 private func mapPlaybackState(_ raw: String) -> BNRPlaybackState {
     switch raw {
-    case "play":      return .playing
-    case "pause":     return .paused
-    case "stop":      return .stopped
-    case "buffering": return .buffering
-    case "completed": return .stopped
-    default:          return .stopped
+    case "play", "playing", "started": return .playing
+    case "pause", "paused":             return .paused
+    case "stop", "stopped":             return .stopped
+    case "buffering":                   return .buffering
+    case "completed", "ended":          return .stopped
+    default:
+        Log.info("[BNR-norm] mapPlaybackState: unknown raw state \"\(raw)\" → defaulting to .stopped")
+        return .stopped
     }
 }

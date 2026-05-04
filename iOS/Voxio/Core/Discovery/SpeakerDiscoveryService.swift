@@ -4,11 +4,16 @@ import Combine
 @MainActor
 class SpeakerDiscoveryService: ObservableObject {
     @Published private(set) var groups: [SpeakerGroup] = []
+    /// Becomes true once an initial-discovery settle window has elapsed without
+    /// new speakers being added. Subscribers can safely run startup logic
+    /// (e.g. picking the playing speaker as the default selection) once this fires.
+    @Published private(set) var didSettle: Bool = false
     let favorites = FavoritesService()
 
     private let discovery = MdnsDiscovery()
     private var allSpeakers: [Speaker] = []
     private var settleTask: Task<Void, Never>?
+    private var initialSettleTask: Task<Void, Never>?
     private let matcher = SpeakerNameMatcher()
     private(set) var activeSpeaker: Speaker?
 
@@ -48,6 +53,7 @@ class SpeakerDiscoveryService: ObservableObject {
             SpeakerStore.shared.allSpeakers = allSpeakers
             Log.info("[SDS] added \(speaker.name) (\(ip)) platform=\(platform.rawValue)")
             scheduleReconstruction()
+            scheduleInitialSettle()
         } catch {
             Log.error("[SDS] rejected \(ip) (\(platform.rawValue)): \(error)")
         }
@@ -70,6 +76,24 @@ class SpeakerDiscoveryService: ObservableObject {
                 group.hostSpeaker = group.members[0]
             }
             break
+        }
+    }
+
+    /// Resets a 2-second timer on each speaker addition. When the timer elapses
+    /// without another addition, marks discovery as settled — subscribers can
+    /// then run "all speakers discovered" startup logic (e.g. selecting the
+    /// playing speaker). Fires at most once.
+    private func scheduleInitialSettle() {
+        guard !didSettle else { return }
+        initialSettleTask?.cancel()
+        initialSettleTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard !Task.isCancelled, let self else { return }
+            await MainActor.run {
+                guard !self.didSettle else { return }
+                self.didSettle = true
+                Log.info("[SDS] initial discovery settled (\(self.allSpeakers.count) speakers)")
+            }
         }
     }
 

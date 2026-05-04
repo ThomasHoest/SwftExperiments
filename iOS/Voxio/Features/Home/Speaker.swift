@@ -72,6 +72,7 @@ class Speaker: Identifiable {
             g.addTask { await self.loadPlaybackState() }
             g.addTask { await self.loadVolume() }
             g.addTask { await self.loadBattery() }
+            g.addTask { await self.loadSourceName() }
         }
         startEventLoop()
         Log.info("[\(name)] initial state — state:\(state.rawValue) vol:\(volume.map(String.init) ?? "?")")
@@ -112,6 +113,12 @@ class Speaker: Identifiable {
         guard let bat = try? await client.getBattery() else { return }
         if bat.batteryLevel > 0 || bat.isCharging { batteryLevel = bat.batteryLevel }
     }
+
+    private func loadSourceName() async {
+        guard let n = try? await client.getActiveSourceName(), !n.isEmpty else { return }
+        source = n
+    }
+
 
     private func handleEvent(_ event: SpeakerEvent) {
         switch event {

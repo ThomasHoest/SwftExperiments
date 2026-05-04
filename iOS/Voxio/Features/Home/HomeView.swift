@@ -82,12 +82,25 @@ struct HomeView: View {
         .animation(BeoAnimation.toast, value: currentToast)
         .onAppear(perform: onAppear)
         .onChange(of: discovery.groups.flatMap(\.members).map(\.id)) { _, ids in
+            // Removal: if the user's selected speaker just disappeared, fall back to first available.
             if let sel = selectedSpeaker, !ids.contains(sel.id) {
                 selectedSpeaker = discovery.groups.flatMap(\.members).first
-                SpeakerStore.shared.activeSpeaker = selectedSpeaker ?? discovery.groups.flatMap(\.members).first
-            } else if selectedSpeaker == nil {
+                SpeakerStore.shared.activeSpeaker = selectedSpeaker
+            } else if selectedSpeaker == nil && discovery.didSettle {
+                // Post-settle additions (rare): pick any new arrival.
                 selectedSpeaker = discovery.groups.flatMap(\.members).first
-                SpeakerStore.shared.activeSpeaker = selectedSpeaker ?? discovery.groups.flatMap(\.members).first
+                SpeakerStore.shared.activeSpeaker = selectedSpeaker
+            }
+        }
+        .onChange(of: discovery.didSettle) { _, settled in
+            // Initial-startup auto-select: prefer the playing speaker, else first.
+            guard settled, selectedSpeaker == nil else { return }
+            let members = discovery.groups.flatMap(\.members)
+            let pick = members.first(where: { $0.isPlaying }) ?? members.first
+            selectedSpeaker = pick
+            SpeakerStore.shared.activeSpeaker = pick
+            if let pick {
+                Log.info("[HomeView] initial selection: \(pick.name) (playing=\(pick.isPlaying))")
             }
         }
         .onChange(of: langService.activeLanguage) { _, language in

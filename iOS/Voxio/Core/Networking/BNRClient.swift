@@ -159,14 +159,53 @@ class BNRClient {
     // MARK: - Playback state
 
     func getBNRPlaybackState() async throws -> BNRPlaybackState {
-        let response: BNRActiveSourcesResponse = try await get("/BeoZone/Zone/ActiveSources")
-        guard let exp = response.activeSources.primaryExperience else { return .stopped }
-        switch exp.state {
-        case "play":      return .playing
-        case "pause":     return .paused
-        case "stop":      return .stopped
-        case "buffering": return .buffering
-        default:          return .stopped
+        try await fetchActiveSources().state
+    }
+
+    /// Returns the current source's friendlyName (e.g. "B&O Radio") if any.
+    /// ASE has no REST endpoint for track metadata — only the source name is available before
+    /// the long-poll delivers a NOW_PLAYING_* notification.
+    func getActiveSourceName() async throws -> String? {
+        try await fetchActiveSources().sourceName
+    }
+
+    private func fetchActiveSources() async throws -> (state: BNRPlaybackState, sourceName: String?) {
+        let raw = try await send("/BeoZone/Zone/ActiveSources", method: "GET")
+        let response: BNRActiveSourcesResponse
+        do { response = try decoder.decode(BNRActiveSourcesResponse.self, from: raw) }
+        catch {
+            let rawString = String(data: raw, encoding: .utf8) ?? "<non-utf8>"
+            Log.error("[BNR:\(host)] decode ActiveSources failed: \(error) | raw: \(rawString)")
+            throw SpeakerError.invalidResponse
+        }
+        let source = response.primaryExperience?.source
+        let sourceName = source?.friendlyName
+
+        // Prefer an explicit state if firmware returns it (api-spec shape).
+        if let rawState = response.primaryExperience?.state {
+            let mapped = mapBNRPlaybackState(rawState)
+            Log.info("[BNR:\(host)] activeSources: REST state:\"\(rawState)\" source:\(sourceName ?? "nil") → \(mapped)")
+            return (mapped, sourceName)
+        }
+
+        // Heuristic fallback: real firmware doesn't include `state` in REST.
+        let primary = response.activeSources?.primary ?? ""
+        let isActive = (source?.inUse == true) || !primary.isEmpty
+        let inferred: BNRPlaybackState = isActive ? .playing : .stopped
+        Log.info("[BNR:\(host)] activeSources: no REST state, source.inUse=\(source?.inUse ?? false) primary=\"\(primary)\" source:\(sourceName ?? "nil") → \(inferred)")
+        return (inferred, sourceName)
+    }
+
+    private func mapBNRPlaybackState(_ raw: String) -> BNRPlaybackState {
+        switch raw {
+        case "play", "playing", "started": return .playing
+        case "pause", "paused":             return .paused
+        case "stop", "stopped":             return .stopped
+        case "buffering":                   return .buffering
+        case "completed", "ended":          return .stopped
+        default:
+            Log.info("[BNR:\(host)] mapBNRPlaybackState: unknown raw \"\(raw)\" → .stopped")
+            return .stopped
         }
     }
 
@@ -245,24 +284,33 @@ private struct BNRVolumeResponse: Decodable {
     let speaker: Speaker
 }
 
+/// Shape on real ASE firmware (verified BeoPlay A9, BeoSound Stage, BeoSound 1):
+/// `primaryExperience` and `activeSources` are sibling top-level keys.
+/// `primaryExperience.state` is NOT returned by REST — it only appears in
+/// long-poll SOURCE/PROGRESS_INFORMATION notifications. The api-spec doc
+/// shows them nested with `state`, but the firmware doesn't match that.
 private struct BNRActiveSourcesResponse: Decodable {
-    struct ActiveSources: Decodable {
-        let primaryExperience: PrimaryExperience?
-    }
+    let primaryExperience: PrimaryExperience?
+    let activeSources: ActiveSources?
+
     struct PrimaryExperience: Decodable {
         let source: SourceInfo?
-        let state: String
+        let state: String?      // present in spec, absent in observed REST responses
     }
     struct SourceInfo: Decodable {
-        let id: String
-        let friendlyName: String
-        let category: String
+        let id: String?
+        let friendlyName: String?
+        let category: String?
+        let inUse: Bool?        // heuristic: true ⇒ source is currently active/playing
         let sourceType: SourceType?
     }
     struct SourceType: Decodable {
-        let type: String
+        let type: String?
     }
-    let activeSources: ActiveSources
+    struct ActiveSources: Decodable {
+        let primary: String?
+        let primaryJid: String?
+    }
 }
 
 private struct BNRDeviceResponse: Decodable {
