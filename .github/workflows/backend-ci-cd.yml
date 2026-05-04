@@ -179,7 +179,13 @@ jobs:
         run: pnpm test:e2e
         working-directory: ${{ env.WORKING_DIR }}
         env:
-          PLAYWRIGHT_BASE_URL: ${{ needs.deploy.outputs.static_web_app_url }}
+          PLAYWRIGHT_BASE_URL: >-
+            ${{
+              needs.deploy.outputs.static_web_app_url != '' && needs.deploy.outputs.static_web_app_url ||
+              github.ref == 'refs/heads/main'    && vars.SWA_PRODUCTION_URL ||
+              github.ref == 'refs/heads/develop' && vars.SWA_STAGING_URL    ||
+              'http://localhost:3000'
+            }}
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: always()
