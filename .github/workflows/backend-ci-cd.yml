@@ -108,9 +108,7 @@ jobs:
           output_location: ""
           deployment_environment: >-
             ${{
-              github.ref == 'refs/heads/main'    && 'production' ||
-              github.ref == 'refs/heads/develop' && 'staging'    ||
-              ''
+              github.ref == 'refs/heads/develop' && 'staging' || ''
             }}
 
   migrate:
