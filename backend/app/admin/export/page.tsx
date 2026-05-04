@@ -1,7 +1,7 @@
 import { filtersFromSearchParams } from '@/lib/filters/events'
 
 interface Props {
-  searchParams: Promise<Record<string, string>> | Record<string, string>
+  searchParams: Promise<Record<string, string>>
 }
 
 export default async function ExportPage({ searchParams }: Props) {

@@ -1,7 +1,7 @@
 import { getStats } from '@/lib/queries/stats'
 
 interface Props {
-  searchParams: Promise<Record<string, string>> | Record<string, string>
+  searchParams: Promise<Record<string, string>>
 }
 
 function defaultDateRange(): { dateFrom: string; dateTo: string } {
