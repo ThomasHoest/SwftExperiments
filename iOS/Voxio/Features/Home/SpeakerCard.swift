@@ -66,11 +66,14 @@ struct SpeakerCard: View {
                 Text(speaker.name)
                     .font(BeoType.speakerName)
                     .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
 
                 Text(speaker.stateDisplay)
                     .font(BeoType.body)
                     .foregroundStyle(.secondary)
             }
+            .layoutPriority(1)
 
             Spacer()
 
@@ -78,10 +81,11 @@ struct SpeakerCard: View {
                 Text(badge)
                     .font(BeoType.caption)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
                     .background(.white.opacity(0.07), in: Capsule())
-                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
                     .accessibilityHidden(true)
             }
         }
