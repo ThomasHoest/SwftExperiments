@@ -1,15 +1,5 @@
 {
   "activityEntities" : [
-    "trainingDataAdded",
-    [
-      {
-        "createdDate" : "2026-04-30T15:18:08Z",
-        "event" : "trainingDataAdded",
-        "id" : "88AE1BEA-15C2-4CDD-9EFC-820451059B69",
-        "subtitle" : "parsing",
-        "title" : "Training Data Added"
-      }
-    ],
     "experimentCreated",
     [
       {
@@ -19,6 +9,36 @@
         "subtitle" : "VoxioCommandModel 1 copy",
         "title" : "Model Source Created"
       }
+    ],
+    "trainingDataAdded",
+    [
+      {
+        "createdDate" : "2026-05-01T17:53:35Z",
+        "event" : "trainingDataAdded",
+        "id" : "3C5A5FEF-3C64-4FB8-849A-08F82F70811C",
+        "subtitle" : "corpus-training.csv",
+        "title" : "Training Data Added"
+      }
+    ],
+    "trainingFinished",
+    [
+      {
+        "createdDate" : "2026-05-01T17:53:46Z",
+        "event" : "trainingFinished",
+        "id" : "B17E762A-D127-450D-BF90-5C9A6BAAF4A1",
+        "subtitle" : "Model converged at 6 iterations",
+        "title" : "Training Completed"
+      }
+    ],
+    "trainingStarted",
+    [
+      {
+        "createdDate" : "2026-05-01T17:53:45Z",
+        "event" : "trainingStarted",
+        "id" : "85AA8CFE-6137-4CF1-98AE-DE4137120151",
+        "subtitle" : "10 iterations",
+        "title" : "Training Started"
+      }
     ]
   ],
   "contentDataResult" : {
@@ -26,12 +46,19 @@
   },
   "createdDate" : "2026-04-30T15:18:08Z",
   "evaluationContainerEntity" : {
-    "createdDate" : "2026-04-30T15:18:08Z",
+    "createdDate" : "2026-05-01T17:53:46Z",
     "evaluationEntities" : [
+      {
+        "analysedDataType" : "none",
+        "createdDate" : "2026-05-01T17:53:46Z",
+        "dataResult" : {
 
+        },
+        "id" : "c0e30442-ef02-48b0-ad0b-de361b28828d"
+      }
     ],
     "id" : "cb016450-a44b-4fc4-a2ff-24b4a5e338a6",
-    "modifiedDate" : "2026-04-30T15:18:08Z",
+    "modifiedDate" : "2026-05-01T17:53:46Z",
     "previewType" : "textClassifier",
     "testingEvaluationEntity" : {
       "analysedDataType" : "none",
@@ -45,11 +72,346 @@
       "analysedDataType" : "none",
       "createdDate" : "2026-04-30T15:18:08Z",
       "dataResult" : {
+        "classesCount" : 17,
         "createdDate" : "2026-04-30T15:18:08Z",
-        "dataSourceID" : "B45E99AE-6D7B-40C5-918A-C65BE4A84B69",
-        "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments/Specification/Voxio%201.1/parsing/"
+        "dataAnalysis" : {
+          "classifierAnalysis" : {
+            "labelStats" : {
+              "cancel" : 56,
+              "confirm" : 63,
+              "joinSpeaker" : 25,
+              "leaveSpeaker" : 22,
+              "listFavorites" : 66,
+              "mute" : 62,
+              "pause" : 76,
+              "playDefault" : 76,
+              "playFavoriteByNumber" : 88,
+              "playNamed" : 51,
+              "resume" : 74,
+              "setVolume" : 78,
+              "stop" : 98,
+              "unknown" : 54,
+              "unmute" : 55,
+              "volumeDown" : 79,
+              "volumeUp" : 84
+            }
+          },
+          "issues" : [
+            {
+              "description" : "17 classes found, including stop, playFavoriteByNumber, volumeUp",
+              "severity" : "debug"
+            },
+            {
+              "description" : "1107 texts found, automatically creating validation set",
+              "severity" : "good"
+            },
+            {
+              "description" : "Smallest class is \"leaveSpeaker\" with 22 texts",
+              "severity" : "debug"
+            },
+            {
+              "description" : "Largest class is \"stop\" with 98 text",
+              "severity" : "debug"
+            }
+          ],
+          "objectDetectorAnalysis" : {
+            "details" : {
+
+            }
+          },
+          "summary" : {
+            "canUseValidation" : 1,
+            "classCount" : 17,
+            "sampleCount" : 1107
+          }
+        },
+        "dataSourceID" : "5CE13A3C-E38C-4884-8AAB-F12ABC056E5F",
+        "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments-usability/Resources/parsing/corpus-training.csv",
+        "itemsCount" : 1107
       },
-      "dataSourceID" : "B45E99AE-6D7B-40C5-918A-C65BE4A84B69",
+      "dataSourceID" : "5CE13A3C-E38C-4884-8AAB-F12ABC056E5F",
+      "evaluationResult" : {
+        "textClassifier" : {
+          "accuracy" : 0.9923954372623575,
+          "confusionMatrix" : [
+            {
+              "actual" : "cancel",
+              "count" : 53,
+              "expected" : "cancel"
+            },
+            {
+              "actual" : "cancel",
+              "count" : 1,
+              "expected" : "stop"
+            },
+            {
+              "actual" : "confirm",
+              "count" : 61,
+              "expected" : "confirm"
+            },
+            {
+              "actual" : "joinSpeaker",
+              "count" : 23,
+              "expected" : "joinSpeaker"
+            },
+            {
+              "actual" : "leaveSpeaker",
+              "count" : 19,
+              "expected" : "leaveSpeaker"
+            },
+            {
+              "actual" : "listFavorites",
+              "count" : 63,
+              "expected" : "listFavorites"
+            },
+            {
+              "actual" : "mute",
+              "count" : 58,
+              "expected" : "mute"
+            },
+            {
+              "actual" : "mute",
+              "count" : 1,
+              "expected" : "stop"
+            },
+            {
+              "actual" : "mute",
+              "count" : 1,
+              "expected" : "unmute"
+            },
+            {
+              "actual" : "pause",
+              "count" : 72,
+              "expected" : "pause"
+            },
+            {
+              "actual" : "playDefault",
+              "count" : 75,
+              "expected" : "playDefault"
+            },
+            {
+              "actual" : "playFavoriteByNumber",
+              "count" : 85,
+              "expected" : "playFavoriteByNumber"
+            },
+            {
+              "actual" : "playNamed",
+              "count" : 48,
+              "expected" : "playNamed"
+            },
+            {
+              "actual" : "resume",
+              "count" : 1,
+              "expected" : "playDefault"
+            },
+            {
+              "actual" : "resume",
+              "count" : 69,
+              "expected" : "resume"
+            },
+            {
+              "actual" : "resume",
+              "count" : 1,
+              "expected" : "stop"
+            },
+            {
+              "actual" : "setVolume",
+              "count" : 72,
+              "expected" : "setVolume"
+            },
+            {
+              "actual" : "stop",
+              "count" : 1,
+              "expected" : "mute"
+            },
+            {
+              "actual" : "stop",
+              "count" : 94,
+              "expected" : "stop"
+            },
+            {
+              "actual" : "unknown",
+              "count" : 51,
+              "expected" : "unknown"
+            },
+            {
+              "actual" : "unmute",
+              "count" : 2,
+              "expected" : "mute"
+            },
+            {
+              "actual" : "unmute",
+              "count" : 49,
+              "expected" : "unmute"
+            },
+            {
+              "actual" : "volumeDown",
+              "count" : 75,
+              "expected" : "volumeDown"
+            },
+            {
+              "actual" : "volumeUp",
+              "count" : 77,
+              "expected" : "volumeUp"
+            }
+          ],
+          "statsByLabel" : {
+            "cancel" : {
+              "count" : 54,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 0.9814814814814815
+                }
+              }
+            },
+            "confirm" : {
+              "count" : 61,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "joinSpeaker" : {
+              "count" : 23,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "leaveSpeaker" : {
+              "count" : 19,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "listFavorites" : {
+              "count" : 63,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "mute" : {
+              "count" : 60,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.9508196721311475,
+                  "recall" : 0.9666666666666667
+                }
+              }
+            },
+            "pause" : {
+              "count" : 72,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "playDefault" : {
+              "count" : 75,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.9868421052631579,
+                  "recall" : 1
+                }
+              }
+            },
+            "playFavoriteByNumber" : {
+              "count" : 85,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "playNamed" : {
+              "count" : 48,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "resume" : {
+              "count" : 71,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 0.971830985915493
+                }
+              }
+            },
+            "setVolume" : {
+              "count" : 72,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "stop" : {
+              "count" : 95,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.9690721649484536,
+                  "recall" : 0.9894736842105263
+                }
+              }
+            },
+            "unknown" : {
+              "count" : 51,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "unmute" : {
+              "count" : 51,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.98,
+                  "recall" : 0.9607843137254902
+                }
+              }
+            },
+            "volumeDown" : {
+              "count" : 75,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "volumeUp" : {
+              "count" : 77,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            }
+          }
+        }
+      },
       "id" : "dff8d4c7-6b53-436f-b6d0-5cbd607a19ac"
     },
     "validationEvaluationEntity" : {
@@ -57,6 +419,283 @@
       "createdDate" : "2026-04-30T15:18:08Z",
       "dataResult" : {
         "createdDate" : "2026-04-30T15:18:08Z"
+      },
+      "evaluationResult" : {
+        "textClassifier" : {
+          "accuracy" : 0.8909090909090909,
+          "confusionMatrix" : [
+            {
+              "actual" : "cancel",
+              "count" : 2,
+              "expected" : "cancel"
+            },
+            {
+              "actual" : "confirm",
+              "count" : 2,
+              "expected" : "confirm"
+            },
+            {
+              "actual" : "joinSpeaker",
+              "count" : 2,
+              "expected" : "joinSpeaker"
+            },
+            {
+              "actual" : "leaveSpeaker",
+              "count" : 1,
+              "expected" : "joinSpeaker"
+            },
+            {
+              "actual" : "leaveSpeaker",
+              "count" : 1,
+              "expected" : "leaveSpeaker"
+            },
+            {
+              "actual" : "leaveSpeaker",
+              "count" : 1,
+              "expected" : "playDefault"
+            },
+            {
+              "actual" : "listFavorites",
+              "count" : 3,
+              "expected" : "listFavorites"
+            },
+            {
+              "actual" : "mute",
+              "count" : 2,
+              "expected" : "mute"
+            },
+            {
+              "actual" : "pause",
+              "count" : 4,
+              "expected" : "pause"
+            },
+            {
+              "actual" : "playDefault",
+              "count" : 1,
+              "expected" : "playDefault"
+            },
+            {
+              "actual" : "playFavoriteByNumber",
+              "count" : 3,
+              "expected" : "playFavoriteByNumber"
+            },
+            {
+              "actual" : "playNamed",
+              "count" : 3,
+              "expected" : "playNamed"
+            },
+            {
+              "actual" : "resume",
+              "count" : 3,
+              "expected" : "resume"
+            },
+            {
+              "actual" : "setVolume",
+              "count" : 6,
+              "expected" : "setVolume"
+            },
+            {
+              "actual" : "stop",
+              "count" : 3,
+              "expected" : "stop"
+            },
+            {
+              "actual" : "unknown",
+              "count" : 1,
+              "expected" : "listFavorites"
+            },
+            {
+              "actual" : "unknown",
+              "count" : 2,
+              "expected" : "unknown"
+            },
+            {
+              "actual" : "unmute",
+              "count" : 1,
+              "expected" : "mute"
+            },
+            {
+              "actual" : "unmute",
+              "count" : 3,
+              "expected" : "unmute"
+            },
+            {
+              "actual" : "volumeDown",
+              "count" : 1,
+              "expected" : "mute"
+            },
+            {
+              "actual" : "volumeDown",
+              "count" : 3,
+              "expected" : "volumeDown"
+            },
+            {
+              "actual" : "volumeUp",
+              "count" : 1,
+              "expected" : "setVolume"
+            },
+            {
+              "actual" : "volumeUp",
+              "count" : 6,
+              "expected" : "volumeUp"
+            }
+          ],
+          "statsByLabel" : {
+            "cancel" : {
+              "count" : 2,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "confirm" : {
+              "count" : 2,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "joinSpeaker" : {
+              "count" : 2,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.6666666666666666,
+                  "recall" : 1
+                }
+              }
+            },
+            "leaveSpeaker" : {
+              "count" : 3,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 0.3333333333333333
+                }
+              }
+            },
+            "listFavorites" : {
+              "count" : 3,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.75,
+                  "recall" : 1
+                }
+              }
+            },
+            "mute" : {
+              "count" : 2,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.5,
+                  "recall" : 1
+                }
+              }
+            },
+            "pause" : {
+              "count" : 4,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "playDefault" : {
+              "count" : 1,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.5,
+                  "recall" : 1
+                }
+              }
+            },
+            "playFavoriteByNumber" : {
+              "count" : 3,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "playNamed" : {
+              "count" : 3,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "resume" : {
+              "count" : 3,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "setVolume" : {
+              "count" : 6,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.8571428571428571,
+                  "recall" : 1
+                }
+              }
+            },
+            "stop" : {
+              "count" : 3,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "unknown" : {
+              "count" : 3,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 0.6666666666666666
+                }
+              }
+            },
+            "unmute" : {
+              "count" : 4,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 0.75
+                }
+              }
+            },
+            "volumeDown" : {
+              "count" : 4,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 0.75
+                }
+              }
+            },
+            "volumeUp" : {
+              "count" : 7,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 0.8571428571428571
+                }
+              }
+            }
+          }
+        }
       },
       "id" : "079825c6-c4be-422e-907a-9961a0808514"
     }
@@ -66,7 +705,7 @@
     "dataResult" : {
 
     },
-    "id" : "ab24e0b7-618e-47e1-9ab3-47322df02284"
+    "id" : "6fc2309f-3ab2-45fa-a2ef-d339234c2185"
   },
   "evaluationState" : "uninitialized",
   "id" : "FEB17AD1-133E-4A41-A0FC-B13AB3BC19FC",
@@ -74,11 +713,12 @@
     "createdDate" : "2026-04-30T15:18:08Z",
     "experimentID" : "94490475-E341-4C18-9E2F-CDF9C1AF6879",
     "id" : "8DBA88AD-5EA9-4574-BFFD-539974E5C3A9",
+    "modelURL" : "Models/VoxioCommandModel%201%20copy.mlmodel",
     "modifiedDate" : "2026-04-30T15:18:08Z",
     "title" : "",
     "version" : "1.0"
   },
-  "modifiedDate" : "2026-04-30T15:18:08Z",
+  "modifiedDate" : "2026-05-01T17:53:46Z",
   "preferredFilename" : "VoxioCommandModel 1 copy",
   "settingEntity" : {
     "algorithmType" : "maxEnt",
@@ -95,6 +735,7 @@
 
     ],
     "harVideoAugmentations" : 0,
+    "iterationCount" : 10,
     "seedType" : "default",
     "styleTransferAlgorithmType" : "image",
     "taskType" : "textClassifier",
@@ -109,7 +750,7 @@
   "snapshotRole" : {
     "withoutSnapshots" : 0
   },
-  "state" : "uninitialized",
+  "state" : "trained",
   "title" : "VoxioCommandModel 1 copy",
   "trainingEntity" : {
     "analysedDataType" : "datasource",
@@ -117,29 +758,45 @@
 
     },
     "dataResult" : {
-      "classesCount" : 1,
+      "classesCount" : 17,
       "createdDate" : "2026-04-30T15:18:08Z",
       "dataAnalysis" : {
         "classifierAnalysis" : {
           "labelStats" : {
-            "parsing" : 1
+            "cancel" : 56,
+            "confirm" : 63,
+            "joinSpeaker" : 25,
+            "leaveSpeaker" : 22,
+            "listFavorites" : 66,
+            "mute" : 62,
+            "pause" : 76,
+            "playDefault" : 76,
+            "playFavoriteByNumber" : 88,
+            "playNamed" : 51,
+            "resume" : 74,
+            "setVolume" : 78,
+            "stop" : 98,
+            "unknown" : 54,
+            "unmute" : 55,
+            "volumeDown" : 79,
+            "volumeUp" : 84
           }
         },
         "issues" : [
           {
-            "description" : "Found one folder \"parsing\" - expected at least two folders of texts, named for their classes",
-            "severity" : "error"
-          },
-          {
-            "description" : "Less than 50 total texts found - add more to improve model validation",
-            "severity" : "warning"
-          },
-          {
-            "description" : "Smallest class is \"parsing\" with 1 texts",
+            "description" : "17 classes found, including stop, playFavoriteByNumber, volumeUp",
             "severity" : "debug"
           },
           {
-            "description" : "Largest class is \"parsing\" with 1 text",
+            "description" : "1107 texts found, automatically creating validation set",
+            "severity" : "good"
+          },
+          {
+            "description" : "Smallest class is \"leaveSpeaker\" with 22 texts",
+            "severity" : "debug"
+          },
+          {
+            "description" : "Largest class is \"stop\" with 98 text",
             "severity" : "debug"
           }
         ],
@@ -149,30 +806,768 @@
           }
         },
         "summary" : {
-          "canUseValidation" : 0,
-          "classCount" : 1,
-          "sampleCount" : 1
-        },
-        "warning" : "Less than 50 total texts found - add more to improve model validation"
+          "canUseValidation" : 1,
+          "classCount" : 17,
+          "sampleCount" : 1107
+        }
       },
-      "dataSourceID" : "B45E99AE-6D7B-40C5-918A-C65BE4A84B69",
-      "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments/Specification/Voxio%201.1/parsing/",
-      "error" : {
-        "code" : 1000,
-        "domain" : "composer.error.domain",
-        "errorType" : "error",
-        "reason" : "Found one folder \"parsing\" - expected at least two folders of texts, named for their classes"
-      },
-      "itemsCount" : 1,
-      "warning" : "Less than 50 total texts found - add more to improve model validation"
+      "dataSourceID" : "5CE13A3C-E38C-4884-8AAB-F12ABC056E5F",
+      "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments-usability/Resources/parsing/corpus-training.csv",
+      "itemsCount" : 1107
     },
-    "dataSourceID" : "B45E99AE-6D7B-40C5-918A-C65BE4A84B69",
+    "dataSourceID" : "5CE13A3C-E38C-4884-8AAB-F12ABC056E5F",
     "featureExtractionCheckpointMayBeAvailable" : false,
+    "finishTime" : "2026-05-01T17:53:46Z",
     "progress" : [
-
+      {
+        "count" : 1,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 10,
+          "trainingAccuracy" : 0.05988593026995659,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 2,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 9,
+          "trainingAccuracy" : 0.9230037927627563,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 3,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 8,
+          "trainingAccuracy" : 0.980038046836853,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 4,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 7,
+          "trainingAccuracy" : 0.9895437359809875,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 5,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 6,
+          "trainingAccuracy" : 0.9904943108558655,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 6,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : true,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 5,
+          "trainingAccuracy" : 0.9923954606056213,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 52,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 152,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 252,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 352,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 452,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 552,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 652,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 752,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 852,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 952,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 1052,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : true,
+        "tableIndex" : 0
+      }
     ],
     "snapshottableCheckpoints" : {
 
+    },
+    "startTime" : "2026-05-01T17:53:45Z",
+    "trainingAccuracy" : 0.9923954372623575,
+    "trainingResults" : {
+      "textClassifier" : {
+        "accuracy" : 0.9923954372623575,
+        "confusionMatrix" : [
+          {
+            "actual" : "cancel",
+            "count" : 53,
+            "expected" : "cancel"
+          },
+          {
+            "actual" : "cancel",
+            "count" : 1,
+            "expected" : "stop"
+          },
+          {
+            "actual" : "confirm",
+            "count" : 61,
+            "expected" : "confirm"
+          },
+          {
+            "actual" : "joinSpeaker",
+            "count" : 23,
+            "expected" : "joinSpeaker"
+          },
+          {
+            "actual" : "leaveSpeaker",
+            "count" : 19,
+            "expected" : "leaveSpeaker"
+          },
+          {
+            "actual" : "listFavorites",
+            "count" : 63,
+            "expected" : "listFavorites"
+          },
+          {
+            "actual" : "mute",
+            "count" : 58,
+            "expected" : "mute"
+          },
+          {
+            "actual" : "mute",
+            "count" : 1,
+            "expected" : "stop"
+          },
+          {
+            "actual" : "mute",
+            "count" : 1,
+            "expected" : "unmute"
+          },
+          {
+            "actual" : "pause",
+            "count" : 72,
+            "expected" : "pause"
+          },
+          {
+            "actual" : "playDefault",
+            "count" : 75,
+            "expected" : "playDefault"
+          },
+          {
+            "actual" : "playFavoriteByNumber",
+            "count" : 85,
+            "expected" : "playFavoriteByNumber"
+          },
+          {
+            "actual" : "playNamed",
+            "count" : 48,
+            "expected" : "playNamed"
+          },
+          {
+            "actual" : "resume",
+            "count" : 1,
+            "expected" : "playDefault"
+          },
+          {
+            "actual" : "resume",
+            "count" : 69,
+            "expected" : "resume"
+          },
+          {
+            "actual" : "resume",
+            "count" : 1,
+            "expected" : "stop"
+          },
+          {
+            "actual" : "setVolume",
+            "count" : 72,
+            "expected" : "setVolume"
+          },
+          {
+            "actual" : "stop",
+            "count" : 1,
+            "expected" : "mute"
+          },
+          {
+            "actual" : "stop",
+            "count" : 94,
+            "expected" : "stop"
+          },
+          {
+            "actual" : "unknown",
+            "count" : 51,
+            "expected" : "unknown"
+          },
+          {
+            "actual" : "unmute",
+            "count" : 2,
+            "expected" : "mute"
+          },
+          {
+            "actual" : "unmute",
+            "count" : 49,
+            "expected" : "unmute"
+          },
+          {
+            "actual" : "volumeDown",
+            "count" : 75,
+            "expected" : "volumeDown"
+          },
+          {
+            "actual" : "volumeUp",
+            "count" : 77,
+            "expected" : "volumeUp"
+          }
+        ],
+        "statsByLabel" : {
+          "cancel" : {
+            "count" : 54,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 0.9814814814814815
+              }
+            }
+          },
+          "confirm" : {
+            "count" : 61,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "joinSpeaker" : {
+            "count" : 23,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "leaveSpeaker" : {
+            "count" : 19,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "listFavorites" : {
+            "count" : 63,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "mute" : {
+            "count" : 60,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.9508196721311475,
+                "recall" : 0.9666666666666667
+              }
+            }
+          },
+          "pause" : {
+            "count" : 72,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "playDefault" : {
+            "count" : 75,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.9868421052631579,
+                "recall" : 1
+              }
+            }
+          },
+          "playFavoriteByNumber" : {
+            "count" : 85,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "playNamed" : {
+            "count" : 48,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "resume" : {
+            "count" : 71,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 0.971830985915493
+              }
+            }
+          },
+          "setVolume" : {
+            "count" : 72,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "stop" : {
+            "count" : 95,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.9690721649484536,
+                "recall" : 0.9894736842105263
+              }
+            }
+          },
+          "unknown" : {
+            "count" : 51,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "unmute" : {
+            "count" : 51,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.98,
+                "recall" : 0.9607843137254902
+              }
+            }
+          },
+          "volumeDown" : {
+            "count" : 75,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "volumeUp" : {
+            "count" : 77,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "validationAccuracy" : 0.8909090909090909,
+    "validationResults" : {
+      "textClassifier" : {
+        "accuracy" : 0.8909090909090909,
+        "confusionMatrix" : [
+          {
+            "actual" : "cancel",
+            "count" : 2,
+            "expected" : "cancel"
+          },
+          {
+            "actual" : "confirm",
+            "count" : 2,
+            "expected" : "confirm"
+          },
+          {
+            "actual" : "joinSpeaker",
+            "count" : 2,
+            "expected" : "joinSpeaker"
+          },
+          {
+            "actual" : "leaveSpeaker",
+            "count" : 1,
+            "expected" : "joinSpeaker"
+          },
+          {
+            "actual" : "leaveSpeaker",
+            "count" : 1,
+            "expected" : "leaveSpeaker"
+          },
+          {
+            "actual" : "leaveSpeaker",
+            "count" : 1,
+            "expected" : "playDefault"
+          },
+          {
+            "actual" : "listFavorites",
+            "count" : 3,
+            "expected" : "listFavorites"
+          },
+          {
+            "actual" : "mute",
+            "count" : 2,
+            "expected" : "mute"
+          },
+          {
+            "actual" : "pause",
+            "count" : 4,
+            "expected" : "pause"
+          },
+          {
+            "actual" : "playDefault",
+            "count" : 1,
+            "expected" : "playDefault"
+          },
+          {
+            "actual" : "playFavoriteByNumber",
+            "count" : 3,
+            "expected" : "playFavoriteByNumber"
+          },
+          {
+            "actual" : "playNamed",
+            "count" : 3,
+            "expected" : "playNamed"
+          },
+          {
+            "actual" : "resume",
+            "count" : 3,
+            "expected" : "resume"
+          },
+          {
+            "actual" : "setVolume",
+            "count" : 6,
+            "expected" : "setVolume"
+          },
+          {
+            "actual" : "stop",
+            "count" : 3,
+            "expected" : "stop"
+          },
+          {
+            "actual" : "unknown",
+            "count" : 1,
+            "expected" : "listFavorites"
+          },
+          {
+            "actual" : "unknown",
+            "count" : 2,
+            "expected" : "unknown"
+          },
+          {
+            "actual" : "unmute",
+            "count" : 1,
+            "expected" : "mute"
+          },
+          {
+            "actual" : "unmute",
+            "count" : 3,
+            "expected" : "unmute"
+          },
+          {
+            "actual" : "volumeDown",
+            "count" : 1,
+            "expected" : "mute"
+          },
+          {
+            "actual" : "volumeDown",
+            "count" : 3,
+            "expected" : "volumeDown"
+          },
+          {
+            "actual" : "volumeUp",
+            "count" : 1,
+            "expected" : "setVolume"
+          },
+          {
+            "actual" : "volumeUp",
+            "count" : 6,
+            "expected" : "volumeUp"
+          }
+        ],
+        "statsByLabel" : {
+          "cancel" : {
+            "count" : 2,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "confirm" : {
+            "count" : 2,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "joinSpeaker" : {
+            "count" : 2,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.6666666666666666,
+                "recall" : 1
+              }
+            }
+          },
+          "leaveSpeaker" : {
+            "count" : 3,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 0.3333333333333333
+              }
+            }
+          },
+          "listFavorites" : {
+            "count" : 3,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.75,
+                "recall" : 1
+              }
+            }
+          },
+          "mute" : {
+            "count" : 2,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.5,
+                "recall" : 1
+              }
+            }
+          },
+          "pause" : {
+            "count" : 4,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "playDefault" : {
+            "count" : 1,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.5,
+                "recall" : 1
+              }
+            }
+          },
+          "playFavoriteByNumber" : {
+            "count" : 3,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "playNamed" : {
+            "count" : 3,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "resume" : {
+            "count" : 3,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "setVolume" : {
+            "count" : 6,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.8571428571428571,
+                "recall" : 1
+              }
+            }
+          },
+          "stop" : {
+            "count" : 3,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "unknown" : {
+            "count" : 3,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 0.6666666666666666
+              }
+            }
+          },
+          "unmute" : {
+            "count" : 4,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 0.75
+              }
+            }
+          },
+          "volumeDown" : {
+            "count" : 4,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 0.75
+              }
+            }
+          },
+          "volumeUp" : {
+            "count" : 7,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 0.8571428571428571
+              }
+            }
+          }
+        }
+      }
     }
   },
   "validationEntity" : {

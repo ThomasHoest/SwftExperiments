@@ -37,7 +37,11 @@
       "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild *)",
       "WebFetch(domain:bangolufsenassistentgohe.blob.core.windows.net)",
       "WebFetch(domain:documenter.getpostman.com)",
-      "WebFetch(domain:gist.github.com)"
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:developer.spotify.com)",
+      "WebFetch(domain:support.bang-olufsen.com)",
+      "WebFetch(domain:techcrunch.com)",
+      "WebFetch(domain:www.home-assistant.io)"
     ]
   }
 }
