@@ -235,8 +235,15 @@ class MozartClient {
     }
 
     /// Returns the currently active input source.
-    func getActiveSource() async throws -> Source {
-        try await get("/playback/sources/active")
+    func getMozartActiveSource() async throws -> Source {
+        let data = try await send("/playback/sources/active", method: "GET")
+        let raw = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+        Log.info("[\(host)] /playback/sources/active raw: \(raw)")
+        do { return try decoder.decode(Source.self, from: data) }
+        catch {
+            Log.error("[\(host)] decode Source failed: \(error)")
+            throw MozartError.invalidResponse
+        }
     }
 
     /// Activates a specific source by its ID.

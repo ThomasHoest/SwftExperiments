@@ -10,16 +10,21 @@ struct SpeakerRecord: Codable {
 @MainActor
 struct WidgetStateWriter {
     private static let suiteName    = "group.T-Creative.Voxio"
-    private static let dataVersion  = 2
+    private static let dataVersion  = 3
 
     /// Write current state for one speaker. Other speakers' keys are untouched.
+    /// Runs the now-playing presenter on the main-app side and writes the
+    /// rendered fields — the widget bundle reads strings only.
     static func write(speaker: Speaker) {
         guard let defaults = UserDefaults(suiteName: suiteName) else { return }
         let host = speaker.host
+        let p    = speaker.nowPlaying
 
         defaults.set(speaker.name,                       forKey: K.name(host))
-        defaults.set(speaker.metadata?.title,            forKey: K.trackTitle(host))
-        defaults.set(speaker.source,                     forKey: K.sourceName(host))
+        defaults.set(p.primaryLine,                      forKey: K.primaryLine(host))
+        defaults.set(p.secondaryLine,                    forKey: K.secondaryLine(host))
+        defaults.set(p.sourceBadge,                      forKey: K.sourceBadge(host))
+        defaults.set(p.category.rawValue,                forKey: K.category(host))
         defaults.set(playbackStateString(for: speaker),  forKey: K.playbackState(host))
         defaults.set(speaker.volume ?? 0,                forKey: K.volume(host))
         defaults.set(speaker.isMuted,                    forKey: K.muted(host))
@@ -35,7 +40,8 @@ struct WidgetStateWriter {
     /// Remove every key for `host`. Called from SpeakerDiscoveryService when mDNS removes a speaker.
     static func removeSpeaker(host: String) {
         guard let defaults = UserDefaults(suiteName: suiteName) else { return }
-        for key in [K.name(host), K.trackTitle(host), K.sourceName(host),
+        for key in [K.name(host), K.primaryLine(host), K.secondaryLine(host),
+                    K.sourceBadge(host), K.category(host),
                     K.playbackState(host), K.volume(host), K.muted(host), K.writtenAt(host)] {
             defaults.removeObject(forKey: key)
         }
@@ -95,13 +101,15 @@ enum WidgetStateKeys {
     static let knownHosts         = "widget_known_hosts"
     static let discoveredSpeakers = "widget_discovered_speakers"
 
-    static func name(_ host: String)          -> String { "widget_speaker_\(host)_name" }
-    static func trackTitle(_ host: String)    -> String { "widget_speaker_\(host)_track_title" }
-    static func sourceName(_ host: String)    -> String { "widget_speaker_\(host)_source_name" }
-    static func playbackState(_ host: String) -> String { "widget_speaker_\(host)_playback_state" }
-    static func volume(_ host: String)        -> String { "widget_speaker_\(host)_volume" }
-    static func muted(_ host: String)         -> String { "widget_speaker_\(host)_muted" }
-    static func writtenAt(_ host: String)     -> String { "widget_speaker_\(host)_written_at" }
+    static func name(_ host: String)           -> String { "widget_speaker_\(host)_name" }
+    static func primaryLine(_ host: String)    -> String { "widget_speaker_\(host)_primary_line" }
+    static func secondaryLine(_ host: String)  -> String { "widget_speaker_\(host)_secondary_line" }
+    static func sourceBadge(_ host: String)    -> String { "widget_speaker_\(host)_source_badge" }
+    static func category(_ host: String)       -> String { "widget_speaker_\(host)_category" }
+    static func playbackState(_ host: String)  -> String { "widget_speaker_\(host)_playback_state" }
+    static func volume(_ host: String)         -> String { "widget_speaker_\(host)_volume" }
+    static func muted(_ host: String)          -> String { "widget_speaker_\(host)_muted" }
+    static func writtenAt(_ host: String)      -> String { "widget_speaker_\(host)_written_at" }
 }
 
 private typealias K = WidgetStateKeys

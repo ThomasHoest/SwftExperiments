@@ -162,14 +162,13 @@ class BNRClient {
         try await fetchActiveSources().state
     }
 
-    /// Returns the current source's friendlyName (e.g. "B&O Radio") if any.
-    /// ASE has no REST endpoint for track metadata — only the source name is available before
-    /// the long-poll delivers a NOW_PLAYING_* notification.
-    func getActiveSourceName() async throws -> String? {
-        try await fetchActiveSources().sourceName
+    /// Returns the active source as a unified `SpeakerSource`, derived from the
+    /// same `/BeoZone/Zone/ActiveSources` call used for play state.
+    func getBNRActiveSource() async throws -> SpeakerSource? {
+        try await fetchActiveSources().source
     }
 
-    private func fetchActiveSources() async throws -> (state: BNRPlaybackState, sourceName: String?) {
+    private func fetchActiveSources() async throws -> (state: BNRPlaybackState, source: SpeakerSource?) {
         let raw = try await send("/BeoZone/Zone/ActiveSources", method: "GET")
         let response: BNRActiveSourcesResponse
         do { response = try decoder.decode(BNRActiveSourcesResponse.self, from: raw) }
@@ -179,13 +178,20 @@ class BNRClient {
             throw SpeakerError.invalidResponse
         }
         let source = response.primaryExperience?.source
+        // Resolve a SpeakerSource — id may live on source.id directly, or be
+        // present as activeSources.primary when source.id is missing.
+        let sourceID   = source?.id ?? response.activeSources?.primary
         let sourceName = source?.friendlyName
+        let typeHint   = source?.sourceType?.type ?? source?.category
+        let speakerSource: SpeakerSource? = sourceID.map {
+            SpeakerSource(id: $0, friendlyName: sourceName, typeHint: typeHint)
+        }
 
         // Prefer an explicit state if firmware returns it (api-spec shape).
         if let rawState = response.primaryExperience?.state {
             let mapped = mapBNRPlaybackState(rawState)
             Log.info("[BNR:\(host)] activeSources: REST state:\"\(rawState)\" source:\(sourceName ?? "nil") → \(mapped)")
-            return (mapped, sourceName)
+            return (mapped, speakerSource)
         }
 
         // Heuristic fallback: real firmware doesn't include `state` in REST.
@@ -193,7 +199,7 @@ class BNRClient {
         let isActive = (source?.inUse == true) || !primary.isEmpty
         let inferred: BNRPlaybackState = isActive ? .playing : .stopped
         Log.info("[BNR:\(host)] activeSources: no REST state, source.inUse=\(source?.inUse ?? false) primary=\"\(primary)\" source:\(sourceName ?? "nil") → \(inferred)")
-        return (inferred, sourceName)
+        return (inferred, speakerSource)
     }
 
     private func mapBNRPlaybackState(_ raw: String) -> BNRPlaybackState {

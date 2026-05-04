@@ -72,6 +72,23 @@ extension MozartClient: SpeakerClient {
         catch let e as MozartError { throw SpeakerError.from(e) }
     }
 
+    func getActiveSource() async throws -> SpeakerSource? {
+        do {
+            let s = try await getMozartActiveSource()
+            Log.info("[\(host)] Mozart active source: id=\(s.id ?? "nil") name=\(s.friendlyName ?? "nil") type=\(s.sourceType ?? "nil")")
+            guard let id = s.id else { return nil }
+            return SpeakerSource(id: id,
+                                 friendlyName: s.friendlyName,
+                                 typeHint: s.sourceType)
+        } catch let e as MozartError {
+            Log.info("[\(host)] getActiveSource MozartError: \(e)")
+            return nil
+        } catch {
+            Log.error("[\(host)] getActiveSource unknown error: \(error)")
+            return nil
+        }
+    }
+
     func getPeers() async throws -> [BeolinkPeer] {
         do { return try await getBeolinkPeers() }
         catch let e as MozartError { throw SpeakerError.from(e) }

@@ -95,8 +95,12 @@ class BNREvents {
                 guard !trimmed.isEmpty, let lineData = trimmed.data(using: .utf8) else { continue }
                 do {
                     let n = try decoder.decode(BNRNotification.self, from: lineData)
-                    if n.notification.type != "SOFTWARE_UPDATE_STATE" {
-                        Log.info("[BNR-LP:\(host)] notification \(n.notification.type) | raw: \(trimmed)")
+                    let type = n.notification.type
+                    let isNoisy = type == "SOFTWARE_UPDATE_STATE" || type == "PROGRESS_INFORMATION"
+                    if isNoisy {
+                        Log.verbose("[BNR-LP:\(host)] notification \(type) | raw: \(trimmed)")
+                    } else {
+                        Log.info("[BNR-LP:\(host)] notification \(type) | raw: \(trimmed)")
                     }
                     count += 1
                     if let event = normalise(n) {
