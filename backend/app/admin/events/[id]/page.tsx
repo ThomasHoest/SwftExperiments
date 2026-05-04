@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 interface Props {
-  params: Promise<{ id: string }> | { id: string }
-  searchParams: Promise<Record<string, string>> | Record<string, string>
+  params: Promise<{ id: string }>
+  searchParams: Promise<Record<string, string>>
 }
 
 export default async function EventDetailPage({ params, searchParams }: Props) {

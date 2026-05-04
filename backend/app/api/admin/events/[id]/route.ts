@@ -3,7 +3,7 @@ import { logError } from '@/lib/logger'
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id: idStr } = await params

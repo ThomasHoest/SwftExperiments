@@ -5,7 +5,7 @@ import { logInfo, logWarn, logError } from '@/lib/logger'
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ deviceId: string }> | { deviceId: string } }
+  { params }: { params: Promise<{ deviceId: string }> }
 ): Promise<Response> {
   // Step 1: Auth
   const authResult = requireApiKey(request)
