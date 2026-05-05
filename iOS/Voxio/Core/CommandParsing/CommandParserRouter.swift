@@ -14,8 +14,10 @@ final class CommandParserRouter {
     let fallback = TwoStageFallbackParser()
     // Stored as Any to avoid @available restriction on stored properties.
     var foundationParser: Any?
+    private let personalisationParser: PersonalisationParser
 
-    init() {
+    init(personalisationStore: PersonalisationStore) {
+        personalisationParser = PersonalisationParser(store: personalisationStore)
 #if canImport(FoundationModels)
         if #available(iOS 26, *) {
             foundationParser = makeFoundationParser()
@@ -28,12 +30,17 @@ final class CommandParserRouter {
     // ── Public API ────────────────────────────────────────────────────────────
 
     /// Parses a transcript string into a `VoiceCommand`.
-    /// Stage 1 regex runs first on all devices — if it matches, returns immediately
-    /// without touching Foundation Models. Unmatched utterances proceed to
-    /// Tier 1 (Foundation Models) → Tier 2 (NLModel) → Tier 3 (regex full pass).
-    func parse(_ transcript: String) async -> VoiceCommand {
+    /// Tier 0 personalisation (alias + confirmed-command) runs first — a hit short-circuits immediately.
+    /// Stage 1 regex runs next on all devices — if it matches, returns without touching Foundation Models.
+    /// Unmatched utterances proceed to Tier 1 (Foundation Models) → Tier 2 (NLModel) → Tier 3 (regex full pass).
+    func parse(_ transcript: String, speakerId: String) async -> VoiceCommand {
         Log.info("[CommandParserRouter] parsing: \"\(transcript)\"")
         let text = transcript.trimmingCharacters(in: .whitespaces).lowercased()
+        if let personalised = personalisationParser.parse(text, speakerId: speakerId) {
+            let result = toVoiceCommand(personalised)
+            Log.info("[CommandParserRouter] result: \(result) (PersonalisationTier)")
+            return result
+        }
         if let fast = fallback.parseStage1(text, raw: transcript) {
             let result = toVoiceCommand(fast)
             Log.info("[CommandParserRouter] result: \(result) (Stage1-fast)")
@@ -75,6 +82,13 @@ final class CommandParserRouter {
         case .confirm:              return .confirm
         case .cancel:               return .cancel
         case .unknown:              return .unknown(parsed.rawText ?? "")
+        case .stopAll:              return .stopAll
+        case .pauseAll:             return .pauseAll
+        case .resumeAll:            return .resumeAll
+        case .volumeUpAll:          return .adjustVolumeAll(+(parsed.volumeDelta ?? 10))
+        case .volumeDownAll:        return .adjustVolumeAll(-(parsed.volumeDelta ?? 10))
+        case .muteAll:              return .muteAll
+        case .unmuteAll:            return .unmuteAll
         }
     }
 }
