@@ -1,3 +1,4 @@
+// TODO: E-38 — delete this file after hasSeenHint migration is confirmed shipped
 import SwiftUI
 
 /// Dismissible getting-started hint card rendered inside the `voiceFeedback`
