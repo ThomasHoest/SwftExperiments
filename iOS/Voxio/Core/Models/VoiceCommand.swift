@@ -32,7 +32,22 @@ enum VoiceCommand: Equatable {
     case cancel
     /// Transcription did not match any known pattern.
     case unknown(String)
+
+    // ── Broadcast commands ────────────────────────────────────────────────────
+    /// Stop playback on all active speakers.
+    case stopAll
+    /// Pause playback on all currently playing speakers.
+    case pauseAll
+    /// Resume playback on all currently paused speakers.
+    case resumeAll
+    /// Adjust volume by a relative delta on all speakers; positive = louder, negative = quieter.
+    case adjustVolumeAll(Int)
+    /// Mute all speakers.
+    case muteAll
+    /// Unmute all speakers.
+    case unmuteAll
 }
+
 
 extension VoiceCommand: CustomStringConvertible {
     var description: String {
@@ -52,6 +67,12 @@ extension VoiceCommand: CustomStringConvertible {
         case .confirm:             return "confirm"
         case .cancel:              return "cancel"
         case .unknown(let s):      return "unknown(\"\(s)\")"
+        case .stopAll:             return "stopAll"
+        case .pauseAll:            return "pauseAll"
+        case .resumeAll:           return "resumeAll"
+        case .adjustVolumeAll(let d): return "adjustVolumeAll(\(d > 0 ? "+\(d)" : "\(d)"))"
+        case .muteAll:             return "muteAll"
+        case .unmuteAll:           return "unmuteAll"
         }
     }
 }

@@ -16,6 +16,9 @@ class Speaker: Identifiable {
     var sourceTypeHint: String?    // BNR sourceType.type or Mozart Source.type, when available
     var batteryLevel: Int?
 
+    /// Stable cross-session identifier. Uses the hardware JID when resolved; falls back to host IP.
+    var stableId: String { identifier.jid ?? identifier.host }
+
     var isPlaying: Bool { state == .playing || state == .started }
 
     var playbackState: SpeakerPlaybackState {

@@ -1,5 +1,7 @@
 import SwiftUI
 import UIKit
+import Speech
+import AVFoundation
 
 struct HomeView: View {
     @StateObject private var discovery     = SpeakerDiscoveryService()
@@ -7,7 +9,19 @@ struct HomeView: View {
     @StateObject private var motionManager = MotionManager()
     @ObservedObject private var langService = LanguageService.shared
     @State private var voiceToText    = VoiceToText()
-    @State private var commandRouter  = CommandParserRouter()
+    @State private var personalisationStore: PersonalisationStore
+    @State private var commandRouter: CommandParserRouter
+    @State private var telemetryBuffer: TelemetryBuffer
+    @State private var telemetryUploader: TelemetryUploader
+
+    init() {
+        let store = PersonalisationStore(context: PersistenceController.shared.viewContext)
+        let buffer = TelemetryBuffer(context: PersistenceController.shared.viewContext)
+        _personalisationStore = State(initialValue: store)
+        _commandRouter = State(initialValue: CommandParserRouter(personalisationStore: store))
+        _telemetryBuffer = State(initialValue: buffer)
+        _telemetryUploader = State(initialValue: TelemetryUploader(buffer: buffer))
+    }
     @StateObject private var transcriptController = TranscriptController()
     @State private var micStatus      = "Initialising microphone…"
     @State private var audioLevel:    Float   = 0
@@ -16,24 +30,35 @@ struct HomeView: View {
     @State private var selectedSpeaker: Speaker?
     @State private var hasAppeared    = false
     @State private var successMessage = ""
+    // T-3804: retained read-only for migration from v1.2 hasSeenHint → hasCompletedOnboarding
     @AppStorage("hasSeenHint") private var hasSeenHint = false
-    @State private var showHintManually = false
+    // T-3802: onboarding persistence key
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("hasSeenTelemetryPrompt") private var hasSeenTelemetryPrompt = false
+    @State private var showTelemetryPrompt = false
+    @State private var showSettings = false
+    // T-3805: re-showable sheet binding (wired to SettingsView in E-39 T-3906)
+    @State private var showOnboardingSheet = false
+    // E-40 T-4006 — HelpView sheet trigger
+    @State private var showHelp = false
     @State private var showLanguagePicker = false
     @State private var currentToast:  Toast?
 
+    // Exposed for Settings sheet (E-39 T-3906)
+    var onboardingSheetBinding: Binding<Bool> { $showOnboardingSheet }
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     private let errorService = ErrorResponseService()
 
     private var cs: CommandStrings { CommandStrings.forLanguage(langService.activeLanguage) }
     private var ui: UIStrings      { UIStrings.forLanguage(langService.activeLanguage) }
 
+    private var broadcastHandler: BroadcastCommandHandler { BroadcastCommandHandler(discovery: discovery) }
+
     private var displayedSpeaker: Speaker? {
         selectedSpeaker ?? discovery.groups.first?.hostSpeaker
-    }
-
-    private var shouldShowHint: Bool {
-        showHintManually || (!hasSeenHint && !discovery.groups.flatMap(\.members).isEmpty)
     }
 
     var body: some View {
@@ -79,8 +104,53 @@ struct HomeView: View {
                 .padding(.top, 8)
             }
         }
+        // T-3802 — full-screen onboarding cover on first launch
+        .fullScreenCover(isPresented: Binding(
+            get: { !hasCompletedOnboarding },
+            set: { _ in }
+        )) {
+            OnboardingView(onDismiss: {
+                // T-3803 — permissions were requested inside OnboardingView.handleCTA()
+                // before this closure is called. Set flag only — onChange(hasCompletedOnboarding)
+                // is the single trigger for startListeningIfReady() to prevent double-start.
+                hasCompletedOnboarding = true
+            })
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView(
+                store: personalisationStore,
+                discoveredSpeakers: discovery.groups.flatMap(\.members)
+            )
+        }
+        // T-3805 — re-showable sheet from Settings (isReshow path; does not change hasCompletedOnboarding)
+        .sheet(isPresented: $showOnboardingSheet) {
+            OnboardingView(onDismiss: { showOnboardingSheet = false }, isReshow: true)
+        }
+        // E-40 T-4006 — Help sheet (replaces HintCardView; disabled during active countdown)
+        .sheet(isPresented: $showHelp) {
+            let members = discovery.groups.flatMap(\.members)
+            HelpView(
+                speakerA: members.first?.name,
+                speakerB: members.dropFirst().first?.name,
+                activeLanguage: langService.activeLanguage,
+                isPresented: $showHelp
+            )
+        }
         .animation(BeoAnimation.toast, value: currentToast)
+        .alert("Help improve Voxio?", isPresented: $showTelemetryPrompt) {
+            Button("Enable") {
+                telemetryUploader.isEnabled = true
+                hasSeenTelemetryPrompt = true
+            }
+            Button("Not now", role: .cancel) {
+                hasSeenTelemetryPrompt = true
+            }
+        }
         .onAppear(perform: onAppear)
+        // ADR §Consequences point 2 — re-fire startListening when hasCompletedOnboarding flips
+        .onChange(of: hasCompletedOnboarding) { _, completed in
+            if completed { startListeningIfReady() }
+        }
         .onChange(of: discovery.groups.flatMap(\.members).map(\.id)) { _, ids in
             // Removal: if the user's selected speaker just disappeared, fall back to first available.
             if let sel = selectedSpeaker, !ids.contains(sel.id) {
@@ -106,8 +176,10 @@ struct HomeView: View {
         .onChange(of: langService.activeLanguage) { _, language in
             voiceToText.setLanguage(language)
         }
-        .onChange(of: transcriptController.text) { _, new in
-            if !new.isEmpty { showHintManually = false }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                Task { await telemetryUploader.attemptUploadIfDue() }
+            }
         }
         .sheet(isPresented: $showLanguagePicker) {
             LanguagePickerSheet { language in
@@ -151,26 +223,32 @@ struct HomeView: View {
         .ignoresSafeArea()
     }
 
-    // ── Status bar ── T-2108 ──────────────────────────────────────────────────
+    // ── Status bar ── T-2108 / E-40 T-4006 ──────────────────────────────────────
 
-    private var hintButtonAccessibilityLabel: String {
-        langService.activeLanguage == .danish
-            ? "Vis kom-godt-i-gang-tip"
-            : "Show getting-started hint"
+    private var helpButtonAccessibilityLabel: String {
+        langService.activeLanguage == .danish ? "Hjælp" : "Help"
     }
 
     private var statusBar: some View {
         HStack {
+            // E-40 T-4006 — opens HelpView sheet (replaces old HintCardView toggle)
             DarkGlassIconButton(
                 systemImage: "questionmark.circle",
-                role: .default,
-                accessibilityLabel: hintButtonAccessibilityLabel
+                role: coordinator.isPending ? .disabled : .default,
+                accessibilityLabel: helpButtonAccessibilityLabel
             ) {
-                showHintManually.toggle()
+                showHelp = true
             }
 
             Spacer()
             ConnectionStatusChip(speakerCount: discovery.groups.flatMap(\.members).count)
+
+            DarkGlassIconButton(
+                systemImage: "gearshape",
+                accessibilityLabel: "Settings"
+            ) {
+                showSettings = true
+            }
         }
         .padding(.top, 8)
     }
@@ -232,21 +310,8 @@ struct HomeView: View {
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .padding(.top, 12)
-
-            if shouldShowHint && !coordinator.isPending {
-                HintCardView(
-                    speakerName: discovery.groups.first?.hostSpeaker.name,
-                    language: langService.activeLanguage,
-                    onDismiss: {
-                        hasSeenHint = true
-                        showHintManually = false
-                    }
-                )
-                .transition(.opacity)
-                .padding(.top, 12)
-            }
+            // HintCardView removed per E-38; replaced by OnboardingView fullScreenCover
         }
-        .animation(.easeInOut(duration: 0.2), value: shouldShowHint)
     }
 
     // ── Setup ─────────────────────────────────────────────────────────────────
@@ -259,8 +324,33 @@ struct HomeView: View {
             hasAppeared = true
         }
 
+        // T-3804 — migrate users upgrading from v1.2 (hasSeenHint → hasCompletedOnboarding).
+        // Return immediately — onChange(hasCompletedOnboarding) is the single trigger for
+        // startListeningIfReady() to avoid a double-start with the onChange handler below.
+        if hasSeenHint && !hasCompletedOnboarding {
+            hasCompletedOnboarding = true
+            return
+        }
+
+        // T-3802 — gate: if onboarding not complete, fullScreenCover handles it
+        if !hasCompletedOnboarding {
+            return
+        }
+
         // T-1903 — show language picker on first launch; defer mic/discovery until chosen
         if !langService.hasExplicitlyChosen {
+            showLanguagePicker = true
+            return
+        }
+        startListening()
+    }
+
+    /// Starts the listening pipeline when all preconditions are met.
+    /// Called from onAppear (gate passed), from the onboarding dismiss closure,
+    /// and from the onChange(hasCompletedOnboarding) handler.
+    private func startListeningIfReady() {
+        guard hasCompletedOnboarding else { return }
+        guard langService.hasExplicitlyChosen else {
             showLanguagePicker = true
             return
         }
@@ -292,65 +382,54 @@ struct HomeView: View {
             Task { @MainActor in
                 isCommandActive = false
 
-                // While countdown is active, only a cancel utterance stops it;
-                // non-cancel utterances are silently ignored — countdown continues.
-                if coordinator.isPending {
-                    if CancelGrammar.matches(text) {
-                        coordinator.cancelCountdown(reason: .userVoice)
-                    }
-                    return
-                }
+                guard !coordinator.isPending else { return }
 
-                let words = text.lowercased()
-                    .components(separatedBy: .whitespaces)
-                    .filter { !$0.isEmpty }
-                guard let (speaker, remaining) = discovery.resolve(words: words) else {
-                    Log.info("[HomeView] no speaker resolved for: \(text)")
+                let classifier = UtteranceClassifier(
+                    discovery: discovery,
+                    personalisationStore: personalisationStore,
+                    router: commandRouter,
+                    focusedSpeaker: { selectedSpeaker }
+                )
+                let outcome = classifier.classify(text)
+
+                switch outcome {
+
+                case .broadcast(let cmd):
+                    HapticEngine.shared.commandRecognised()
+                    Log.info("[HomeView] → broadcast: \(cmd)")
+                    let result = await broadcastHandler.handle(cmd)
+                    let message = result.totalCount == 0
+                        ? cs.broadcastNothingInScope
+                        : cs.broadcastExecuted(result.successCount, result.totalCount)
+                    showToast(Toast(kind: .success(message: message)))
+                    transcriptController.clearAfterCommand()
+
+                case .personalised(let speaker, let parsed):
+                    HapticEngine.shared.commandRecognised()
+                    selectedSpeaker = speaker
+                    let cmd = commandRouter.toVoiceCommand(parsed)
+                    Log.info("[HomeView] → \(speaker.name) (personalised): \(cmd)")
+                    await dispatchCommand(cmd, to: speaker, commandText: text)
+
+                case .addressed(let speaker, let remainder):
+                    selectedSpeaker = speaker
+                    let cmd = await commandRouter.parse(remainder, speakerId: speaker.stableId)
+                    Log.info("[HomeView] → \(speaker.name): \(cmd)")
+                    if case .unknown = cmd { } else { HapticEngine.shared.commandRecognised() }
+                    await dispatchCommand(cmd, to: speaker, commandText: remainder)
+
+                case .focused(let speaker, let fullText):
+                    selectedSpeaker = speaker
+                    let cmd = await commandRouter.parse(fullText, speakerId: speaker.stableId)
+                    Log.info("[HomeView] → \(speaker.name) (focused): \(cmd)")
+                    if case .unknown = cmd { } else { HapticEngine.shared.commandRecognised() }
+                    await dispatchCommand(cmd, to: speaker, commandText: fullText)
+
+                case .unresolved:
                     let available = discovery.groups.flatMap(\.members).map(\.name)
                     handleError(.noSpeakerSpoken(available: available))
                     transcriptController.clearAfterCommand()
-                    return
                 }
-                selectedSpeaker = speaker
-
-                let commandText = remaining.isEmpty ? text : remaining.joined(separator: " ")
-                let command = await commandRouter.parse(commandText)
-                Log.info("[HomeView] → \(speaker.name): \(command)")
-                if case .unknown = command { } else { HapticEngine.shared.commandRecognised() }
-
-                if case .playFavorite(let index) = command {
-                    Log.info("[HomeView][clear] path=playFavorite index=\(index)")
-                    await handlePlayFavorite(index: index, speaker: speaker)
-                    return
-                }
-
-                // Commands that need no confirmation (listFavorites, confirm, cancel, unknown)
-                guard let confirmMsg = confirmationMessage(for: command, speaker: speaker) else {
-                    Log.info("[HomeView][clear] path=noConfirmation command=\(command) → clearAfterCommand")
-                    if case .unknown = command { handleError(.voiceNotRecognised) }
-                    await dispatch(command: command, to: speaker)
-                    transcriptController.clearAfterCommand()
-                    return
-                }
-
-                if let preflight = preflightError(for: command, speaker: speaker) {
-                    Log.info("[HomeView][clear] path=preflightError command=\(command) error=\(preflight) → clearAfterCommand")
-                    handleError(preflight)
-                    transcriptController.clearAfterCommand()
-                    return
-                }
-
-                Log.info("[HomeView][clear] path=countdown command=\(command) → clearAfterCommand deferred to action")
-
-                coordinator.startCountdown(
-                    action: {
-                        let succeeded = await dispatch(command: command, to: speaker)
-                        if succeeded { showSuccess("Done") }
-                        transcriptController.clearAfterCommand()
-                    },
-                    readBack: confirmMsg,
-                    onResolved: { _ in }
-                )
             }
         }
         voiceToText.onFinalTranscript = handleFinalTranscript
@@ -379,6 +458,9 @@ struct HomeView: View {
             return cs.joinSpeakers(speaker.name, targetName)
         case .leaveSpeaker:         return cs.leaveSpeaker(speaker.name)
         case .listFavorites, .confirm, .cancel, .unknown:
+            return nil
+        // Broadcast commands execute immediately — no countdown confirmation (ADR E-37).
+        case .stopAll, .pauseAll, .resumeAll, .adjustVolumeAll, .muteAll, .unmuteAll:
             return nil
         }
     }
@@ -467,6 +549,10 @@ struct HomeView: View {
         case .confirm, .cancel, .unknown:
             Log.info("[HomeView] unhandled: \(command)")
             return false
+        // Broadcast commands are handled before dispatch() is called (see isBroadcast intercept).
+        case .stopAll, .pauseAll, .resumeAll, .adjustVolumeAll, .muteAll, .unmuteAll:
+            Log.info("[HomeView] broadcast command reached dispatch unexpectedly: \(command)")
+            return false
         }
     }
 
@@ -513,6 +599,90 @@ struct HomeView: View {
         )
     }
 
+    @MainActor
+    private func dispatchCommand(_ command: VoiceCommand, to speaker: Speaker, commandText: String) async {
+        if case .playFavorite(let index) = command {
+            Log.info("[HomeView][clear] path=playFavorite index=\(index)")
+            await handlePlayFavorite(index: index, speaker: speaker)
+            return
+        }
+
+        guard let confirmMsg = confirmationMessage(for: command, speaker: speaker) else {
+            Log.info("[HomeView][clear] path=noConfirmation command=\(command) → clearAfterCommand")
+            if case .unknown = command { handleError(.voiceNotRecognised) }
+            await dispatch(command: command, to: speaker)
+            transcriptController.clearAfterCommand()
+            return
+        }
+
+        if let preflight = preflightError(for: command, speaker: speaker) {
+            Log.info("[HomeView][clear] path=preflightError command=\(command) error=\(preflight) → clearAfterCommand")
+            handleError(preflight)
+            transcriptController.clearAfterCommand()
+            return
+        }
+
+        Log.info("[HomeView][clear] path=countdown command=\(command) → clearAfterCommand deferred to action")
+
+        let capturedParserPath = commandRouter.lastParserPath ?? "unknown"
+
+        coordinator.startCountdown(
+            action: {
+                let succeeded = await dispatch(command: command, to: speaker)
+                if succeeded { showSuccess("Done") }
+                transcriptController.clearAfterCommand()
+            },
+            readBack: confirmMsg,
+            onResolved: { resolution in
+                // T-3305: record confirmed command on execution
+                // T-3306: delete confirmed command on cancellation
+                Task { @MainActor in
+                    switch resolution {
+                    case .fired:
+                        try? personalisationStore.recordConfirmedCommand(
+                            speakerId: speaker.stableId,
+                            transcription: commandText.lowercased(),
+                            intent: command.toCommandIntent(),
+                            slots: [:]
+                        )
+                        try? telemetryBuffer.record(
+                            transcription: commandText,
+                            speakerName: speaker.name,
+                            speakerId: speaker.stableId,
+                            intent: command.toCommandIntent().rawValue,
+                            slots: [:],
+                            parserPath: capturedParserPath,
+                            outcome: .confirmed,
+                            locale: Locale.current.identifier
+                        )
+                        let count = UserDefaults.standard.integer(forKey: "confirmedCommandCount") + 1
+                        UserDefaults.standard.set(count, forKey: "confirmedCommandCount")
+                        if count == 50 && !hasSeenTelemetryPrompt {
+                            showTelemetryPrompt = true
+                        }
+                        await telemetryUploader.attemptUploadIfDue()
+                    case .cancelled:
+                        try? personalisationStore.deleteConfirmedCommand(
+                            transcription: commandText.lowercased(),
+                            speakerId: speaker.stableId
+                        )
+                        try? telemetryBuffer.record(
+                            transcription: commandText,
+                            speakerName: speaker.name,
+                            speakerId: speaker.stableId,
+                            intent: command.toCommandIntent().rawValue,
+                            slots: [:],
+                            parserPath: capturedParserPath,
+                            outcome: .cancelled,
+                            locale: Locale.current.identifier
+                        )
+                        await telemetryUploader.attemptUploadIfDue()
+                    }
+                }
+            }
+        )
+    }
+
     private func preflightError(for command: VoiceCommand, speaker: Speaker) -> AppError? {
         switch command {
         case .adjustVolume(let d) where d > 0:
@@ -521,6 +691,9 @@ struct HomeView: View {
             if let vol = speaker.volume, vol <= 0 { return .volumeAtLimit(speaker: speaker.name, atMax: false) }
         case .mute:
             if speaker.isMuted { return .alreadyMuted(speaker: speaker.name) }
+        // Broadcast commands execute immediately — no preflight (ADR E-37).
+        case .stopAll, .pauseAll, .resumeAll, .adjustVolumeAll, .muteAll, .unmuteAll:
+            return nil
         default: break
         }
         return nil

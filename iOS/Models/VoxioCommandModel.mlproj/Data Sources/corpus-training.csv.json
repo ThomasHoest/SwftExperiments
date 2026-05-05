@@ -1,49 +1,109 @@
 {
   "activityEntities" : [
+    "dataSourceCreated",
+    [
+      {
+        "createdDate" : "2026-05-05T09:38:42Z",
+        "event" : "dataSourceCreated",
+        "id" : "929104CB-5AC3-47AD-87F6-1DCAC7829D10",
+        "subtitle" : "corpus-training.csv",
+        "title" : "Data Source Created"
+      }
+    ],
     "dataSourceMetrics",
     [
       {
-        "createdDate" : "2026-04-30T15:21:55Z",
+        "createdDate" : "2026-05-05T09:38:47Z",
         "event" : "dataSourceMetrics",
-        "id" : "89BA12C3-174B-424A-B3A5-6312F16F05B8",
-        "subtitle" : "15 Classes, 1.060 Items",
+        "id" : "D7AD1262-0FC4-4869-8892-A970BFE4F8B1",
+        "subtitle" : "24 Classes, 10.933 Items",
         "title" : "Data Summary"
       }
     ],
     "dataSourceTrainingStarted",
     [
       {
-        "createdDate" : "2026-04-30T15:21:55Z",
+        "createdDate" : "2026-05-05T09:38:47Z",
         "event" : "dataSourceTrainingStarted",
-        "id" : "A0A63354-963E-4367-9BE8-44FD354B1A21",
-        "subtitle" : "VoxioCommandModel 1",
+        "id" : "24D85FD5-DCA6-4103-99E7-ADB0C6853B72",
+        "subtitle" : "VoxioCommandModel 5",
         "title" : "Used By"
-      }
-    ],
-    "dataSourceCreated",
-    [
-      {
-        "createdDate" : "2026-04-30T15:21:00Z",
-        "event" : "dataSourceCreated",
-        "id" : "635D7DAC-A0E0-4341-A6E3-FE606D6B3130",
-        "subtitle" : "corpus-training.csv",
-        "title" : "Data Source Created"
       }
     ]
   ],
-  "createdDate" : "2026-04-30T15:21:00Z",
-  "dataPathRelativeToProjectURL" : "../../../Specification/Voxio%201.1/parsing/corpus-training.csv/",
+  "createdDate" : "2026-05-05T09:38:42Z",
+  "dataPathRelativeToProjectURL" : "../../../Resources/parsing/corpus-training.csv/",
   "dataResult" : {
-    "createdDate" : "2026-04-30T15:21:00Z",
-    "dataSourceID" : "61A4E431-50CB-4835-906C-4E5A2BB69FD9",
-    "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments/Specification/Voxio%201.1/parsing/corpus-training.csv"
+    "classesCount" : 24,
+    "createdDate" : "2026-05-05T09:38:42Z",
+    "dataAnalysis" : {
+      "classifierAnalysis" : {
+        "labelStats" : {
+          "cancel" : 383,
+          "confirm" : 487,
+          "joinSpeaker" : 500,
+          "leaveSpeaker" : 500,
+          "listFavorites" : 432,
+          "mute" : 417,
+          "muteAll" : 382,
+          "pause" : 460,
+          "pauseAll" : 319,
+          "playDefault" : 482,
+          "playFavoriteByNumber" : 500,
+          "playNamed" : 500,
+          "resume" : 500,
+          "resumeAll" : 340,
+          "setVolume" : 500,
+          "stop" : 499,
+          "stopAll" : 405,
+          "unknown" : 500,
+          "unmute" : 418,
+          "unmuteAll" : 409,
+          "volumeDown" : 500,
+          "volumeDownAll" : 500,
+          "volumeUp" : 500,
+          "volumeUpAll" : 500
+        }
+      },
+      "issues" : [
+        {
+          "description" : "24 classes found, including volumeDownAll, leaveSpeaker, playFavoriteByNumber",
+          "severity" : "debug"
+        },
+        {
+          "description" : "10933 texts found, automatically creating validation set",
+          "severity" : "good"
+        },
+        {
+          "description" : "Smallest class is \"pauseAll\" with 319 texts",
+          "severity" : "debug"
+        },
+        {
+          "description" : "Largest class is \"volumeDownAll\" with 500 text",
+          "severity" : "debug"
+        }
+      ],
+      "objectDetectorAnalysis" : {
+        "details" : {
+
+        }
+      },
+      "summary" : {
+        "canUseValidation" : 1,
+        "classCount" : 24,
+        "sampleCount" : 10933
+      }
+    },
+    "dataSourceID" : "1E1C7AE5-58C8-40FB-B1C6-DF49CD570497",
+    "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments/Resources/parsing/corpus-training.csv",
+    "itemsCount" : 10933
   },
-  "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments/Specification/Voxio%201.1/parsing/corpus-training.csv",
+  "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments/Resources/parsing/corpus-training.csv",
   "experimentIDs" : [
-    "4B9A296C-12D2-42D4-92B9-7B9FDBC90B66"
+    "DAF20D4B-E4B2-404E-BF62-56DC2B18AF5E"
   ],
-  "id" : "61A4E431-50CB-4835-906C-4E5A2BB69FD9",
-  "modifiedDate" : "2026-04-30T15:21:55Z",
+  "id" : "1E1C7AE5-58C8-40FB-B1C6-DF49CD570497",
+  "modifiedDate" : "2026-05-05T09:44:48Z",
   "pathType" : 0,
   "preferredFilename" : "corpus-training.csv",
   "title" : "corpus-training.csv",

@@ -18,5 +18,11 @@
         <key>NSAllowsLocalNetworking</key>
         <true/>
     </dict>
+    <key>UIRequiresFullScreen</key>
+    <true/>
+    <key>TELEMETRY_HOSTNAME</key>
+    <string>$(TELEMETRY_HOSTNAME)</string>
+    <key>TELEMETRY_API_KEY</key>
+    <string>$(TELEMETRY_API_KEY)</string>
 </dict>
 </plist>

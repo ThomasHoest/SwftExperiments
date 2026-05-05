@@ -32,57 +32,64 @@ class VoiceToText {
         Log.info("[VoiceToText] language → \(language.localeIdentifier)")
     }
 
+    /// Starts the recording pipeline.
+    ///
+    /// Permission requests (SFSpeechRecognizer.requestAuthorization and
+    /// AVAudioApplication.requestRecordPermission) have moved to
+    /// OnboardingView.handleCTA() per E-38 ADR. By the time this method is
+    /// called, permissions are already determined.
     func start(onStatus: @escaping (String) -> Void) {
         let ui = UIStrings.forLanguage(currentLanguage)
         onStatus(ui.initialisingMic)
 
-        SFSpeechRecognizer.requestAuthorization { [weak self] speechStatus in
-            AVAudioApplication.requestRecordPermission { [weak self] granted in
-                DispatchQueue.main.async {
-                    guard let self else { return }
-                    let ui = UIStrings.forLanguage(self.currentLanguage)
-                    guard granted, speechStatus == .authorized else {
-                        onStatus(ui.micAccessDenied)
-                        return
-                    }
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let ui = UIStrings.forLanguage(self.currentLanguage)
 
-                    self.recorder.onTranscription = { [weak self] text, isFinal in
-                        self?.onTranscript?(text)
-                        if isFinal, !text.trimmingCharacters(in: .whitespaces).isEmpty {
-                            self?.onFinalTranscript?(text)
-                        }
-                    }
-                    self.recorder.onAudioLevel = { [weak self] level in
-                        self?.onAudioLevel?(level)
-                    }
+            // Check current authorization state without re-requesting
+            let speechStatus = SFSpeechRecognizer.authorizationStatus()
+            let micGranted = AVAudioApplication.shared.recordPermission == .granted
 
-                    do {
-                        try self.recorder.startRecording()
-                        onStatus(ui.listening)
-                    } catch {
-                        onStatus(ui.micUnavailable)
-                    }
+            guard micGranted, speechStatus == .authorized else {
+                onStatus(ui.micAccessDenied)
+                return
+            }
 
-                    // T-0312 — stop when app moves to background
-                    NotificationCenter.default.addObserver(
-                        forName: UIApplication.didEnterBackgroundNotification,
-                        object: nil,
-                        queue: .main
-                    ) { [weak self] _ in
-                        self?.recorder.stopRecording()
-                        onStatus(UIStrings.forLanguage(self?.currentLanguage ?? .english).backgroundPaused)
-                    }
-
-                    // Resume when returning to foreground
-                    NotificationCenter.default.addObserver(
-                        forName: UIApplication.willEnterForegroundNotification,
-                        object: nil,
-                        queue: .main
-                    ) { [weak self] _ in
-                        try? self?.recorder.startRecording()
-                        onStatus(UIStrings.forLanguage(self?.currentLanguage ?? .english).listening)
-                    }
+            self.recorder.onTranscription = { [weak self] text, isFinal in
+                self?.onTranscript?(text)
+                if isFinal, !text.trimmingCharacters(in: .whitespaces).isEmpty {
+                    self?.onFinalTranscript?(text)
                 }
+            }
+            self.recorder.onAudioLevel = { [weak self] level in
+                self?.onAudioLevel?(level)
+            }
+
+            do {
+                try self.recorder.startRecording()
+                onStatus(ui.listening)
+            } catch {
+                onStatus(ui.micUnavailable)
+            }
+
+            // T-0312 — stop when app moves to background
+            NotificationCenter.default.addObserver(
+                forName: UIApplication.didEnterBackgroundNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.recorder.stopRecording()
+                onStatus(UIStrings.forLanguage(self?.currentLanguage ?? .english).backgroundPaused)
+            }
+
+            // Resume when returning to foreground
+            NotificationCenter.default.addObserver(
+                forName: UIApplication.willEnterForegroundNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                try? self?.recorder.startRecording()
+                onStatus(UIStrings.forLanguage(self?.currentLanguage ?? .english).listening)
             }
         }
     }

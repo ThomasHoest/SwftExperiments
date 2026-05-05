@@ -53,6 +53,45 @@ enum CommandIntent: String, CaseIterable, Codable, Equatable {
     case confirm        // "Yes" / "Ja"
     case cancel         // "No" / "Nej"
     case unknown
+
+    // ── Broadcast intents ─────────────────────────────────────────────────────
+    case stopAll        // "stop everything" / "stop alt"
+    case pauseAll       // "pause all" / "pause alting"
+    case resumeAll      // "resume all" / "genoptag alt"
+    case volumeUpAll    // "volume up all [amount]" / "skru op for alt"
+    case volumeDownAll  // "volume down all [amount]" / "skru ned for alt"
+    case muteAll        // "mute all" / "slå alt fra"
+    case unmuteAll      // "unmute all" / "slå alt til"
+}
+
+// Defined here (not in VoiceCommand.swift) so CommandIntent stays in the same compilation unit —
+// VoiceCommand.swift is shared with VoxioWidget which does not compile CommandParsing files.
+extension VoiceCommand {
+    func toCommandIntent() -> CommandIntent {
+        switch self {
+        case .playFavorite:              return .playFavoriteByNumber
+        case .playDefault:               return .playDefault
+        case .listFavorites:             return .listFavorites
+        case .stop:                      return .stop
+        case .pause:                     return .pause
+        case .resume:                    return .resume
+        case .setVolume:                 return .setVolume
+        case .adjustVolume(let d):       return d >= 0 ? .volumeUp : .volumeDown
+        case .mute:                      return .mute
+        case .unmute:                    return .unmute
+        case .joinSpeaker:               return .joinSpeaker
+        case .leaveSpeaker:              return .leaveSpeaker
+        case .confirm:                   return .confirm
+        case .cancel:                    return .cancel
+        case .unknown:                   return .unknown
+        case .stopAll:                   return .stopAll
+        case .pauseAll:                  return .pauseAll
+        case .resumeAll:                 return .resumeAll
+        case .adjustVolumeAll(let d):    return d >= 0 ? .volumeUpAll : .volumeDownAll
+        case .muteAll:                   return .muteAll
+        case .unmuteAll:                 return .unmuteAll
+        }
+    }
 }
 
 extension ParsedCommand: CustomStringConvertible {
@@ -75,6 +114,13 @@ extension ParsedCommand: CustomStringConvertible {
         case .confirm:       return "confirm"
         case .cancel:        return "cancel"
         case .unknown:       return "unknown(\"\(rawText ?? "")\")"
+        case .stopAll:       return "stopAll"
+        case .pauseAll:      return "pauseAll"
+        case .resumeAll:     return "resumeAll"
+        case .volumeUpAll:   return "volumeUpAll(\(volumeDelta.map { "+\($0)" } ?? "default"))"
+        case .volumeDownAll: return "volumeDownAll(\(volumeDelta.map { "-\($0)" } ?? "default"))"
+        case .muteAll:       return "muteAll"
+        case .unmuteAll:     return "unmuteAll"
         }
     }
 }

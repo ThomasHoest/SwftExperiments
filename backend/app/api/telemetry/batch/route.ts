@@ -97,7 +97,20 @@ export async function POST(request: Request): Promise<Response> {
       )
     }
 
-    // Step 7: Multi-row INSERT for valid events (per-event loop for safety)
+    // Step 7: Device UPSERT — must happen before event inserts (FK constraint)
+    const localeForDevice = validEvents[0].locale
+    await sql`
+      INSERT INTO devices (device_id, first_seen_at, last_seen_at, last_upload_at, app_version, model_version, locale)
+      VALUES (${deviceId}, now(), now(), now(), ${appVersion}, ${modelVersion}, ${localeForDevice})
+      ON CONFLICT (device_id) DO UPDATE SET
+        last_seen_at   = now(),
+        last_upload_at = now(),
+        app_version    = EXCLUDED.app_version,
+        model_version  = EXCLUDED.model_version,
+        locale         = EXCLUDED.locale
+    `
+
+    // Step 8: Multi-row INSERT for valid events
     for (const event of validEvents) {
       await sql`
         INSERT INTO events (
@@ -119,23 +132,10 @@ export async function POST(request: Request): Promise<Response> {
       `
     }
 
-    // Step 8: Device UPSERT
-    const localeForDevice = validEvents[0].locale
-    await sql`
-      INSERT INTO devices (device_id, first_seen_at, last_seen_at, last_upload_at, app_version, model_version, locale)
-      VALUES (${deviceId}, now(), now(), now(), ${appVersion}, ${modelVersion}, ${localeForDevice})
-      ON CONFLICT (device_id) DO UPDATE SET
-        last_seen_at   = now(),
-        last_upload_at = now(),
-        app_version    = EXCLUDED.app_version,
-        model_version  = EXCLUDED.model_version,
-        locale         = EXCLUDED.locale
-    `
-
     const accepted = validEvents.length
     const rejected = errors.length
 
-    // Step 9: Log INFO
+    // Step 9: Log and respond
     logInfo('batch accepted', {
       deviceId,
       batchSize: events.length,
