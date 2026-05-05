@@ -57,13 +57,6 @@ struct HomeView: View {
 
     private var broadcastHandler: BroadcastCommandHandler { BroadcastCommandHandler(discovery: discovery) }
 
-    private func isBroadcast(_ command: VoiceCommand) -> Bool {
-        switch command {
-        case .stopAll, .pauseAll, .resumeAll, .adjustVolumeAll, .muteAll, .unmuteAll: return true
-        default: return false
-        }
-    }
-
     private var displayedSpeaker: Speaker? {
         selectedSpeaker ?? discovery.groups.first?.hostSpeaker
     }
@@ -389,157 +382,54 @@ struct HomeView: View {
             Task { @MainActor in
                 isCommandActive = false
 
-                // While countdown is active, only a cancel utterance stops it;
-                // non-cancel utterances are silently ignored — countdown continues.
-                if coordinator.isPending {
-                    if CancelGrammar.matches(text) {
-                        coordinator.cancelCountdown(reason: .userVoice)
-                    }
-                    return
-                }
+                guard !coordinator.isPending else { return }
 
-                // Broadcast pre-check: parse the full transcript before speaker resolution
-                // so SpeakerMatcher cannot consume words from broadcast phrases
-                // (e.g. "stop alle" — "Stue" fuzzy-matches "stop", leaving only "alle").
-                if let broadcastCmd = commandRouter.parseBroadcast(text) {
+                let classifier = UtteranceClassifier(
+                    discovery: discovery,
+                    personalisationStore: personalisationStore,
+                    router: commandRouter,
+                    focusedSpeaker: { selectedSpeaker }
+                )
+                let outcome = classifier.classify(text)
+
+                switch outcome {
+
+                case .broadcast(let cmd):
                     HapticEngine.shared.commandRecognised()
-                    Log.info("[HomeView] → broadcast (pre-resolve): \(broadcastCmd)")
-                    let result = await broadcastHandler.handle(broadcastCmd)
+                    Log.info("[HomeView] → broadcast: \(cmd)")
+                    let result = await broadcastHandler.handle(cmd)
                     let message = result.totalCount == 0
                         ? cs.broadcastNothingInScope
                         : cs.broadcastExecuted(result.successCount, result.totalCount)
                     showToast(Toast(kind: .success(message: message)))
                     transcriptController.clearAfterCommand()
-                    return
-                }
 
-                let words = text.lowercased()
-                    .components(separatedBy: .whitespaces)
-                    .filter { !$0.isEmpty }
+                case .personalised(let speaker, let parsed):
+                    HapticEngine.shared.commandRecognised()
+                    selectedSpeaker = speaker
+                    let cmd = commandRouter.toVoiceCommand(parsed)
+                    Log.info("[HomeView] → \(speaker.name) (personalised): \(cmd)")
+                    await dispatchCommand(cmd, to: speaker, commandText: text)
 
-                // Speaker resolution: name-matcher first, then alias cross-speaker fallback
-                // (handles phrases like "musik til arbejdet" that contain no speaker name).
-                var resolvedSpeaker: Speaker? = nil
-                var commandText: String = text
-                if let (spk, remaining) = discovery.resolve(words: words) {
-                    resolvedSpeaker = spk
-                    commandText = remaining.isEmpty ? text : remaining.joined(separator: " ")
-                } else if personalisationStore.isEnabled,
-                          let aliasMatch = personalisationStore.matchPersonalisedCommandAcrossAllSpeakers(phrase: text),
-                          let aliasedSpeaker = discovery.groups.flatMap(\.members)
-                              .first(where: { $0.id.uuidString == aliasMatch.speakerId }) {
-                    Log.info("[HomeView] alias pre-resolve → \(aliasedSpeaker.name) for: \(text)")
-                    resolvedSpeaker = aliasedSpeaker
-                } else {
-                    Log.info("[HomeView] no speaker resolved for: \(text)")
+                case .addressed(let speaker, let remainder):
+                    selectedSpeaker = speaker
+                    let cmd = await commandRouter.parse(remainder, speakerId: speaker.stableId)
+                    Log.info("[HomeView] → \(speaker.name): \(cmd)")
+                    if case .unknown = cmd { } else { HapticEngine.shared.commandRecognised() }
+                    await dispatchCommand(cmd, to: speaker, commandText: remainder)
+
+                case .focused(let speaker, let fullText):
+                    selectedSpeaker = speaker
+                    let cmd = await commandRouter.parse(fullText, speakerId: speaker.stableId)
+                    Log.info("[HomeView] → \(speaker.name) (focused): \(cmd)")
+                    if case .unknown = cmd { } else { HapticEngine.shared.commandRecognised() }
+                    await dispatchCommand(cmd, to: speaker, commandText: fullText)
+
+                case .unresolved:
                     let available = discovery.groups.flatMap(\.members).map(\.name)
                     handleError(.noSpeakerSpoken(available: available))
                     transcriptController.clearAfterCommand()
-                    return
                 }
-                guard let speaker = resolvedSpeaker else { return }
-                selectedSpeaker = speaker
-
-                let command = await commandRouter.parse(commandText, speakerId: speaker.id.uuidString)
-                Log.info("[HomeView] → \(speaker.name): \(command)")
-                if case .unknown = command { } else { HapticEngine.shared.commandRecognised() }
-
-                // Broadcast intercept — runs before single-speaker dispatch (ADR E-37).
-                if isBroadcast(command) {
-                    Log.info("[HomeView][clear] path=broadcast command=\(command)")
-                    let result = await broadcastHandler.handle(command)
-                    let message: String
-                    if result.totalCount == 0 {
-                        message = cs.broadcastNothingInScope
-                    } else {
-                        message = cs.broadcastExecuted(result.successCount, result.totalCount)
-                    }
-                    showToast(Toast(kind: .success(message: message)))
-                    transcriptController.clearAfterCommand()
-                    return
-                }
-
-                if case .playFavorite(let index) = command {
-                    Log.info("[HomeView][clear] path=playFavorite index=\(index)")
-                    await handlePlayFavorite(index: index, speaker: speaker)
-                    return
-                }
-
-                // Commands that need no confirmation (listFavorites, confirm, cancel, unknown)
-                guard let confirmMsg = confirmationMessage(for: command, speaker: speaker) else {
-                    Log.info("[HomeView][clear] path=noConfirmation command=\(command) → clearAfterCommand")
-                    if case .unknown = command { handleError(.voiceNotRecognised) }
-                    await dispatch(command: command, to: speaker)
-                    transcriptController.clearAfterCommand()
-                    return
-                }
-
-                if let preflight = preflightError(for: command, speaker: speaker) {
-                    Log.info("[HomeView][clear] path=preflightError command=\(command) error=\(preflight) → clearAfterCommand")
-                    handleError(preflight)
-                    transcriptController.clearAfterCommand()
-                    return
-                }
-
-                Log.info("[HomeView][clear] path=countdown command=\(command) → clearAfterCommand deferred to action")
-
-                let capturedParserPath = commandRouter.lastParserPath ?? "unknown"
-
-                coordinator.startCountdown(
-                    action: {
-                        let succeeded = await dispatch(command: command, to: speaker)
-                        if succeeded { showSuccess("Done") }
-                        transcriptController.clearAfterCommand()
-                    },
-                    readBack: confirmMsg,
-                    onResolved: { resolution in
-                        // T-3305: record confirmed command on execution
-                        // T-3306: delete confirmed command on cancellation
-                        Task { @MainActor in
-                            switch resolution {
-                            case .fired:
-                                try? personalisationStore.recordConfirmedCommand(
-                                    speakerId: speaker.id.uuidString,
-                                    transcription: commandText.lowercased(),
-                                    intent: command.toCommandIntent(),
-                                    slots: [:]
-                                )
-                                try? telemetryBuffer.record(
-                                    transcription: commandText,
-                                    speakerName: speaker.name,
-                                    speakerId: speaker.id.uuidString,
-                                    intent: command.toCommandIntent().rawValue,
-                                    slots: [:],
-                                    parserPath: capturedParserPath,
-                                    outcome: .confirmed,
-                                    locale: Locale.current.identifier
-                                )
-                                let count = UserDefaults.standard.integer(forKey: "confirmedCommandCount") + 1
-                                UserDefaults.standard.set(count, forKey: "confirmedCommandCount")
-                                if count == 50 && !hasSeenTelemetryPrompt {
-                                    showTelemetryPrompt = true
-                                }
-                                await telemetryUploader.attemptUploadIfDue()
-                            case .cancelled:
-                                try? personalisationStore.deleteConfirmedCommand(
-                                    transcription: commandText.lowercased(),
-                                    speakerId: speaker.id.uuidString
-                                )
-                                try? telemetryBuffer.record(
-                                    transcription: commandText,
-                                    speakerName: speaker.name,
-                                    speakerId: speaker.id.uuidString,
-                                    intent: command.toCommandIntent().rawValue,
-                                    slots: [:],
-                                    parserPath: capturedParserPath,
-                                    outcome: .cancelled,
-                                    locale: Locale.current.identifier
-                                )
-                                await telemetryUploader.attemptUploadIfDue()
-                            }
-                        }
-                    }
-                )
             }
         }
         voiceToText.onFinalTranscript = handleFinalTranscript
@@ -706,6 +596,90 @@ struct HomeView: View {
             },
             readBack: confirmMsg,
             onResolved: { _ in }
+        )
+    }
+
+    @MainActor
+    private func dispatchCommand(_ command: VoiceCommand, to speaker: Speaker, commandText: String) async {
+        if case .playFavorite(let index) = command {
+            Log.info("[HomeView][clear] path=playFavorite index=\(index)")
+            await handlePlayFavorite(index: index, speaker: speaker)
+            return
+        }
+
+        guard let confirmMsg = confirmationMessage(for: command, speaker: speaker) else {
+            Log.info("[HomeView][clear] path=noConfirmation command=\(command) → clearAfterCommand")
+            if case .unknown = command { handleError(.voiceNotRecognised) }
+            await dispatch(command: command, to: speaker)
+            transcriptController.clearAfterCommand()
+            return
+        }
+
+        if let preflight = preflightError(for: command, speaker: speaker) {
+            Log.info("[HomeView][clear] path=preflightError command=\(command) error=\(preflight) → clearAfterCommand")
+            handleError(preflight)
+            transcriptController.clearAfterCommand()
+            return
+        }
+
+        Log.info("[HomeView][clear] path=countdown command=\(command) → clearAfterCommand deferred to action")
+
+        let capturedParserPath = commandRouter.lastParserPath ?? "unknown"
+
+        coordinator.startCountdown(
+            action: {
+                let succeeded = await dispatch(command: command, to: speaker)
+                if succeeded { showSuccess("Done") }
+                transcriptController.clearAfterCommand()
+            },
+            readBack: confirmMsg,
+            onResolved: { resolution in
+                // T-3305: record confirmed command on execution
+                // T-3306: delete confirmed command on cancellation
+                Task { @MainActor in
+                    switch resolution {
+                    case .fired:
+                        try? personalisationStore.recordConfirmedCommand(
+                            speakerId: speaker.stableId,
+                            transcription: commandText.lowercased(),
+                            intent: command.toCommandIntent(),
+                            slots: [:]
+                        )
+                        try? telemetryBuffer.record(
+                            transcription: commandText,
+                            speakerName: speaker.name,
+                            speakerId: speaker.stableId,
+                            intent: command.toCommandIntent().rawValue,
+                            slots: [:],
+                            parserPath: capturedParserPath,
+                            outcome: .confirmed,
+                            locale: Locale.current.identifier
+                        )
+                        let count = UserDefaults.standard.integer(forKey: "confirmedCommandCount") + 1
+                        UserDefaults.standard.set(count, forKey: "confirmedCommandCount")
+                        if count == 50 && !hasSeenTelemetryPrompt {
+                            showTelemetryPrompt = true
+                        }
+                        await telemetryUploader.attemptUploadIfDue()
+                    case .cancelled:
+                        try? personalisationStore.deleteConfirmedCommand(
+                            transcription: commandText.lowercased(),
+                            speakerId: speaker.stableId
+                        )
+                        try? telemetryBuffer.record(
+                            transcription: commandText,
+                            speakerName: speaker.name,
+                            speakerId: speaker.stableId,
+                            intent: command.toCommandIntent().rawValue,
+                            slots: [:],
+                            parserPath: capturedParserPath,
+                            outcome: .cancelled,
+                            locale: Locale.current.identifier
+                        )
+                        await telemetryUploader.attemptUploadIfDue()
+                    }
+                }
+            }
         )
     }
 

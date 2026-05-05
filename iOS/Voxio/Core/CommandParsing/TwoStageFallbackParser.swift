@@ -48,14 +48,6 @@ struct TwoStageFallbackParser {
     // ── Stage 1: Deterministic Regex ─────────────────────────────────────────
 
     func parseStage1(_ text: String, raw: String) -> ParsedCommand? {
-        // confirm / cancel  (anchored — must be the whole utterance)
-        if text.matches(of: /^(yes|yeah|correct|do it|confirm|ja|jo)$/).count > 0 {
-            return ParsedCommand(intent: .confirm)
-        }
-        if text.matches(of: /^(no|cancel|stop that|never mind|nope|nej|annuller)$/).count > 0 {
-            return ParsedCommand(intent: .cancel)
-        }
-
         // Broadcast patterns — must be checked before single-speaker equivalents
         // Trigger qualifiers: all, everything, everywhere, alt, alting, overalt
         let broadcastQualifier = "\\b(all|everything|everywhere|alt|alle|alting|overalt)\\b"
