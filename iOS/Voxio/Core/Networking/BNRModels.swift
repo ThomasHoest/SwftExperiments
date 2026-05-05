@@ -86,7 +86,7 @@ func normalise(_ notification: BNRNotification) -> BNREvent? {
     case "SOURCE":
         let src = data.primaryExperience?.source
         let embeddedState = data.primaryExperience?.state
-        Log.info("[BNR-norm] SOURCE → name:\(src?.friendlyName ?? "nil") id:\(src?.id ?? "nil") embeddedState:\(embeddedState ?? "nil")")
+        Log.verbose("[BNR-norm] SOURCE → name:\(src?.friendlyName ?? "nil") id:\(src?.id ?? "nil") embeddedState:\(embeddedState ?? "nil")")
         return .source(name: src?.friendlyName, id: src?.id)
 
     case "PROGRESS_INFORMATION":
@@ -104,7 +104,7 @@ func normalise(_ notification: BNRNotification) -> BNREvent? {
         return .metadata(title: data.name, artist: data.artist, album: data.album)
 
     case "NOW_PLAYING_ENDED":
-        Log.info("[BNR-norm] NOW_PLAYING_ENDED (state mapping not currently emitted)")
+        Log.verbose("[BNR-norm] NOW_PLAYING_ENDED (state mapping not currently emitted)")
         return nil
 
     case "STREAMING_STATUS":
@@ -119,7 +119,7 @@ func normalise(_ notification: BNRNotification) -> BNREvent? {
         return nil
 
     default:
-        Log.info("[BNR-norm] unhandled notification type: \(envelope.type)")
+        Log.verbose("[BNR-norm] unhandled notification type: \(envelope.type)")
         return nil
     }
 }

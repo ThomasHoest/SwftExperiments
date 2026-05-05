@@ -19,7 +19,7 @@ struct AliasListView: View {
         let speakerIds = Set(allAliases.map(\.speakerId))
         return speakerIds
             .map { sid -> (String, String, [AliasRecord]) in
-                let name = discoveredSpeakers.first(where: { $0.id.uuidString == sid })?.name ?? sid
+                let name = discoveredSpeakers.first(where: { $0.stableId == sid })?.name ?? sid
                 let records = allAliases.filter { $0.speakerId == sid }
                 return (sid, name, records)
             }
@@ -261,7 +261,7 @@ struct AliasListView: View {
     // MARK: - Actions
 
     private func reloadAliases() {
-        let speakerIds = Set(discoveredSpeakers.map { $0.id.uuidString })
+        let speakerIds = Set(discoveredSpeakers.map { $0.stableId })
         allAliases = speakerIds.flatMap { store.aliases(for: $0) }
     }
 

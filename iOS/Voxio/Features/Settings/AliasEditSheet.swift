@@ -68,7 +68,7 @@ struct AliasEditSheet: View {
     }
 
     private var initialSpeakerId: String {
-        editingAlias?.speakerId ?? (discoveredSpeakers.first?.id.uuidString ?? "")
+        editingAlias?.speakerId ?? (discoveredSpeakers.first?.stableId ?? "")
     }
 
     private var isDirty: Bool {
@@ -107,11 +107,11 @@ struct AliasEditSheet: View {
     }
 
     private var selectedSpeakerName: String {
-        discoveredSpeakers.first(where: { $0.id.uuidString == selectedSpeakerId })?.name ?? selectedSpeakerId
+        discoveredSpeakers.first(where: { $0.stableId == selectedSpeakerId })?.name ?? selectedSpeakerId
     }
 
     private var otherSpeakers: [Speaker] {
-        discoveredSpeakers.filter { $0.id.uuidString != selectedSpeakerId }
+        discoveredSpeakers.filter { $0.stableId != selectedSpeakerId }
     }
 
     private var previewResolvedLine: String {
@@ -416,7 +416,7 @@ struct AliasEditSheet: View {
                 if isEditMode,
                    let original = editingAlias,
                    selectedSpeakerId != original.speakerId {
-                    let originalName = discoveredSpeakers.first(where: { $0.id.uuidString == original.speakerId })?.name ?? original.speakerId
+                    let originalName = discoveredSpeakers.first(where: { $0.stableId == original.speakerId })?.name ?? original.speakerId
                     Text("This will move the alias from \(originalName).")
                         .font(BeoType.caption)
                         .foregroundStyle(BeoColor.muted)
@@ -484,7 +484,7 @@ struct AliasEditSheet: View {
         if discoveredSpeakers.count <= 3 {
             Picker("Speaker", selection: $selectedSpeakerId) {
                 ForEach(discoveredSpeakers) { speaker in
-                    Text(speaker.name).tag(speaker.id.uuidString)
+                    Text(speaker.name).tag(speaker.stableId)
                 }
             }
             .pickerStyle(.segmented)
@@ -495,7 +495,7 @@ struct AliasEditSheet: View {
             Menu {
                 ForEach(discoveredSpeakers) { speaker in
                     Button(speaker.name) {
-                        selectedSpeakerId = speaker.id.uuidString
+                        selectedSpeakerId = speaker.stableId
                         onSpeakerChanged()
                     }
                 }
@@ -924,7 +924,7 @@ struct AliasEditSheet: View {
     // MARK: - Favourites fetch
 
     private func fetchFavoritesForSelectedSpeaker() async {
-        guard let speaker = discoveredSpeakers.first(where: { $0.id.uuidString == selectedSpeakerId }) else {
+        guard let speaker = discoveredSpeakers.first(where: { $0.stableId == selectedSpeakerId }) else {
             speakerFavorites = []
             return
         }
