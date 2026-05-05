@@ -15,6 +15,7 @@ final class CommandParserRouter {
     // Stored as Any to avoid @available restriction on stored properties.
     var foundationParser: Any?
     private let personalisationParser: PersonalisationParser
+    private(set) var lastParserPath: String?
 
     init(personalisationStore: PersonalisationStore) {
         personalisationParser = PersonalisationParser(store: personalisationStore)
@@ -39,19 +40,26 @@ final class CommandParserRouter {
         if let personalised = personalisationParser.parse(text, speakerId: speakerId) {
             let result = toVoiceCommand(personalised)
             Log.info("[CommandParserRouter] result: \(result) (PersonalisationTier)")
+            lastParserPath = "PersonalisationTier"
             return result
         }
         if let fast = fallback.parseStage1(text, raw: transcript) {
             let result = toVoiceCommand(fast)
             Log.info("[CommandParserRouter] result: \(result) (Stage1-fast)")
+            lastParserPath = "Stage1-fast"
             return result
         }
 #if canImport(FoundationModels)
         if #available(iOS 26, *) {
-            if let result = await tryFoundationModel(transcript) { return result }
+            if let result = await tryFoundationModel(transcript) {
+                lastParserPath = "FoundationModels"
+                return result
+            }
         }
 #endif
-        return parseFallback(transcript)
+        let fallbackResult = parseFallback(transcript)
+        lastParserPath = "TwoStageFallback"
+        return fallbackResult
     }
 
     /// Returns the broadcast `VoiceCommand` if `text` matches a Stage 1 broadcast pattern,

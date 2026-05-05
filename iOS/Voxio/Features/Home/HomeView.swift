@@ -11,11 +11,16 @@ struct HomeView: View {
     @State private var voiceToText    = VoiceToText()
     @State private var personalisationStore: PersonalisationStore
     @State private var commandRouter: CommandParserRouter
+    @State private var telemetryBuffer: TelemetryBuffer
+    @State private var telemetryUploader: TelemetryUploader
 
     init() {
         let store = PersonalisationStore(context: PersistenceController.shared.viewContext)
+        let buffer = TelemetryBuffer(context: PersistenceController.shared.viewContext)
         _personalisationStore = State(initialValue: store)
         _commandRouter = State(initialValue: CommandParserRouter(personalisationStore: store))
+        _telemetryBuffer = State(initialValue: buffer)
+        _telemetryUploader = State(initialValue: TelemetryUploader(buffer: buffer))
     }
     @StateObject private var transcriptController = TranscriptController()
     @State private var micStatus      = "Initialising microphone…"
@@ -29,6 +34,8 @@ struct HomeView: View {
     @AppStorage("hasSeenHint") private var hasSeenHint = false
     // T-3802: onboarding persistence key
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("hasSeenTelemetryPrompt") private var hasSeenTelemetryPrompt = false
+    @State private var showTelemetryPrompt = false
     // T-3805: re-showable sheet binding (wired to SettingsView in E-39 T-3906)
     @State private var showOnboardingSheet = false
     // E-40 T-4006 — HelpView sheet trigger
@@ -40,6 +47,7 @@ struct HomeView: View {
     var onboardingSheetBinding: Binding<Bool> { $showOnboardingSheet }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     private let errorService = ErrorResponseService()
 
@@ -129,6 +137,15 @@ struct HomeView: View {
             )
         }
         .animation(BeoAnimation.toast, value: currentToast)
+        .alert("Help improve Voxio?", isPresented: $showTelemetryPrompt) {
+            Button("Enable") {
+                telemetryUploader.isEnabled = true
+                hasSeenTelemetryPrompt = true
+            }
+            Button("Not now", role: .cancel) {
+                hasSeenTelemetryPrompt = true
+            }
+        }
         .onAppear(perform: onAppear)
         // ADR §Consequences point 2 — re-fire startListening when hasCompletedOnboarding flips
         .onChange(of: hasCompletedOnboarding) { _, completed in
@@ -158,6 +175,11 @@ struct HomeView: View {
         }
         .onChange(of: langService.activeLanguage) { _, language in
             voiceToText.setLanguage(language)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                Task { await telemetryUploader.attemptUploadIfDue() }
+            }
         }
         .sheet(isPresented: $showLanguagePicker) {
             LanguagePickerSheet { language in
@@ -433,6 +455,8 @@ struct HomeView: View {
 
                 Log.info("[HomeView][clear] path=countdown command=\(command) → clearAfterCommand deferred to action")
 
+                let capturedParserPath = commandRouter.lastParserPath ?? "unknown"
+
                 coordinator.startCountdown(
                     action: {
                         let succeeded = await dispatch(command: command, to: speaker)
@@ -452,10 +476,35 @@ struct HomeView: View {
                                     intent: command.toCommandIntent(),
                                     slots: [:]
                                 )
+                                try? telemetryBuffer.record(
+                                    transcription: commandText,
+                                    speakerName: speaker.name,
+                                    speakerId: speaker.id.uuidString,
+                                    intent: command.toCommandIntent().rawValue,
+                                    slots: [:],
+                                    parserPath: capturedParserPath,
+                                    outcome: .confirmed,
+                                    locale: Locale.current.identifier
+                                )
+                                let count = UserDefaults.standard.integer(forKey: "confirmedCommandCount") + 1
+                                UserDefaults.standard.set(count, forKey: "confirmedCommandCount")
+                                if count == 50 && !hasSeenTelemetryPrompt {
+                                    showTelemetryPrompt = true
+                                }
                             case .cancelled:
                                 try? personalisationStore.deleteConfirmedCommand(
                                     transcription: commandText.lowercased(),
                                     speakerId: speaker.id.uuidString
+                                )
+                                try? telemetryBuffer.record(
+                                    transcription: commandText,
+                                    speakerName: speaker.name,
+                                    speakerId: speaker.id.uuidString,
+                                    intent: command.toCommandIntent().rawValue,
+                                    slots: [:],
+                                    parserPath: capturedParserPath,
+                                    outcome: .cancelled,
+                                    locale: Locale.current.identifier
                                 )
                             }
                         }

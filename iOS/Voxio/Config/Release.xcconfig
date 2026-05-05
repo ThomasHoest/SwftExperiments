@@ -1,0 +1,4 @@
+// Manual step required: assign this file to the build configuration in Xcode > Project > Info > Configurations
+
+TELEMETRY_BASE_URL = https://gentle-rock-06dc31e03.7.azurestaticapps.net/
+INFOPLIST_KEY_TELEMETRY_BASE_URL = $(TELEMETRY_BASE_URL)

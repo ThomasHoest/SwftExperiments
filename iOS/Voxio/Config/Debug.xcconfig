@@ -1,0 +1,4 @@
+// Manual step required: assign this file to the build configuration in Xcode > Project > Info > Configurations
+
+TELEMETRY_BASE_URL = https://black-desert-01d018e03-staging.westeurope.7.azurestaticapps.net/
+INFOPLIST_KEY_TELEMETRY_BASE_URL = $(TELEMETRY_BASE_URL)
