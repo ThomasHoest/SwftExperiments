@@ -16,8 +16,8 @@ The Neon project region cannot be changed after creation without recreating the 
 
 ## SWA Hostname
 
-*(Record here after T-4103 is complete)*
+ SWA hostname: https://gentle-rock-06dc31e03.7.azurestaticapps.net  
 
 ## Neon Project
 
-*(Record connection string location and project name here after T-4104 is complete)*
+Neon project ID: winter-fog-77342787

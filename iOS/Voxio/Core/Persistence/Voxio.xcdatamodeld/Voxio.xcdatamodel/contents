@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22757" systemVersion="23F79" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="NO" userDefinedModelVersionIdentifier="">
+    <entity name="Alias" representedClassName="Alias" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="speakerId" optional="YES" attributeType="String"/>
+        <attribute name="phrase" optional="YES" attributeType="String"/>
+        <attribute name="intentRaw" optional="YES" attributeType="String"/>
+        <attribute name="slotsJSON" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="ConfirmedCommand" representedClassName="ConfirmedCommand" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="speakerId" optional="YES" attributeType="String"/>
+        <attribute name="transcription" optional="YES" attributeType="String"/>
+        <attribute name="intentRaw" optional="YES" attributeType="String"/>
+        <attribute name="slotsJSON" optional="YES" attributeType="String"/>
+        <attribute name="lastUsedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="useCount" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+    </entity>
+    <entity name="TelemetryEventEntity" representedClassName="TelemetryEventEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="transcriptionAnonymised" optional="YES" attributeType="String"/>
+        <attribute name="intent" optional="YES" attributeType="String"/>
+        <attribute name="slotsAnonymised" optional="YES" attributeType="String"/>
+        <attribute name="parserPath" optional="YES" attributeType="String"/>
+        <attribute name="outcome" optional="YES" attributeType="String"/>
+        <attribute name="appVersion" optional="YES" attributeType="String"/>
+        <attribute name="modelVersion" optional="YES" attributeType="String"/>
+        <attribute name="locale" optional="YES" attributeType="String"/>
+        <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="flagsJSON" optional="YES" attributeType="String"/>
+        <attribute name="speakerId" optional="YES" attributeType="String"/>
+        <attribute name="uploaded" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+    </entity>
+    <elements>
+        <element name="Alias" positionX="-63" positionY="-18" width="128" height="149"/>
+        <element name="ConfirmedCommand" positionX="63" positionY="-18" width="128" height="149"/>
+        <element name="TelemetryEventEntity" positionX="189" positionY="-18" width="128" height="224"/>
+    </elements>
+</model>

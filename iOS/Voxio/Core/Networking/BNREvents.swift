@@ -49,7 +49,7 @@ class BNREvents {
             do {
                 let count = try await streamNotifications()
                 backoffSeconds = 1
-                Log.info("[BNR-LP:\(host)] stream ended after \(count) notification(s) — re-issuing")
+                Log.verbose("[BNR-LP:\(host)] stream ended after \(count) notification(s) — re-issuing")
                 if count == 0 {
                     // Empty stream — small pause to avoid hot loop if speaker misbehaves.
                     try? await Task.sleep(nanoseconds: 1_000_000_000)
@@ -74,7 +74,7 @@ class BNREvents {
         guard let url = URL(string: "http://\(host):\(port)/BeoNotify/Notifications?timeout=55") else {
             throw SpeakerError.invalidResponse
         }
-        Log.info("[BNR-LP:\(host)] fetch start (streaming)")
+        Log.verbose("[BNR-LP:\(host)] fetch start (streaming)")
         var req = URLRequest(url: url)
         req.httpMethod = "GET"
         req.setValue("keep-alive", forHTTPHeaderField: "Connection")
@@ -96,12 +96,7 @@ class BNREvents {
                 do {
                     let n = try decoder.decode(BNRNotification.self, from: lineData)
                     let type = n.notification.type
-                    let isNoisy = type == "SOFTWARE_UPDATE_STATE" || type == "PROGRESS_INFORMATION"
-                    if isNoisy {
-                        Log.verbose("[BNR-LP:\(host)] notification \(type) | raw: \(trimmed)")
-                    } else {
-                        Log.info("[BNR-LP:\(host)] notification \(type) | raw: \(trimmed)")
-                    }
+                    Log.verbose("[BNR-LP:\(host)] notification \(type) | raw: \(trimmed)")
                     count += 1
                     if let event = normalise(n) {
                         onEvent?(event)

@@ -35,6 +35,12 @@ struct CommandStrings {
     // ── Favorites listing ─────────────────────────────────────────────────────
     var listFavoritesResult: (_ speaker: String, _ list: String) -> String
 
+    // ── Broadcast feedback ────────────────────────────────────────────────────
+    /// "Sent to 3 of 4 speakers" / "Sendt til 3 af 4 højttalere"
+    var broadcastExecuted: (_ successCount: Int, _ totalCount: Int) -> String
+    /// "No speakers were in scope for that command" / "Ingen højttalere var i scope for den kommando"
+    var broadcastNothingInScope: String
+
     // ── Timeout ───────────────────────────────────────────────────────────────
     var actionCancelled: String
 
@@ -62,6 +68,8 @@ struct CommandStrings {
         joined:           { src, tgt in "\(src) joined \(tgt)" },
         leftGroup:        { s in "\(s) is now playing alone" },
         listFavoritesResult: { s, list in "Favorites on \(s): \(list)" },
+        broadcastExecuted: { n, t in "Sent to \(n) of \(t) speaker\(t == 1 ? "" : "s")" },
+        broadcastNothingInScope: "No speakers were in scope for that command",
         actionCancelled:  "Action cancelled"
     )
 
@@ -89,6 +97,8 @@ struct CommandStrings {
         joined:           { src, tgt in "\(src) tilsluttet \(tgt)" },
         leftGroup:        { s in "\(s) spiller nu alene" },
         listFavoritesResult: { s, list in "Favoritter på \(s): \(list)" },
+        broadcastExecuted: { n, t in "Sendt til \(n) af \(t) højttaler\(t == 1 ? "" : "e")" },
+        broadcastNothingInScope: "Ingen højttalere var i scope for den kommando",
         actionCancelled:  "Handling annulleret"
     )
 

@@ -14,8 +14,11 @@ final class CommandParserRouter {
     let fallback = TwoStageFallbackParser()
     // Stored as Any to avoid @available restriction on stored properties.
     var foundationParser: Any?
+    private var personalisationParser: PersonalisationParser
+    private(set) var lastParserPath: String?
 
-    init() {
+    init(personalisationStore: PersonalisationStore) {
+        personalisationParser = PersonalisationParser(store: personalisationStore)
 #if canImport(FoundationModels)
         if #available(iOS 26, *) {
             foundationParser = makeFoundationParser()
@@ -28,23 +31,51 @@ final class CommandParserRouter {
     // ── Public API ────────────────────────────────────────────────────────────
 
     /// Parses a transcript string into a `VoiceCommand`.
-    /// Stage 1 regex runs first on all devices — if it matches, returns immediately
-    /// without touching Foundation Models. Unmatched utterances proceed to
-    /// Tier 1 (Foundation Models) → Tier 2 (NLModel) → Tier 3 (regex full pass).
-    func parse(_ transcript: String) async -> VoiceCommand {
+    /// Tier 0 personalisation (alias + confirmed-command) runs first — a hit short-circuits immediately.
+    /// Stage 1 regex runs next on all devices — if it matches, returns without touching Foundation Models.
+    /// Unmatched utterances proceed to Tier 1 (Foundation Models) → Tier 2 (NLModel) → Tier 3 (regex full pass).
+    func parse(_ transcript: String, speakerId: String) async -> VoiceCommand {
         Log.info("[CommandParserRouter] parsing: \"\(transcript)\"")
         let text = transcript.trimmingCharacters(in: .whitespaces).lowercased()
+        if let personalised = personalisationParser.parse(text, speakerId: speakerId) {
+            let result = toVoiceCommand(personalised)
+            let path = personalisationParser.lastPath ?? "PersonalisationAlias"
+            Log.info("[CommandParserRouter] result: \(result) (\(path))")
+            lastParserPath = path
+            return result
+        }
         if let fast = fallback.parseStage1(text, raw: transcript) {
             let result = toVoiceCommand(fast)
-            Log.info("[CommandParserRouter] result: \(result) (Stage1-fast)")
+            Log.info("[CommandParserRouter] result: \(result) (KeywordRegex)")
+            lastParserPath = "KeywordRegex"
             return result
         }
 #if canImport(FoundationModels)
         if #available(iOS 26, *) {
-            if let result = await tryFoundationModel(transcript) { return result }
+            if let result = await tryFoundationModel(transcript) {
+                lastParserPath = "FoundationModels"
+                return result
+            }
         }
 #endif
-        return parseFallback(transcript)
+        let fallbackResult = parseFallback(transcript)
+        lastParserPath = "NLModel"
+        return fallbackResult
+    }
+
+    /// Returns the broadcast `VoiceCommand` if `text` matches a Stage 1 broadcast pattern,
+    /// without running speaker resolution or personalisation. Called before `discovery.resolve()`
+    /// in HomeView so SpeakerMatcher cannot consume words from broadcast phrases.
+    func parseBroadcast(_ text: String) -> VoiceCommand? {
+        let lower = text.trimmingCharacters(in: .whitespaces).lowercased()
+        guard let parsed = fallback.parseStage1(lower, raw: text) else { return nil }
+        let cmd = toVoiceCommand(parsed)
+        switch cmd {
+        case .stopAll, .pauseAll, .resumeAll, .adjustVolumeAll, .muteAll, .unmuteAll:
+            return cmd
+        default:
+            return nil
+        }
     }
 
     /// Pre-warms the Foundation Models session on launch. No-op on unsupported devices.
@@ -75,6 +106,13 @@ final class CommandParserRouter {
         case .confirm:              return .confirm
         case .cancel:               return .cancel
         case .unknown:              return .unknown(parsed.rawText ?? "")
+        case .stopAll:              return .stopAll
+        case .pauseAll:             return .pauseAll
+        case .resumeAll:            return .resumeAll
+        case .volumeUpAll:          return .adjustVolumeAll(+(parsed.volumeDelta ?? 10))
+        case .volumeDownAll:        return .adjustVolumeAll(-(parsed.volumeDelta ?? 10))
+        case .muteAll:              return .muteAll
+        case .unmuteAll:            return .unmuteAll
         }
     }
 }

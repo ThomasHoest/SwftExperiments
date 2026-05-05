@@ -48,15 +48,86 @@ struct TwoStageFallbackParser {
     // ── Stage 1: Deterministic Regex ─────────────────────────────────────────
 
     func parseStage1(_ text: String, raw: String) -> ParsedCommand? {
-        // confirm / cancel  (anchored — must be the whole utterance)
-        if text.matches(of: /^(yes|yeah|correct|do it|confirm|ja|jo)$/).count > 0 {
-            return ParsedCommand(intent: .confirm)
-        }
-        if text.matches(of: /^(no|cancel|stop that|never mind|nope|nej|annuller)$/).count > 0 {
-            return ParsedCommand(intent: .cancel)
+        // Broadcast patterns — must be checked before single-speaker equivalents
+        // Trigger qualifiers: all, everything, everywhere, alt, alting, overalt
+        let broadcastQualifier = "\\b(all|everything|everywhere|alt|alle|alting|overalt)\\b"
+
+        // stopAll: "stop all/everything" (EN) / "stop alt/alting" (DA)
+        if text.range(of: "\\b(stop|stands?)\\b.*\(broadcastQualifier)|\\b\(broadcastQualifier).*\\b(stop|stands?)\\b",
+                      options: .regularExpression) != nil {
+            return ParsedCommand(intent: .stopAll)
         }
 
-        // stop
+        // pauseAll: "pause all/everything" (EN) / "pause alt/alting" (DA)
+        if text.range(of: "\\bpause\\b.*\(broadcastQualifier)|\\b\(broadcastQualifier).*\\bpause\\b",
+                      options: .regularExpression) != nil {
+            return ParsedCommand(intent: .pauseAll)
+        }
+
+        // resumeAll: "resume/play/continue all/everything" (EN) / "genoptag alt" / "afspil alt/alting" (DA)
+        if text.range(of: "\\b(resume|continue playing|unpause|genoptag|afspil|spil|play)\\b.*\(broadcastQualifier)|\\b\(broadcastQualifier).*\\b(resume|continue playing|unpause|genoptag|afspil|spil|play)\\b",
+                      options: .regularExpression) != nil {
+            return ParsedCommand(intent: .resumeAll)
+        }
+
+        // volumeUpAll with amount: "volume up all 20" / "skru op for alt 20"
+        if let match = text.range(of: "\\b(?:volume up|louder by|skru op(?:\\s+for)?)\\b.*\(broadcastQualifier).*\\b(\\d{1,3})\\b|\\b(\\d{1,3})\\b.*\(broadcastQualifier).*\\b(?:volume up|louder by|skru op(?:\\s+for)?)\\b",
+                                  options: .regularExpression) {
+            let matched = String(text[match])
+            let delta: Int
+            if let numMatch = matched.range(of: "\\b(\\d{1,3})\\b", options: .regularExpression) {
+                delta = Int(matched[numMatch]) ?? defaultVolumeStep
+            } else {
+                delta = defaultVolumeStep
+            }
+            return ParsedCommand(intent: .volumeUpAll, volumeDelta: delta)
+        }
+        // volumeUpAll (default step): "volume up all" / "louder everywhere" / "skru op for alt"
+        if text.range(of: "\\b(volume up|louder|higher|increase|skru op|højere)\\b.*\(broadcastQualifier)|\\b\(broadcastQualifier).*\\b(volume up|louder|higher|increase|skru op|højere)\\b",
+                      options: .regularExpression) != nil {
+            return ParsedCommand(intent: .volumeUpAll)
+        }
+
+        // volumeDownAll with amount: "volume down all 20" / "skru ned for alt 20"
+        if let match = text.range(of: "\\b(?:volume down|quieter by|skru ned(?:\\s+for)?)\\b.*\(broadcastQualifier).*\\b(\\d{1,3})\\b|\\b(\\d{1,3})\\b.*\(broadcastQualifier).*\\b(?:volume down|quieter by|skru ned(?:\\s+for)?)\\b",
+                                  options: .regularExpression) {
+            let matched = String(text[match])
+            let delta: Int
+            if let numMatch = matched.range(of: "\\b(\\d{1,3})\\b", options: .regularExpression) {
+                delta = Int(matched[numMatch]) ?? defaultVolumeStep
+            } else {
+                delta = defaultVolumeStep
+            }
+            return ParsedCommand(intent: .volumeDownAll, volumeDelta: delta)
+        }
+        // volumeDownAll (default step): "volume down all" / "quieter everywhere" / "skru ned for alt"
+        if text.range(of: "\\b(volume down|quieter|softer|lower|decrease|skru ned|lavere)\\b.*\(broadcastQualifier)|\\b\(broadcastQualifier).*\\b(volume down|quieter|softer|lower|decrease|skru ned|lavere)\\b",
+                      options: .regularExpression) != nil {
+            return ParsedCommand(intent: .volumeDownAll)
+        }
+
+        // unmuteAll (before muteAll so "unmute" doesn't match mute)
+        // EN: "unmute all/everything/everywhere" / DA: "slå alt til" / "til for alt"
+        if text.range(of: "\\b(unmute|slå lyden til)\\b.*\(broadcastQualifier)|\\b\(broadcastQualifier).*\\b(unmute|slå lyden til)\\b",
+                      options: .regularExpression) != nil {
+            return ParsedCommand(intent: .unmuteAll)
+        }
+        if text.range(of: "\\bslå\\b.*\(broadcastQualifier).*\\btil\\b|\\btil\\s+for\\b.*\(broadcastQualifier)",
+                      options: .regularExpression) != nil {
+            return ParsedCommand(intent: .unmuteAll)
+        }
+
+        // muteAll: "mute all/everything/everywhere" / DA: "slå alt fra" / "fra for alt"
+        if text.range(of: "\\b(mute|slå lyden fra|tavs)\\b.*\(broadcastQualifier)|\\b\(broadcastQualifier).*\\b(mute|slå lyden fra|tavs)\\b",
+                      options: .regularExpression) != nil {
+            return ParsedCommand(intent: .muteAll)
+        }
+        if text.range(of: "\\bslå\\b.*\(broadcastQualifier).*\\bfra\\b|\\bfra\\s+for\\b.*\(broadcastQualifier)",
+                      options: .regularExpression) != nil {
+            return ParsedCommand(intent: .muteAll)
+        }
+
+        // stop (single-speaker — only reached if no broadcast qualifier matched above)
         if text.contains(/\b(stop|stop music|stop playing)\b/) {
             return ParsedCommand(intent: .stop)
         }

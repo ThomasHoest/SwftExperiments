@@ -14,16 +14,56 @@
   "createdDate" : "2026-05-01T17:56:40Z",
   "dataPathRelativeToProjectURL" : "../../../../SwftExperiments-usability/Resources/",
   "dataResult" : {
+    "classesCount" : 2,
     "createdDate" : "2026-05-01T17:56:40Z",
+    "dataAnalysis" : {
+      "classifierAnalysis" : {
+        "labelStats" : {
+          "CommandClassifier" : 1,
+          "parsing" : 2
+        }
+      },
+      "issues" : [
+        {
+          "description" : "2 classes found, including parsing, CommandClassifier",
+          "severity" : "debug"
+        },
+        {
+          "description" : "Less than 50 total texts found - add more to improve model validation",
+          "severity" : "warning"
+        },
+        {
+          "description" : "Smallest class is \"CommandClassifier\" with 1 texts",
+          "severity" : "debug"
+        },
+        {
+          "description" : "Largest class is \"parsing\" with 2 text",
+          "severity" : "debug"
+        }
+      ],
+      "objectDetectorAnalysis" : {
+        "details" : {
+
+        }
+      },
+      "summary" : {
+        "canUseValidation" : 0,
+        "classCount" : 2,
+        "sampleCount" : 3
+      },
+      "warning" : "Less than 50 total texts found - add more to improve model validation"
+    },
     "dataSourceID" : "C5B0BC06-D36B-4165-BE1D-09ADA52BC049",
-    "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments-usability/Resources/"
+    "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments-usability/Resources/",
+    "itemsCount" : 3,
+    "warning" : "Less than 50 total texts found - add more to improve model validation"
   },
   "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments-usability/Resources/",
   "experimentIDs" : [
     "F15856F6-7950-43F7-860D-968EFC9C105D"
   ],
   "id" : "C5B0BC06-D36B-4165-BE1D-09ADA52BC049",
-  "modifiedDate" : "2026-05-01T17:56:40Z",
+  "modifiedDate" : "2026-05-05T09:24:52Z",
   "pathType" : 0,
   "preferredFilename" : "Resources",
   "title" : "Resources",
