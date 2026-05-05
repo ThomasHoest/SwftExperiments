@@ -1,5 +1,7 @@
 import SwiftUI
 import UIKit
+import Speech
+import AVFoundation
 
 struct HomeView: View {
     @StateObject private var discovery     = SpeakerDiscoveryService()
@@ -7,7 +9,14 @@ struct HomeView: View {
     @StateObject private var motionManager = MotionManager()
     @ObservedObject private var langService = LanguageService.shared
     @State private var voiceToText    = VoiceToText()
-    @State private var commandRouter  = CommandParserRouter()
+    @State private var personalisationStore: PersonalisationStore
+    @State private var commandRouter: CommandParserRouter
+
+    init() {
+        let store = PersonalisationStore(context: PersistenceController.shared.viewContext)
+        _personalisationStore = State(initialValue: store)
+        _commandRouter = State(initialValue: CommandParserRouter(personalisationStore: store))
+    }
     @StateObject private var transcriptController = TranscriptController()
     @State private var micStatus      = "Initialising microphone…"
     @State private var audioLevel:    Float   = 0
@@ -16,10 +25,19 @@ struct HomeView: View {
     @State private var selectedSpeaker: Speaker?
     @State private var hasAppeared    = false
     @State private var successMessage = ""
+    // T-3804: retained read-only for migration from v1.2 hasSeenHint → hasCompletedOnboarding
     @AppStorage("hasSeenHint") private var hasSeenHint = false
-    @State private var showHintManually = false
+    // T-3802: onboarding persistence key
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    // T-3805: re-showable sheet binding (wired to SettingsView in E-39 T-3906)
+    @State private var showOnboardingSheet = false
+    // E-40 T-4006 — HelpView sheet trigger
+    @State private var showHelp = false
     @State private var showLanguagePicker = false
     @State private var currentToast:  Toast?
+
+    // Exposed for Settings sheet (E-39 T-3906)
+    var onboardingSheetBinding: Binding<Bool> { $showOnboardingSheet }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -28,12 +46,17 @@ struct HomeView: View {
     private var cs: CommandStrings { CommandStrings.forLanguage(langService.activeLanguage) }
     private var ui: UIStrings      { UIStrings.forLanguage(langService.activeLanguage) }
 
-    private var displayedSpeaker: Speaker? {
-        selectedSpeaker ?? discovery.groups.first?.hostSpeaker
+    private var broadcastHandler: BroadcastCommandHandler { BroadcastCommandHandler(discovery: discovery) }
+
+    private func isBroadcast(_ command: VoiceCommand) -> Bool {
+        switch command {
+        case .stopAll, .pauseAll, .resumeAll, .adjustVolumeAll, .muteAll, .unmuteAll: return true
+        default: return false
+        }
     }
 
-    private var shouldShowHint: Bool {
-        showHintManually || (!hasSeenHint && !discovery.groups.flatMap(\.members).isEmpty)
+    private var displayedSpeaker: Speaker? {
+        selectedSpeaker ?? discovery.groups.first?.hostSpeaker
     }
 
     var body: some View {
@@ -79,8 +102,38 @@ struct HomeView: View {
                 .padding(.top, 8)
             }
         }
+        // T-3802 — full-screen onboarding cover on first launch
+        .fullScreenCover(isPresented: Binding(
+            get: { !hasCompletedOnboarding },
+            set: { _ in }
+        )) {
+            OnboardingView(onDismiss: {
+                // T-3803 — permissions were requested inside OnboardingView.handleCTA()
+                // before this closure is called; set flag and start pipeline.
+                hasCompletedOnboarding = true
+                startListeningIfReady()
+            })
+        }
+        // T-3805 — re-showable sheet from Settings (isReshow path; does not change hasCompletedOnboarding)
+        .sheet(isPresented: $showOnboardingSheet) {
+            OnboardingView(isReshow: true, onDismiss: { showOnboardingSheet = false })
+        }
+        // E-40 T-4006 — Help sheet (replaces HintCardView; disabled during active countdown)
+        .sheet(isPresented: $showHelp) {
+            let members = discovery.groups.flatMap(\.members)
+            HelpView(
+                speakerA: members.first?.name,
+                speakerB: members.dropFirst().first?.name,
+                activeLanguage: langService.activeLanguage,
+                isPresented: $showHelp
+            )
+        }
         .animation(BeoAnimation.toast, value: currentToast)
         .onAppear(perform: onAppear)
+        // ADR §Consequences point 2 — re-fire startListening when hasCompletedOnboarding flips
+        .onChange(of: hasCompletedOnboarding) { _, completed in
+            if completed { startListeningIfReady() }
+        }
         .onChange(of: discovery.groups.flatMap(\.members).map(\.id)) { _, ids in
             // Removal: if the user's selected speaker just disappeared, fall back to first available.
             if let sel = selectedSpeaker, !ids.contains(sel.id) {
@@ -105,9 +158,6 @@ struct HomeView: View {
         }
         .onChange(of: langService.activeLanguage) { _, language in
             voiceToText.setLanguage(language)
-        }
-        .onChange(of: transcriptController.text) { _, new in
-            if !new.isEmpty { showHintManually = false }
         }
         .sheet(isPresented: $showLanguagePicker) {
             LanguagePickerSheet { language in
@@ -151,22 +201,21 @@ struct HomeView: View {
         .ignoresSafeArea()
     }
 
-    // ── Status bar ── T-2108 ──────────────────────────────────────────────────
+    // ── Status bar ── T-2108 / E-40 T-4006 ──────────────────────────────────────
 
-    private var hintButtonAccessibilityLabel: String {
-        langService.activeLanguage == .danish
-            ? "Vis kom-godt-i-gang-tip"
-            : "Show getting-started hint"
+    private var helpButtonAccessibilityLabel: String {
+        langService.activeLanguage == .danish ? "Hjælp" : "Help"
     }
 
     private var statusBar: some View {
         HStack {
+            // E-40 T-4006 — opens HelpView sheet (replaces old HintCardView toggle)
             DarkGlassIconButton(
                 systemImage: "questionmark.circle",
-                role: .default,
-                accessibilityLabel: hintButtonAccessibilityLabel
+                role: coordinator.isPending ? .disabled : .default,
+                accessibilityLabel: helpButtonAccessibilityLabel
             ) {
-                showHintManually.toggle()
+                showHelp = true
             }
 
             Spacer()
@@ -232,21 +281,8 @@ struct HomeView: View {
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .padding(.top, 12)
-
-            if shouldShowHint && !coordinator.isPending {
-                HintCardView(
-                    speakerName: discovery.groups.first?.hostSpeaker.name,
-                    language: langService.activeLanguage,
-                    onDismiss: {
-                        hasSeenHint = true
-                        showHintManually = false
-                    }
-                )
-                .transition(.opacity)
-                .padding(.top, 12)
-            }
+            // HintCardView removed per E-38; replaced by OnboardingView fullScreenCover
         }
-        .animation(.easeInOut(duration: 0.2), value: shouldShowHint)
     }
 
     // ── Setup ─────────────────────────────────────────────────────────────────
@@ -259,8 +295,30 @@ struct HomeView: View {
             hasAppeared = true
         }
 
+        // T-3804 — migrate users upgrading from v1.2 (hasSeenHint → hasCompletedOnboarding)
+        if hasSeenHint && !hasCompletedOnboarding {
+            hasCompletedOnboarding = true
+        }
+
+        // T-3802 — gate: if onboarding not complete, fullScreenCover handles it
+        if !hasCompletedOnboarding {
+            return
+        }
+
         // T-1903 — show language picker on first launch; defer mic/discovery until chosen
         if !langService.hasExplicitlyChosen {
+            showLanguagePicker = true
+            return
+        }
+        startListening()
+    }
+
+    /// Starts the listening pipeline when all preconditions are met.
+    /// Called from onAppear (gate passed), from the onboarding dismiss closure,
+    /// and from the onChange(hasCompletedOnboarding) handler.
+    private func startListeningIfReady() {
+        guard hasCompletedOnboarding else { return }
+        guard langService.hasExplicitlyChosen else {
             showLanguagePicker = true
             return
         }
@@ -314,9 +372,24 @@ struct HomeView: View {
                 selectedSpeaker = speaker
 
                 let commandText = remaining.isEmpty ? text : remaining.joined(separator: " ")
-                let command = await commandRouter.parse(commandText)
+                let command = await commandRouter.parse(commandText, speakerId: speaker.id.uuidString)
                 Log.info("[HomeView] → \(speaker.name): \(command)")
                 if case .unknown = command { } else { HapticEngine.shared.commandRecognised() }
+
+                // Broadcast intercept — runs before single-speaker dispatch (ADR E-37).
+                if isBroadcast(command) {
+                    Log.info("[HomeView][clear] path=broadcast command=\(command)")
+                    let result = await broadcastHandler.handle(command)
+                    let message: String
+                    if result.totalCount == 0 {
+                        message = cs.broadcastNothingInScope
+                    } else {
+                        message = cs.broadcastExecuted(result.successCount, result.totalCount)
+                    }
+                    showToast(Toast(kind: .success(message: message)))
+                    transcriptController.clearAfterCommand()
+                    return
+                }
 
                 if case .playFavorite(let index) = command {
                     Log.info("[HomeView][clear] path=playFavorite index=\(index)")
@@ -349,7 +422,26 @@ struct HomeView: View {
                         transcriptController.clearAfterCommand()
                     },
                     readBack: confirmMsg,
-                    onResolved: { _ in }
+                    onResolved: { resolution in
+                        // T-3305: record confirmed command on execution
+                        // T-3306: delete confirmed command on cancellation
+                        Task { @MainActor in
+                            switch resolution {
+                            case .fired:
+                                try? personalisationStore.recordConfirmedCommand(
+                                    speakerId: speaker.id.uuidString,
+                                    transcription: commandText.lowercased(),
+                                    intent: command.toCommandIntent(),
+                                    slots: [:]
+                                )
+                            case .cancelled:
+                                try? personalisationStore.deleteConfirmedCommand(
+                                    transcription: commandText.lowercased(),
+                                    speakerId: speaker.id.uuidString
+                                )
+                            }
+                        }
+                    }
                 )
             }
         }
@@ -379,6 +471,9 @@ struct HomeView: View {
             return cs.joinSpeakers(speaker.name, targetName)
         case .leaveSpeaker:         return cs.leaveSpeaker(speaker.name)
         case .listFavorites, .confirm, .cancel, .unknown:
+            return nil
+        // Broadcast commands execute immediately — no countdown confirmation (ADR E-37).
+        case .stopAll, .pauseAll, .resumeAll, .adjustVolumeAll, .muteAll, .unmuteAll:
             return nil
         }
     }
@@ -467,6 +562,10 @@ struct HomeView: View {
         case .confirm, .cancel, .unknown:
             Log.info("[HomeView] unhandled: \(command)")
             return false
+        // Broadcast commands are handled before dispatch() is called (see isBroadcast intercept).
+        case .stopAll, .pauseAll, .resumeAll, .adjustVolumeAll, .muteAll, .unmuteAll:
+            Log.info("[HomeView] broadcast command reached dispatch unexpectedly: \(command)")
+            return false
         }
     }
 
@@ -521,6 +620,9 @@ struct HomeView: View {
             if let vol = speaker.volume, vol <= 0 { return .volumeAtLimit(speaker: speaker.name, atMax: false) }
         case .mute:
             if speaker.isMuted { return .alreadyMuted(speaker: speaker.name) }
+        // Broadcast commands execute immediately — no preflight (ADR E-37).
+        case .stopAll, .pauseAll, .resumeAll, .adjustVolumeAll, .muteAll, .unmuteAll:
+            return nil
         default: break
         }
         return nil
