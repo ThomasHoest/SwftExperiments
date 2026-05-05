@@ -61,7 +61,7 @@ final class TelemetryUploader {
         self.deviceId = KeychainDeviceID.readOrCreate()
 
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 15
+        config.timeoutIntervalForRequest = 30
         self.session = URLSession(configuration: config)
 
         pathMonitor.pathUpdateHandler = { [weak self] path in
