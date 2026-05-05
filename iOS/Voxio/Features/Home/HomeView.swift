@@ -392,7 +392,9 @@ struct HomeView: View {
                     router: commandRouter,
                     focusedSpeaker: { selectedSpeaker }
                 )
+                let t0 = Date()
                 let outcome = classifier.classify(text)
+                let classifyMs = Int(Date().timeIntervalSince(t0) * 1000)
 
                 switch outcome {
 
@@ -405,25 +407,44 @@ struct HomeView: View {
                         : cs.broadcastExecuted(result.successCount, result.totalCount)
                     showToast(Toast(kind: .success(message: message)))
                     transcriptController.clearAfterCommand()
+                    try? telemetryBuffer.record(
+                        transcription: text,
+                        speakerName: "",
+                        speakerId: "",
+                        intent: cmd.toCommandIntent().rawValue,
+                        slots: [:],
+                        parserPath: commandRouter.lastParserPath ?? "KeywordRegex",
+                        outcome: .confirmed,
+                        locale: Locale.current.identifier,
+                        flags: .broadcast
+                    )
+                    Log.info("[Timing] broadcast — classify:\(classifyMs)ms total:\(Int(Date().timeIntervalSince(t0) * 1000))ms")
 
                 case .personalised(let speaker, let parsed):
                     HapticEngine.shared.commandRecognised()
                     selectedSpeaker = speaker
                     let cmd = commandRouter.toVoiceCommand(parsed)
                     Log.info("[HomeView] → \(speaker.name) (personalised): \(cmd)")
+                    Log.info("[Timing] personalised:\(speaker.name) — classify:\(classifyMs)ms (no parse)")
                     await dispatchCommand(cmd, to: speaker, commandText: text)
 
                 case .addressed(let speaker, let remainder):
                     selectedSpeaker = speaker
+                    let tParse = Date()
                     let cmd = await commandRouter.parse(remainder, speakerId: speaker.stableId)
+                    let parseMs = Int(Date().timeIntervalSince(tParse) * 1000)
                     Log.info("[HomeView] → \(speaker.name): \(cmd)")
+                    Log.info("[Timing] addressed:\(speaker.name) — classify:\(classifyMs)ms parse:\(parseMs)ms total:\(Int(Date().timeIntervalSince(t0) * 1000))ms")
                     if case .unknown = cmd { } else { HapticEngine.shared.commandRecognised() }
                     await dispatchCommand(cmd, to: speaker, commandText: remainder)
 
                 case .focused(let speaker, let fullText):
                     selectedSpeaker = speaker
+                    let tParse = Date()
                     let cmd = await commandRouter.parse(fullText, speakerId: speaker.stableId)
+                    let parseMs = Int(Date().timeIntervalSince(tParse) * 1000)
                     Log.info("[HomeView] → \(speaker.name) (focused): \(cmd)")
+                    Log.info("[Timing] focused:\(speaker.name) — classify:\(classifyMs)ms parse:\(parseMs)ms total:\(Int(Date().timeIntervalSince(t0) * 1000))ms")
                     if case .unknown = cmd { } else { HapticEngine.shared.commandRecognised() }
                     await dispatchCommand(cmd, to: speaker, commandText: fullText)
 
@@ -431,6 +452,17 @@ struct HomeView: View {
                     let available = discovery.groups.flatMap(\.members).map(\.name)
                     handleError(.noSpeakerSpoken(available: available))
                     transcriptController.clearAfterCommand()
+                    try? telemetryBuffer.record(
+                        transcription: text,
+                        speakerName: "",
+                        speakerId: "",
+                        intent: CommandIntent.unknown.rawValue,
+                        slots: [:],
+                        parserPath: commandRouter.lastParserPath ?? "unknown",
+                        outcome: .unknown,
+                        locale: Locale.current.identifier
+                    )
+                    Log.info("[Timing] unresolved — classify:\(classifyMs)ms")
                 }
             }
         }
@@ -611,8 +643,19 @@ struct HomeView: View {
 
         guard let confirmMsg = confirmationMessage(for: command, speaker: speaker) else {
             Log.info("[HomeView][clear] path=noConfirmation command=\(command) → clearAfterCommand")
-            if case .unknown = command { handleError(.voiceNotRecognised) }
+            let isUnknown: Bool
+            if case .unknown = command { handleError(.voiceNotRecognised); isUnknown = true } else { isUnknown = false }
             await dispatch(command: command, to: speaker)
+            try? telemetryBuffer.record(
+                transcription: commandText,
+                speakerName: speaker.name,
+                speakerId: speaker.stableId,
+                intent: command.toCommandIntent().rawValue,
+                slots: [:],
+                parserPath: commandRouter.lastParserPath ?? "unknown",
+                outcome: isUnknown ? .unknown : .confirmed,
+                locale: Locale.current.identifier
+            )
             transcriptController.clearAfterCommand()
             return
         }

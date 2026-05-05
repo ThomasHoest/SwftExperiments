@@ -55,7 +55,7 @@ class AVService {
         audioQueue.sync {
             let session = AVAudioSession.sharedInstance()
             do {
-                try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
+                try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers])
                 try session.setActive(true)
             } catch {
                 startError = error
