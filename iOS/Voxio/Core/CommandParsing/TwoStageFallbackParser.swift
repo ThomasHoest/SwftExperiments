@@ -56,9 +56,6 @@ struct TwoStageFallbackParser {
             return ParsedCommand(intent: .cancel)
         }
 
-        // TODO T-3708: Retrain VoxioCommandModel with broadcast trigger phrases after Stage 1 patterns ship.
-        // Until then, Stage 2 (NLModel) returns .unknown for broadcast utterances — Stage 1 covers all specified phrases.
-
         // Broadcast patterns — must be checked before single-speaker equivalents
         // Trigger qualifiers: all, everything, everywhere, alt, alting, overalt
         let broadcastQualifier = "\\b(all|everything|everywhere|alt|alle|alting|overalt)\\b"
