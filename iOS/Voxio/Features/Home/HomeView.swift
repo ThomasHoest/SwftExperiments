@@ -36,6 +36,7 @@ struct HomeView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("hasSeenTelemetryPrompt") private var hasSeenTelemetryPrompt = false
     @State private var showTelemetryPrompt = false
+    @State private var showSettings = false
     // T-3805: re-showable sheet binding (wired to SettingsView in E-39 T-3906)
     @State private var showOnboardingSheet = false
     // E-40 T-4006 — HelpView sheet trigger
@@ -121,6 +122,12 @@ struct HomeView: View {
                 // is the single trigger for startListeningIfReady() to prevent double-start.
                 hasCompletedOnboarding = true
             })
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView(
+                store: personalisationStore,
+                discoveredSpeakers: discovery.groups.flatMap(\.members)
+            )
         }
         // T-3805 — re-showable sheet from Settings (isReshow path; does not change hasCompletedOnboarding)
         .sheet(isPresented: $showOnboardingSheet) {
@@ -242,6 +249,13 @@ struct HomeView: View {
 
             Spacer()
             ConnectionStatusChip(speakerCount: discovery.groups.flatMap(\.members).count)
+
+            DarkGlassIconButton(
+                systemImage: "gearshape",
+                accessibilityLabel: "Settings"
+            ) {
+                showSettings = true
+            }
         }
         .padding(.top, 8)
     }
