@@ -25,7 +25,7 @@ struct SettingsView: View {
                     }
 
                     NavigationLink {
-                        LearnedPhrasesView(store: store)
+                        LearnedPhrasesView(store: store, discoveredSpeakers: discoveredSpeakers)
                     } label: {
                         Label(str.learnedPhrases, systemImage: "brain")
                     }

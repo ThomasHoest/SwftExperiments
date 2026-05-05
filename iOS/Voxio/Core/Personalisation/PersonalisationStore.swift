@@ -213,6 +213,22 @@ final class PersonalisationStore {
         try saveContext()
     }
 
+    /// Removes ConfirmedCommand rows whose speakerId is a UUID string — those were created
+    /// before Speaker.stableId was introduced and can never be matched again.
+    func removeOrphanedUUIDSpeakerRecords() {
+        let request: NSFetchRequest<ConfirmedCommand> = ConfirmedCommand.fetchRequest()
+        do {
+            let all = try context.fetch(request)
+            let orphans = all.filter { UUID(uuidString: $0.speakerId ?? "") != nil }
+            guard !orphans.isEmpty else { return }
+            orphans.forEach { context.delete($0) }
+            try saveContext()
+            Log.info("[PersonalisationStore] removed \(orphans.count) orphaned UUID-speakerId record(s)")
+        } catch {
+            Log.error("[PersonalisationStore] removeOrphanedUUIDSpeakerRecords failed: \(error)")
+        }
+    }
+
     // MARK: - Match (Tier 0 lookups)
 
     func matchAlias(phrase: String, speakerId: String) -> ParsedCommand? {

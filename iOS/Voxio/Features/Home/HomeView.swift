@@ -317,6 +317,8 @@ struct HomeView: View {
     // ── Setup ─────────────────────────────────────────────────────────────────
 
     private func onAppear() {
+        personalisationStore.removeOrphanedUUIDSpeakerRecords()
+
         withAnimation(reduceMotion
             ? .easeIn(duration: 0.2)
             : .spring(response: 0.5, dampingFraction: 0.8).delay(0.15)
