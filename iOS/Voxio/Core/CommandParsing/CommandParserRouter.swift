@@ -54,6 +54,21 @@ final class CommandParserRouter {
         return parseFallback(transcript)
     }
 
+    /// Returns the broadcast `VoiceCommand` if `text` matches a Stage 1 broadcast pattern,
+    /// without running speaker resolution or personalisation. Called before `discovery.resolve()`
+    /// in HomeView so SpeakerMatcher cannot consume words from broadcast phrases.
+    func parseBroadcast(_ text: String) -> VoiceCommand? {
+        let lower = text.trimmingCharacters(in: .whitespaces).lowercased()
+        guard let parsed = fallback.parseStage1(lower, raw: text) else { return nil }
+        let cmd = toVoiceCommand(parsed)
+        switch cmd {
+        case .stopAll, .pauseAll, .resumeAll, .adjustVolumeAll, .muteAll, .unmuteAll:
+            return cmd
+        default:
+            return nil
+        }
+    }
+
     /// Pre-warms the Foundation Models session on launch. No-op on unsupported devices.
     func warmUp() async {
 #if canImport(FoundationModels)

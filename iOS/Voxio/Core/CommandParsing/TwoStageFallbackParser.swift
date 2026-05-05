@@ -61,7 +61,7 @@ struct TwoStageFallbackParser {
 
         // Broadcast patterns — must be checked before single-speaker equivalents
         // Trigger qualifiers: all, everything, everywhere, alt, alting, overalt
-        let broadcastQualifier = "\\b(all|everything|everywhere|alt|alting|overalt)\\b"
+        let broadcastQualifier = "\\b(all|everything|everywhere|alt|alle|alting|overalt)\\b"
 
         // stopAll: "stop all/everything" (EN) / "stop alt/alting" (DA)
         if text.range(of: "\\b(stop|stands?)\\b.*\(broadcastQualifier)|\\b\(broadcastQualifier).*\\b(stop|stands?)\\b",

@@ -362,6 +362,21 @@ struct HomeView: View {
                     return
                 }
 
+                // Broadcast pre-check: parse the full transcript before speaker resolution
+                // so SpeakerMatcher cannot consume words from broadcast phrases
+                // (e.g. "stop alle" — "Stue" fuzzy-matches "stop", leaving only "alle").
+                if let broadcastCmd = commandRouter.parseBroadcast(text) {
+                    HapticEngine.shared.commandRecognised()
+                    Log.info("[HomeView] → broadcast (pre-resolve): \(broadcastCmd)")
+                    let result = await broadcastHandler.handle(broadcastCmd)
+                    let message = result.totalCount == 0
+                        ? cs.broadcastNothingInScope
+                        : cs.broadcastExecuted(result.successCount, result.totalCount)
+                    showToast(Toast(kind: .success(message: message)))
+                    transcriptController.clearAfterCommand()
+                    return
+                }
+
                 let words = text.lowercased()
                     .components(separatedBy: .whitespaces)
                     .filter { !$0.isEmpty }
