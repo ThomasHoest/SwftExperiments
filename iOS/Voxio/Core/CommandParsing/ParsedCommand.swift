@@ -53,6 +53,15 @@ enum CommandIntent: String, CaseIterable, Codable, Equatable {
     case confirm        // "Yes" / "Ja"
     case cancel         // "No" / "Nej"
     case unknown
+
+    // ── Broadcast intents ─────────────────────────────────────────────────────
+    case stopAll        // "stop everything" / "stop alt"
+    case pauseAll       // "pause all" / "pause alting"
+    case resumeAll      // "resume all" / "genoptag alt"
+    case volumeUpAll    // "volume up all [amount]" / "skru op for alt"
+    case volumeDownAll  // "volume down all [amount]" / "skru ned for alt"
+    case muteAll        // "mute all" / "slå alt fra"
+    case unmuteAll      // "unmute all" / "slå alt til"
 }
 
 extension ParsedCommand: CustomStringConvertible {
@@ -75,6 +84,13 @@ extension ParsedCommand: CustomStringConvertible {
         case .confirm:       return "confirm"
         case .cancel:        return "cancel"
         case .unknown:       return "unknown(\"\(rawText ?? "")\")"
+        case .stopAll:       return "stopAll"
+        case .pauseAll:      return "pauseAll"
+        case .resumeAll:     return "resumeAll"
+        case .volumeUpAll:   return "volumeUpAll(\(volumeDelta.map { "+\($0)" } ?? "default"))"
+        case .volumeDownAll: return "volumeDownAll(\(volumeDelta.map { "-\($0)" } ?? "default"))"
+        case .muteAll:       return "muteAll"
+        case .unmuteAll:     return "unmuteAll"
         }
     }
 }
