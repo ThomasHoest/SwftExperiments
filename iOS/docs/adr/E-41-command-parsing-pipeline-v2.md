@@ -22,7 +22,6 @@ before any speaker resolution is performed:
 
 ```swift
 enum UtteranceClass {
-    case system(VoiceCommand)                                    // confirm / cancel
     case broadcast(VoiceCommand)                                 // stopAll / pauseAll / …
     case personalised(speaker: Speaker, command: ParsedCommand)  // alias / confirmed-command hit (any speaker)
     case addressed(speaker: Speaker, remainder: String)          // speaker name appears in transcript
@@ -153,10 +152,8 @@ need) and Phase 3 (the existing three-tier parser, untouched).
 
 The classifier-first design enforces a single principle: **decide what kind
 of utterance this is before deciding which speaker it targets.** That
-principle dissolves all six listed problems:
+principle dissolves the listed problems:
 
-- System commands have their own classification (`.system`); they never see
-  the speaker matcher.
 - Broadcast commands have their own classification (`.broadcast`); the
   pre-check stops being a "pre-check" and becomes a first-class branch.
 - Aliases that span no speaker name have their own classification
@@ -166,7 +163,7 @@ principle dissolves all six listed problems:
   speaker name is present and no alias hits, the currently focused speaker
   is used.
 - The speaker-name path has its own classification (`.addressed`); it is now
-  one branch among five, not the gate that all others must pass through.
+  one branch among four, not the gate that all others must pass through.
 
 The three-tier parser internals (Stage 1 regex, Foundation Models, NLModel
 fallback) are not changed. The classifier delegates command parsing to
@@ -233,7 +230,6 @@ struct UtteranceClassifier {
 
     /// All possible classification outcomes. Exactly one is returned per call.
     enum Outcome {
-        case system(VoiceCommand)                                    // .confirm / .cancel
         case broadcast(VoiceCommand)                                 // .stopAll / .pauseAll / .resumeAll / .adjustVolumeAll / .muteAll / .unmuteAll
         case personalised(speaker: Speaker, command: ParsedCommand)  // alias or confirmed-command hit (any speaker)
         case addressed(speaker: Speaker, remainder: String)          // SpeakerNameMatcher consumed leading tokens
@@ -248,37 +244,31 @@ struct UtteranceClassifier {
         focusedSpeaker: @escaping () -> Speaker?
     )
 
-    /// Classifies the utterance. Synchronous: all five paths are cheap lookups.
-    /// The full three-tier parse is NOT performed here — only Stage 1 patterns
-    /// for system/broadcast and an exact-string lookup for personalised.
+    /// Classifies the utterance. Synchronous: all four paths are cheap lookups.
+    /// The full three-tier parse is NOT performed here — only Stage 1 broadcast
+    /// patterns and an exact-string lookup for personalised.
     func classify(_ text: String) -> Outcome
 }
 ```
 
 A typealias `UtteranceClass = UtteranceClassifier.Outcome` is provided at file
-scope so call sites can write `UtteranceClass.system(...)` without nesting.
+scope so call sites can write `UtteranceClass.broadcast(...)` without nesting.
 
-```swift
-// iOS/Voxio/Core/CommandParsing/CommandParserRouter.swift  (additions)
-
-extension CommandParserRouter {
-    /// Returns `.confirm` / `.cancel` if `text` matches a Stage 1 system pattern,
-    /// otherwise `nil`. Does not consult personalisation, Foundation Models, or NLModel.
-    func parseSystem(_ text: String) -> VoiceCommand?
-}
-```
+`parseSystem()` is **not added** to `CommandParserRouter` — confirm/cancel are
+UI-only interactions. The confirm/cancel Stage 1 regex in
+`TwoStageFallbackParser.parseStage1` is **removed** as part of T-4107 (it can
+no longer be reached via voice). The voice-cancel guard in the HomeView
+countdown handler (`if coordinator.isPending { if CancelGrammar.matches …}`)
+is also removed.
 
 ### Updated HomeView dispatch (pseudo-code)
 
 ```swift
+// During active countdown: ignore all voice input — confirm/cancel are UI only.
+guard !coordinator.isPending else { return }
+
 let outcome = classifier.classify(text)
 switch outcome {
-
-case .system(let cmd):
-    // confirm / cancel — dispatched to the active confirmation coordinator.
-    // If no countdown is pending, .cancel is a no-op; .confirm is a no-op.
-    handleSystemCommand(cmd)
-    transcriptController.clearAfterCommand()
 
 case .broadcast(let cmd):
     HapticEngine.shared.commandRecognised()
@@ -318,27 +308,37 @@ case .unresolved:
 The classifier evaluates the cases in this exact order. Earlier branches
 short-circuit:
 
-1. **`.system`** — `router.parseSystem(text)` returns `.confirm` / `.cancel`.
-   No speaker-name search is done first; system commands win unconditionally.
-2. **`.broadcast`** — `router.parseBroadcast(text)` returns a broadcast
-   `VoiceCommand`. Runs before alias lookup so saved aliases cannot hide
+1. **`.broadcast`** — `router.parseBroadcast(text)` returns a broadcast
+   `VoiceCommand`. Runs before alias lookup so saved aliases cannot shadow
    broadcast intent (e.g. a user who saved the phrase "stop alle" as an
-   alias still gets broadcast behaviour).
-3. **`.personalised`** — `personalisationStore.isEnabled` and
+   alias still gets broadcast behaviour — broadcast wins).
+2. **`.personalised`** — `personalisationStore.isEnabled` and
    `matchPersonalisedCommandAcrossAllSpeakers(phrase:)` returns a hit.
    The classifier looks up the speaker by `speakerId` in
    `discovery.groups.flatMap(\.members)`; if the speaker is no longer
    reachable (e.g. powered off), the classifier falls through to the
    next case.
-4. **`.addressed`** — `discovery.resolve(words:)` (which wraps
+3. **`.addressed`** — `discovery.resolve(words:)` (which wraps
    `SpeakerNameMatcher`) succeeds. Returns the matched speaker and the
    tokens that remain after stripping the name. If `remainder` is empty,
    the classifier still emits `.addressed` with the original text as
    `remainder` — `CommandParserRouter.parse` handles bare speaker names by
-   returning `.unknown`.
-5. **`.focused`** — none of the above; the `focusedSpeaker()` closure
+   returning `.unknown`. **An alias phrase that fuzzy-matches a speaker
+   name is resolved by branch 2 (personalised) before this branch runs —
+   exact alias match wins over fuzzy speaker-name match.**
+4. **`.focused`** — none of the above; the `focusedSpeaker()` closure
    returns a non-nil `Speaker`. Classifier returns `.focused(speaker, text)`.
-6. **`.unresolved`** — fall-through. HomeView surfaces `.noSpeakerSpoken`.
+5. **`.unresolved`** — fall-through. HomeView surfaces `.noSpeakerSpoken`.
+
+---
+
+## Open Questions — Resolved
+
+| # | Question | Decision | Date |
+|---|---|---|---|
+| OQ-1 | Confirm/cancel via voice during countdown | **Removed.** Confirm and cancel are UI-button interactions only. Voice input is ignored while a countdown is pending. The confirm/cancel Stage 1 regex and voice-cancel guard in HomeView are deleted. | 2026-05-05 |
+| OQ-2 | Alias phrase that fuzzy-matches a speaker name | **Alias wins.** Branch 1 (`.personalised`) runs before branch 3 (`.addressed`). An exact alias match always takes precedence over a fuzzy speaker-name match. | 2026-05-05 |
+| OQ-3 | `focusedSpeaker` persistence across app launches | **No persistence.** `selectedSpeaker` resets to `nil` on cold launch. The `.focused` fallback is a within-session convenience only. | 2026-05-05 |
 
 ---
 

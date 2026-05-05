@@ -80,7 +80,7 @@ cross-speaker grouping voice commands.
 ### Task list
 
 - [ ] **T-4101** Create `iOS/Voxio/Core/CommandParsing/UtteranceClassifier.swift`.
-  Define the `UtteranceClassifier.Outcome` enum (the five classification cases plus
+  Define the `UtteranceClassifier.Outcome` enum (four classification cases plus
   `.unresolved`) and the `UtteranceClassifier` struct itself. The struct is
   `@MainActor`, value-type, holds references to
   `SpeakerDiscoveryService`, `PersonalisationStore`, `CommandParserRouter`,
@@ -89,40 +89,18 @@ cross-speaker grouping voice commands.
   as a stub that returns `.unresolved` for everything; later tasks fill in
   the cases. Mirror the public surface in ADR E-41 exactly.
 
+  Note: there is **no `.system` case** — confirm/cancel are UI-only (OQ-1
+  resolved 2026-05-05).
+
   **Files added:** `iOS/Voxio/Core/CommandParsing/UtteranceClassifier.swift`.
   **Files changed:** none.
   **Acceptance criteria:**
   - File compiles with Swift 6 strict concurrency under `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`.
   - `UtteranceClassifier(...).classify("anything")` returns `.unresolved`.
-  - The `Outcome` enum has exactly six cases: `.system`, `.broadcast`, `.personalised`, `.addressed`, `.focused`, `.unresolved`.
-  - The five-case typealias `UtteranceClass` is referenceable from outside the file (e.g. `UtteranceClass.broadcast(.stopAll)`).
+  - The `Outcome` enum has exactly five cases: `.broadcast`, `.personalised`, `.addressed`, `.focused`, `.unresolved`.
+  - The typealias `UtteranceClass` is referenceable from outside the file (e.g. `UtteranceClass.broadcast(.stopAll)`).
 
-  *No dependencies. Prerequisite for T-4102 – T-4106.*
-
-- [ ] **T-4102** Add system-command classification. Extend
-  `CommandParserRouter` with a new method
-  `func parseSystem(_ text: String) -> VoiceCommand?` that returns `.confirm`
-  for `^(yes|yeah|correct|do it|confirm|ja|jo)$`, `.cancel` for
-  `^(no|cancel|stop that|never mind|nope|nej|annuller)$`, and `nil`
-  otherwise. The implementation must reuse the same regex used inside
-  `TwoStageFallbackParser.parseStage1` for `.confirm` / `.cancel` — extract
-  it into a static constant if duplication is unacceptable. Wire it into
-  `UtteranceClassifier.classify` as the first branch: if `parseSystem`
-  returns non-nil, return `.system(cmd)`.
-
-  **Files changed:**
-  - `iOS/Voxio/Core/CommandParsing/CommandParserRouter.swift` — add `parseSystem(_:)`.
-  - `iOS/Voxio/Core/CommandParsing/UtteranceClassifier.swift` — wire branch 1.
-  - Optionally: `iOS/Voxio/Core/CommandParsing/TwoStageFallbackParser.swift` — extract shared regex.
-
-  **Acceptance criteria:**
-  - `classify("yes")` returns `.system(.confirm)`.
-  - `classify("nej")` returns `.system(.cancel)`.
-  - `classify("yes please")` does NOT match `.system` (anchored regex; falls through to next branch).
-  - `classify("annuller")` returns `.system(.cancel)`.
-  - `classify("Yes")` (mixed case) returns `.system(.confirm)` — text is lowercased before matching.
-
-  *Depends on: T-4101.*
+  *No dependencies. Prerequisite for T-4103 – T-4106.*
 
 - [ ] **T-4103** Refactor broadcast classification into
   `UtteranceClassifier`. The classifier's branch 2 calls the existing
@@ -259,8 +237,6 @@ cross-speaker grouping voice commands.
   `focusedSpeaker`.
 
   Test cases (one per outcome, plus regression cases):
-  - `system_confirm` — "yes" → `.system(.confirm)`.
-  - `system_cancel_danish` — "nej" → `.system(.cancel)`.
   - `broadcast_stop_all` — "stop alle" → `.broadcast(.stopAll)`.
   - `broadcast_volume_up_all_with_amount` — "skru op for alt 20" → `.broadcast(.adjustVolumeAll(20))`.
   - `personalised_alias_no_speaker_name` — alias "musik til arbejdet" saved for speaker A, utterance "musik til arbejdet" → `.personalised(A, ...)`.
@@ -318,10 +294,12 @@ cross-speaker grouping voice commands.
 
 ## Dependency graph
 
+T-4102 is removed (system-command classification — OQ-1 resolved: UI only).
+
 ```
-T-4101 ─┬─> T-4102 ─┬─> T-4103 ─> T-4106 ─> T-4107 ─> T-4108 ─> T-4109
-        ├─> T-4104 ─┘                          ▲
-        └─> T-4105 ───────────────────────────┘
+T-4101 ─┬─> T-4103 ─> T-4106 ─> T-4107 ─> T-4108 ─> T-4109
+        ├─> T-4104 ─┘              ▲
+        └─> T-4105 ────────────────┘
 ```
 
 T-4108 (unit tests) can be developed in parallel with T-4101 – T-4106 (TDD)
@@ -349,26 +327,7 @@ T-4107 lands.
 
 ## Open questions
 
-1. **System command behaviour outside a countdown.** Currently, "yes" /
-   "nej" outside a pending countdown is parsed by the regex full-pass
-   (Stage 1) and dispatched as `.confirm` / `.cancel` to the resolved
-   speaker — which is meaningless. Under v2, branch 1 returns
-   `.system(.confirm)` regardless of countdown state. **Default
-   assumption:** if no countdown is pending, the system command is a no-op
-   (logged, transcript cleared). **Owner:** product. Confirm before
-   T-4107.
-
-2. **Alias phrase that is also a fuzzy speaker-name match.** If a user
-   saves an alias whose phrase happens to be Levenshtein-1 from a speaker
-   name (e.g. alias phrase "stuee"), branch 3 wins because it runs before
-   branch 4. **Default assumption:** this is correct — exact alias matches
-   beat fuzzy speaker-name matches. **Owner:** product / engineering.
-
-3. **`focusedSpeaker` lifetime across app suspensions.** Should
-   `selectedSpeaker` persist across app launches (so the focused-speaker
-   fallback works on first command after relaunch)? **Default assumption:**
-   no — `selectedSpeaker` resets to `nil` on relaunch (matches current
-   behaviour). **Owner:** product.
+All open questions resolved. See Resolved Decisions table below.
 
 ---
 
@@ -382,6 +341,9 @@ T-4107 lands.
 | Is the workaround `matchPersonalisedCommandAcrossAllSpeakers` deleted? | No — it becomes the official backing API for `.personalised`. |
 | Is `UtteranceClassifier` a class or a struct? | Struct. Value type, stateless beyond captured references, constructed per transcript. |
 | What is "focused speaker"? | The current value of `HomeView.selectedSpeaker`, exposed to the classifier via a closure. No new state field is added. |
-| Order of classification branches? | Locked: system → broadcast → personalised → addressed → focused → unresolved. |
-| Does `.focused` consult the alias store? | No — alias lookup is branch 3, before `.focused`. If an alias matches, it wins. |
-| Does the classifier run the full three-tier parser? | No. It runs only Stage 1 patterns (system / broadcast) and exact-string lookups (personalised). The full parse is delegated to `CommandParserRouter.parse` for `.addressed` and `.focused` outcomes from inside HomeView. |
+| Order of classification branches? | Locked: broadcast → personalised → addressed → focused → unresolved. |
+| Does `.focused` consult the alias store? | No — alias lookup is branch 2, before `.focused`. If an alias matches, it wins. |
+| Does the classifier run the full three-tier parser? | No. It runs only Stage 1 broadcast patterns and exact-string lookups (personalised). The full parse is delegated to `CommandParserRouter.parse` for `.addressed` and `.focused` from inside HomeView. |
+| OQ-1: Voice confirm/cancel | **Removed.** Confirm and cancel are UI-button only. Voice input ignored during active countdown. Confirm/cancel Stage 1 regex deleted from `TwoStageFallbackParser`. No `.system` case in classifier. |
+| OQ-2: Alias vs fuzzy speaker-name precedence | **Alias wins.** `.personalised` (branch 2) runs before `.addressed` (branch 3). Exact alias always beats fuzzy speaker-name match. |
+| OQ-3: focusedSpeaker persistence across launches | **No persistence.** `selectedSpeaker` resets to nil on cold launch. Focused-speaker fallback is within-session only. |
