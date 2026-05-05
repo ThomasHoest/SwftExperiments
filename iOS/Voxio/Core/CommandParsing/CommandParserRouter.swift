@@ -14,7 +14,7 @@ final class CommandParserRouter {
     let fallback = TwoStageFallbackParser()
     // Stored as Any to avoid @available restriction on stored properties.
     var foundationParser: Any?
-    private let personalisationParser: PersonalisationParser
+    private var personalisationParser: PersonalisationParser
     private(set) var lastParserPath: String?
 
     init(personalisationStore: PersonalisationStore) {
@@ -39,14 +39,15 @@ final class CommandParserRouter {
         let text = transcript.trimmingCharacters(in: .whitespaces).lowercased()
         if let personalised = personalisationParser.parse(text, speakerId: speakerId) {
             let result = toVoiceCommand(personalised)
-            Log.info("[CommandParserRouter] result: \(result) (PersonalisationTier)")
-            lastParserPath = "PersonalisationTier"
+            let path = personalisationParser.lastPath ?? "PersonalisationAlias"
+            Log.info("[CommandParserRouter] result: \(result) (\(path))")
+            lastParserPath = path
             return result
         }
         if let fast = fallback.parseStage1(text, raw: transcript) {
             let result = toVoiceCommand(fast)
-            Log.info("[CommandParserRouter] result: \(result) (Stage1-fast)")
-            lastParserPath = "Stage1-fast"
+            Log.info("[CommandParserRouter] result: \(result) (KeywordRegex)")
+            lastParserPath = "KeywordRegex"
             return result
         }
 #if canImport(FoundationModels)
@@ -58,7 +59,7 @@ final class CommandParserRouter {
         }
 #endif
         let fallbackResult = parseFallback(transcript)
-        lastParserPath = "TwoStageFallback"
+        lastParserPath = "NLModel"
         return fallbackResult
     }
 

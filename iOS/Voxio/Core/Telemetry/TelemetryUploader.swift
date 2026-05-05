@@ -1,10 +1,22 @@
 import Foundation
 import Network
 
-// TODO: align with backend spec
-private struct TelemetryUploadBatch: Codable {
+private struct TelemetryUploadEvent: Encodable {
+    let transcriptionAnonymised: String
+    let intent: String
+    let slotsAnonymised: [String: String]
+    let parserPath: String
+    let outcome: String
+    let locale: String
+    let timestamp: String
+    let flags: [String]
+}
+
+private struct TelemetryUploadBatch: Encodable {
     let deviceId: String
-    let events: [[String: String]]
+    let appVersion: String
+    let modelVersion: String
+    let events: [TelemetryUploadEvent]
 }
 
 @MainActor
@@ -33,8 +45,13 @@ final class TelemetryUploader {
     private let session: URLSession
 
     private var baseURL: URL? {
-        guard let raw = Bundle.main.infoDictionary?["TELEMETRY_BASE_URL"] as? String else { return nil }
-        return URL(string: raw)
+        guard let host = Bundle.main.infoDictionary?["TELEMETRY_HOSTNAME"] as? String,
+              !host.isEmpty else { return nil }
+        return URL(string: "https://\(host)")
+    }
+
+    private var apiKey: String? {
+        Bundle.main.infoDictionary?["TELEMETRY_API_KEY"] as? String
     }
 
     // MARK: - Init
@@ -64,7 +81,6 @@ final class TelemetryUploader {
         }
 
 #if DEBUG
-        // In debug builds: skip network and interval guards so every call uploads immediately.
         Log.info("[TelemetryUploader] DEBUG — bypassing Wi-Fi and interval guards")
 #else
         guard currentPath?.status == .satisfied else {
@@ -86,34 +102,44 @@ final class TelemetryUploader {
         }
 #endif
 
-        guard let url = baseURL?.appendingPathComponent("telemetry/events") else { return }
+        guard let url = baseURL?.appendingPathComponent("api/telemetry/batch") else {
+            Log.error("[TelemetryUploader] missing base URL")
+            return
+        }
+        guard let key = apiKey, !key.isEmpty else {
+            Log.error("[TelemetryUploader] missing API key — set TELEMETRY_API_KEY in xcconfig")
+            return
+        }
 
         do {
             let batch = try buffer.pendingBatch(limit: 100)
             guard !batch.isEmpty else { return }
 
+            let appVersion   = batch[0].appVersion
+            let modelVersion = batch[0].modelVersion
+
             let payload = TelemetryUploadBatch(
                 deviceId: deviceId.uuidString,
+                appVersion: appVersion,
+                modelVersion: modelVersion,
                 events: batch.map { event in
-                    [
-                        "id":                      event.id.uuidString,
-                        "transcriptionAnonymised": event.transcriptionAnonymised,
-                        "intent":                  event.intent,
-                        "slotsAnonymised":         event.slotsAnonymised,
-                        "parserPath":              event.parserPath,
-                        "outcome":                 event.outcome.rawValue,
-                        "appVersion":              event.appVersion,
-                        "modelVersion":            event.modelVersion,
-                        "locale":                  event.locale,
-                        "timestamp":               ISO8601DateFormatter().string(from: event.timestamp),
-                        "speakerId":               event.speakerId
-                    ]
+                    TelemetryUploadEvent(
+                        transcriptionAnonymised: event.transcriptionAnonymised,
+                        intent:                  event.intent,
+                        slotsAnonymised:         decodeSlotsDict(event.slotsAnonymised),
+                        parserPath:              normalisedParserPath(event.parserPath),
+                        outcome:                 event.outcome.rawValue,
+                        locale:                  normalisedLocale(event.locale),
+                        timestamp:               ISO8601DateFormatter().string(from: event.timestamp),
+                        flags:                   flagStrings(event.flags)
+                    )
                 }
             )
 
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue(key, forHTTPHeaderField: "x-api-key")
             request.httpBody = try JSONEncoder().encode(payload)
 
             Log.info("[TelemetryUploader] uploading \(batch.count) event(s) to \(url)")
@@ -137,15 +163,16 @@ final class TelemetryUploader {
     // MARK: - requestDeletion
 
     func requestDeletion() async -> DeletionResult {
-        // TODO: verify endpoint with backend team
         guard let url = baseURL?
-            .appendingPathComponent("telemetry")
-            .appendingPathComponent(deviceId.uuidString) else {
+            .appendingPathComponent("api/telemetry")
+            .appendingPathComponent(deviceId.uuidString),
+              let key = apiKey, !key.isEmpty else {
             return .pending
         }
 
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
+        request.setValue(key, forHTTPHeaderField: "x-api-key")
 
         do {
             let (_, response) = try await session.data(for: request)
@@ -157,5 +184,36 @@ final class TelemetryUploader {
             Log.error("[TelemetryUploader] deletion request failed: \(error)")
             return .failed(error)
         }
+    }
+
+    // MARK: - Private helpers
+
+    private func normalisedParserPath(_ raw: String) -> String {
+        switch raw {
+        case "PersonalisationTier": return "PersonalisationAlias"
+        case "Stage1-fast":         return "KeywordRegex"
+        case "TwoStageFallback", "Fallback": return "NLModel"
+        default:                    return raw
+        }
+    }
+
+    private func normalisedLocale(_ identifier: String) -> String {
+        let parts = identifier.replacingOccurrences(of: "_", with: "-").split(separator: "-")
+        guard parts.count >= 2 else { return identifier }
+        return "\(parts[0].lowercased())-\(parts[1].uppercased())"
+    }
+
+    private func flagStrings(_ flags: TelemetryFlags) -> [String] {
+        var result: [String] = []
+        if flags.contains(.likelyMisparse)     { result.append("likelyMisparse") }
+        if flags.contains(.recoverableUnknown) { result.append("recoverableUnknown") }
+        if flags.contains(.broadcast)          { result.append("broadcast") }
+        return result
+    }
+
+    private func decodeSlotsDict(_ json: String) -> [String: String] {
+        guard let data = json.data(using: .utf8),
+              let dict = try? JSONDecoder().decode([String: String].self, from: data) else { return [:] }
+        return dict
     }
 }

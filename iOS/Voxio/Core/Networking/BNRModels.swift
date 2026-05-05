@@ -14,7 +14,16 @@ struct BNRNotification: Decodable {
 
 struct BNRNotificationEnvelope: Decodable {
     let type: String
-    let data: BNRNotificationData
+    let data: BNRNotificationData?
+
+    private enum CodingKeys: String, CodingKey { case type, data }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        type = try c.decode(String.self, forKey: .type)
+        // Some notifications (e.g. TRACKPAD) send `data` as a plain string — ignore those.
+        data = try? c.decode(BNRNotificationData.self, forKey: .data)
+    }
 }
 
 struct BNRNotificationData: Decodable {
@@ -74,45 +83,45 @@ enum BNREvent {
 
 func normalise(_ notification: BNRNotification) -> BNREvent? {
     let envelope = notification.notification
-    let data = envelope.data
+    let data = envelope.data  // nil when `data` field is not a dictionary (e.g. TRACKPAD)
 
     switch envelope.type {
     case "VOLUME":
-        guard let spk = data.speaker else { return nil }
+        guard let spk = data?.speaker else { return nil }
         let max = max(spk.range.maximum, 1)
         let pct = spk.level * 100 / max
         return .volume(level: pct, muted: spk.muted)
 
     case "SOURCE":
-        let src = data.primaryExperience?.source
-        let embeddedState = data.primaryExperience?.state
+        let src = data?.primaryExperience?.source
+        let embeddedState = data?.primaryExperience?.state
         Log.verbose("[BNR-norm] SOURCE → name:\(src?.friendlyName ?? "nil") id:\(src?.id ?? "nil") embeddedState:\(embeddedState ?? "nil")")
         return .source(name: src?.friendlyName, id: src?.id)
 
     case "PROGRESS_INFORMATION":
-        let raw = data.state ?? ""
+        let raw = data?.state ?? ""
         let state = mapPlaybackState(raw)
         Log.verbose("[BNR-norm] PROGRESS_INFORMATION → raw:\"\(raw)\" → \(state)")
         return .playbackState(state)
 
     case "NOW_PLAYING_NET_RADIO":
-        Log.info("[BNR-norm] NOW_PLAYING_NET_RADIO → title:\(data.name ?? "nil") artist:\(data.liveDescription ?? "nil")")
-        return .metadata(title: data.name, artist: data.liveDescription, album: nil)
+        Log.info("[BNR-norm] NOW_PLAYING_NET_RADIO → title:\(data?.name ?? "nil") artist:\(data?.liveDescription ?? "nil")")
+        return .metadata(title: data?.name, artist: data?.liveDescription, album: nil)
 
     case "NOW_PLAYING_STORED_MUSIC":
-        Log.info("[BNR-norm] NOW_PLAYING_STORED_MUSIC → title:\(data.name ?? "nil") artist:\(data.artist ?? "nil") album:\(data.album ?? "nil")")
-        return .metadata(title: data.name, artist: data.artist, album: data.album)
+        Log.info("[BNR-norm] NOW_PLAYING_STORED_MUSIC → title:\(data?.name ?? "nil") artist:\(data?.artist ?? "nil") album:\(data?.album ?? "nil")")
+        return .metadata(title: data?.name, artist: data?.artist, album: data?.album)
 
     case "NOW_PLAYING_ENDED":
         Log.verbose("[BNR-norm] NOW_PLAYING_ENDED (state mapping not currently emitted)")
         return nil
 
     case "STREAMING_STATUS":
-        Log.info("[BNR-norm] STREAMING_STATUS data.state:\(data.state ?? "nil") — not currently mapped")
+        Log.info("[BNR-norm] STREAMING_STATUS data.state:\(data?.state ?? "nil") — not currently mapped")
         return nil
 
     case "SOURCE_EXPERIENCE_CHANGED":
-        Log.info("[BNR-norm] SOURCE_EXPERIENCE_CHANGED data.state:\(data.state ?? "nil") primary.state:\(data.primaryExperience?.state ?? "nil") — not currently mapped")
+        Log.info("[BNR-norm] SOURCE_EXPERIENCE_CHANGED data.state:\(data?.state ?? "nil") primary.state:\(data?.primaryExperience?.state ?? "nil") — not currently mapped")
         return nil
 
     case "SOFTWARE_UPDATE_STATE":

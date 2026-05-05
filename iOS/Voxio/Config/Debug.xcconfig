@@ -1,4 +1,6 @@
 // Manual step required: assign this file to the build configuration in Xcode > Project > Info > Configurations
 
-TELEMETRY_BASE_URL = https://gentle-rock-06dc31e03-staging.7.azurestaticapps.net/
-INFOPLIST_KEY_TELEMETRY_BASE_URL = $(TELEMETRY_BASE_URL)
+TELEMETRY_HOSTNAME = gentle-rock-06dc31e03-staging.7.azurestaticapps.net
+INFOPLIST_KEY_TELEMETRY_HOSTNAME = $(TELEMETRY_HOSTNAME)
+TELEMETRY_API_KEY = 448bf4c5c93a5af6244b6defc0316ed7ef006ec4812958ce0fa70776b1b20b80
+INFOPLIST_KEY_TELEMETRY_API_KEY = $(TELEMETRY_API_KEY)
