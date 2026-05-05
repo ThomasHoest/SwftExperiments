@@ -64,6 +64,36 @@ enum CommandIntent: String, CaseIterable, Codable, Equatable {
     case unmuteAll      // "unmute all" / "slå alt til"
 }
 
+// Defined here (not in VoiceCommand.swift) so CommandIntent stays in the same compilation unit —
+// VoiceCommand.swift is shared with VoxioWidget which does not compile CommandParsing files.
+extension VoiceCommand {
+    func toCommandIntent() -> CommandIntent {
+        switch self {
+        case .playFavorite:              return .playFavoriteByNumber
+        case .playDefault:               return .playDefault
+        case .listFavorites:             return .listFavorites
+        case .stop:                      return .stop
+        case .pause:                     return .pause
+        case .resume:                    return .resume
+        case .setVolume:                 return .setVolume
+        case .adjustVolume(let d):       return d >= 0 ? .volumeUp : .volumeDown
+        case .mute:                      return .mute
+        case .unmute:                    return .unmute
+        case .joinSpeaker:               return .joinSpeaker
+        case .leaveSpeaker:              return .leaveSpeaker
+        case .confirm:                   return .confirm
+        case .cancel:                    return .cancel
+        case .unknown:                   return .unknown
+        case .stopAll:                   return .stopAll
+        case .pauseAll:                  return .pauseAll
+        case .resumeAll:                 return .resumeAll
+        case .adjustVolumeAll(let d):    return d >= 0 ? .volumeUpAll : .volumeDownAll
+        case .muteAll:                   return .muteAll
+        case .unmuteAll:                 return .unmuteAll
+        }
+    }
+}
+
 extension ParsedCommand: CustomStringConvertible {
     var description: String {
         switch intent {

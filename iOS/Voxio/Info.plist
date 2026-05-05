@@ -18,5 +18,7 @@
         <key>NSAllowsLocalNetworking</key>
         <true/>
     </dict>
+    <key>UIRequiresFullScreen</key>
+    <true/>
 </dict>
 </plist>

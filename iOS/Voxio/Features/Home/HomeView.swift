@@ -109,14 +109,14 @@ struct HomeView: View {
         )) {
             OnboardingView(onDismiss: {
                 // T-3803 — permissions were requested inside OnboardingView.handleCTA()
-                // before this closure is called; set flag and start pipeline.
+                // before this closure is called. Set flag only — onChange(hasCompletedOnboarding)
+                // is the single trigger for startListeningIfReady() to prevent double-start.
                 hasCompletedOnboarding = true
-                startListeningIfReady()
             })
         }
         // T-3805 — re-showable sheet from Settings (isReshow path; does not change hasCompletedOnboarding)
         .sheet(isPresented: $showOnboardingSheet) {
-            OnboardingView(isReshow: true, onDismiss: { showOnboardingSheet = false })
+            OnboardingView(onDismiss: { showOnboardingSheet = false }, isReshow: true)
         }
         // E-40 T-4006 — Help sheet (replaces HintCardView; disabled during active countdown)
         .sheet(isPresented: $showHelp) {
@@ -295,9 +295,12 @@ struct HomeView: View {
             hasAppeared = true
         }
 
-        // T-3804 — migrate users upgrading from v1.2 (hasSeenHint → hasCompletedOnboarding)
+        // T-3804 — migrate users upgrading from v1.2 (hasSeenHint → hasCompletedOnboarding).
+        // Return immediately — onChange(hasCompletedOnboarding) is the single trigger for
+        // startListeningIfReady() to avoid a double-start with the onChange handler below.
         if hasSeenHint && !hasCompletedOnboarding {
             hasCompletedOnboarding = true
+            return
         }
 
         // T-3802 — gate: if onboarding not complete, fullScreenCover handles it

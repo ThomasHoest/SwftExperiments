@@ -48,34 +48,6 @@ enum VoiceCommand: Equatable {
     case unmuteAll
 }
 
-extension VoiceCommand {
-    /// Maps a `VoiceCommand` back to the closest `CommandIntent` for personalisation storage.
-    func toCommandIntent() -> CommandIntent {
-        switch self {
-        case .playFavorite:    return .playFavoriteByNumber
-        case .playDefault:     return .playDefault
-        case .listFavorites:   return .listFavorites
-        case .stop:            return .stop
-        case .pause:           return .pause
-        case .resume:          return .resume
-        case .setVolume:       return .setVolume
-        case .adjustVolume(let d): return d >= 0 ? .volumeUp : .volumeDown
-        case .mute:            return .mute
-        case .unmute:          return .unmute
-        case .joinSpeaker:     return .joinSpeaker
-        case .leaveSpeaker:    return .leaveSpeaker
-        case .confirm:         return .confirm
-        case .cancel:          return .cancel
-        case .unknown:         return .unknown
-        case .stopAll:         return .stopAll
-        case .pauseAll:        return .pauseAll
-        case .resumeAll:       return .resumeAll
-        case .adjustVolumeAll(let d): return d >= 0 ? .volumeUpAll : .volumeDownAll
-        case .muteAll:         return .muteAll
-        case .unmuteAll:       return .unmuteAll
-        }
-    }
-}
 
 extension VoiceCommand: CustomStringConvertible {
     var description: String {

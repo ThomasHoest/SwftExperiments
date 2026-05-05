@@ -37,6 +37,9 @@ struct BroadcastCommandHandler {
         var successes = 0
         await withTaskGroup(of: Bool.self) { group in
             for speaker in scopedSpeakers {
+                // Capture name on MainActor before entering the child task,
+                // where MainActor-isolated sync properties are inaccessible.
+                let name = speaker.name
                 group.addTask {
                     do {
                         switch command {
@@ -57,7 +60,7 @@ struct BroadcastCommandHandler {
                         }
                         return true
                     } catch {
-                        Log.info("[BroadcastCommandHandler] speaker \(speaker.name) failed: \(error)")
+                        print("[BroadcastCommandHandler] speaker \(name) failed: \(error)")
                         return false
                     }
                 }
