@@ -1,0 +1,2851 @@
+{
+  "activityEntities" : [
+    "experimentCreated",
+    [
+      {
+        "createdDate" : "2026-05-05T09:38:13Z",
+        "event" : "experimentCreated",
+        "id" : "66F074C4-5CC2-410A-AA0A-91C1470F9CE2",
+        "subtitle" : "VoxioCommandModel 5",
+        "title" : "Model Source Created"
+      }
+    ],
+    "trainingDataAdded",
+    [
+      {
+        "createdDate" : "2026-05-05T09:38:42Z",
+        "event" : "trainingDataAdded",
+        "id" : "CC32D8ED-D02F-4A39-B39B-F839876CA75A",
+        "subtitle" : "corpus-training.csv",
+        "title" : "Training Data Added"
+      }
+    ],
+    "trainingStarted",
+    [
+      {
+        "createdDate" : "2026-05-05T09:38:47Z",
+        "event" : "trainingStarted",
+        "id" : "C569BB44-7482-4CC3-99A9-F4161ACF6788",
+        "subtitle" : "10 iterations",
+        "title" : "Training Started"
+      }
+    ],
+    "trainingFinished",
+    [
+      {
+        "createdDate" : "2026-05-05T09:38:48Z",
+        "event" : "trainingFinished",
+        "id" : "0077269D-D9E7-4486-8C1E-330B196BBD26",
+        "subtitle" : "10 iterations",
+        "title" : "Training Completed"
+      }
+    ]
+  ],
+  "contentDataResult" : {
+    "createdDate" : "2026-05-05T09:38:42Z"
+  },
+  "createdDate" : "2026-05-05T09:38:13Z",
+  "evaluationContainerEntity" : {
+    "createdDate" : "2026-05-05T09:38:48Z",
+    "evaluationEntities" : [
+      {
+        "analysedDataType" : "none",
+        "createdDate" : "2026-05-05T09:38:48Z",
+        "dataResult" : {
+
+        },
+        "id" : "fde07965-8b46-438a-b07c-90326ff3dc11"
+      }
+    ],
+    "id" : "ee962581-b52e-4450-9dc8-f74702651901",
+    "modifiedDate" : "2026-05-05T09:38:48Z",
+    "previewType" : "textClassifier",
+    "testingEvaluationEntity" : {
+      "analysedDataType" : "none",
+      "createdDate" : "2026-05-05T09:38:13Z",
+      "dataResult" : {
+        "createdDate" : "2026-05-05T09:38:42Z"
+      },
+      "id" : "c7912c40-f0e1-42cb-a5b1-c400dd0ed156"
+    },
+    "trainingEvaluationEntity" : {
+      "analysedDataType" : "none",
+      "createdDate" : "2026-05-05T09:38:13Z",
+      "dataResult" : {
+        "classesCount" : 24,
+        "createdDate" : "2026-05-05T09:38:42Z",
+        "dataAnalysis" : {
+          "classifierAnalysis" : {
+            "labelStats" : {
+              "cancel" : 383,
+              "confirm" : 487,
+              "joinSpeaker" : 500,
+              "leaveSpeaker" : 500,
+              "listFavorites" : 432,
+              "mute" : 417,
+              "muteAll" : 382,
+              "pause" : 460,
+              "pauseAll" : 319,
+              "playDefault" : 482,
+              "playFavoriteByNumber" : 500,
+              "playNamed" : 500,
+              "resume" : 500,
+              "resumeAll" : 340,
+              "setVolume" : 500,
+              "stop" : 499,
+              "stopAll" : 405,
+              "unknown" : 500,
+              "unmute" : 418,
+              "unmuteAll" : 409,
+              "volumeDown" : 500,
+              "volumeDownAll" : 500,
+              "volumeUp" : 500,
+              "volumeUpAll" : 500
+            }
+          },
+          "issues" : [
+            {
+              "description" : "24 classes found, including volumeDownAll, leaveSpeaker, playFavoriteByNumber",
+              "severity" : "debug"
+            },
+            {
+              "description" : "10933 texts found, automatically creating validation set",
+              "severity" : "good"
+            },
+            {
+              "description" : "Smallest class is \"pauseAll\" with 319 texts",
+              "severity" : "debug"
+            },
+            {
+              "description" : "Largest class is \"volumeDownAll\" with 500 text",
+              "severity" : "debug"
+            }
+          ],
+          "objectDetectorAnalysis" : {
+            "details" : {
+
+            }
+          },
+          "summary" : {
+            "canUseValidation" : 1,
+            "classCount" : 24,
+            "sampleCount" : 10933
+          }
+        },
+        "dataSourceID" : "1E1C7AE5-58C8-40FB-B1C6-DF49CD570497",
+        "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments/Resources/parsing/corpus-training.csv",
+        "itemsCount" : 10933
+      },
+      "dataSourceID" : "1E1C7AE5-58C8-40FB-B1C6-DF49CD570497",
+      "evaluationResult" : {
+        "textClassifier" : {
+          "accuracy" : 0.9963415808221816,
+          "confusionMatrix" : [
+            {
+              "actual" : "cancel",
+              "count" : 367,
+              "expected" : "cancel"
+            },
+            {
+              "actual" : "confirm",
+              "count" : 453,
+              "expected" : "confirm"
+            },
+            {
+              "actual" : "confirm",
+              "count" : 1,
+              "expected" : "stopAll"
+            },
+            {
+              "actual" : "joinSpeaker",
+              "count" : 478,
+              "expected" : "joinSpeaker"
+            },
+            {
+              "actual" : "leaveSpeaker",
+              "count" : 475,
+              "expected" : "leaveSpeaker"
+            },
+            {
+              "actual" : "listFavorites",
+              "count" : 412,
+              "expected" : "listFavorites"
+            },
+            {
+              "actual" : "mute",
+              "count" : 384,
+              "expected" : "mute"
+            },
+            {
+              "actual" : "mute",
+              "count" : 5,
+              "expected" : "muteAll"
+            },
+            {
+              "actual" : "mute",
+              "count" : 3,
+              "expected" : "stop"
+            },
+            {
+              "actual" : "mute",
+              "count" : 1,
+              "expected" : "unmute"
+            },
+            {
+              "actual" : "muteAll",
+              "count" : 1,
+              "expected" : "mute"
+            },
+            {
+              "actual" : "muteAll",
+              "count" : 359,
+              "expected" : "muteAll"
+            },
+            {
+              "actual" : "muteAll",
+              "count" : 2,
+              "expected" : "stopAll"
+            },
+            {
+              "actual" : "pause",
+              "count" : 1,
+              "expected" : "cancel"
+            },
+            {
+              "actual" : "pause",
+              "count" : 438,
+              "expected" : "pause"
+            },
+            {
+              "actual" : "pause",
+              "count" : 1,
+              "expected" : "pauseAll"
+            },
+            {
+              "actual" : "pauseAll",
+              "count" : 300,
+              "expected" : "pauseAll"
+            },
+            {
+              "actual" : "playDefault",
+              "count" : 447,
+              "expected" : "playDefault"
+            },
+            {
+              "actual" : "playDefault",
+              "count" : 4,
+              "expected" : "resume"
+            },
+            {
+              "actual" : "playFavoriteByNumber",
+              "count" : 472,
+              "expected" : "playFavoriteByNumber"
+            },
+            {
+              "actual" : "playNamed",
+              "count" : 476,
+              "expected" : "playNamed"
+            },
+            {
+              "actual" : "resume",
+              "count" : 476,
+              "expected" : "resume"
+            },
+            {
+              "actual" : "resumeAll",
+              "count" : 329,
+              "expected" : "resumeAll"
+            },
+            {
+              "actual" : "setVolume",
+              "count" : 481,
+              "expected" : "setVolume"
+            },
+            {
+              "actual" : "stop",
+              "count" : 7,
+              "expected" : "mute"
+            },
+            {
+              "actual" : "stop",
+              "count" : 475,
+              "expected" : "stop"
+            },
+            {
+              "actual" : "stop",
+              "count" : 2,
+              "expected" : "stopAll"
+            },
+            {
+              "actual" : "stopAll",
+              "count" : 1,
+              "expected" : "muteAll"
+            },
+            {
+              "actual" : "stopAll",
+              "count" : 378,
+              "expected" : "stopAll"
+            },
+            {
+              "actual" : "unknown",
+              "count" : 475,
+              "expected" : "unknown"
+            },
+            {
+              "actual" : "unmute",
+              "count" : 2,
+              "expected" : "mute"
+            },
+            {
+              "actual" : "unmute",
+              "count" : 391,
+              "expected" : "unmute"
+            },
+            {
+              "actual" : "unmute",
+              "count" : 4,
+              "expected" : "unmuteAll"
+            },
+            {
+              "actual" : "unmuteAll",
+              "count" : 382,
+              "expected" : "unmuteAll"
+            },
+            {
+              "actual" : "volumeDown",
+              "count" : 469,
+              "expected" : "volumeDown"
+            },
+            {
+              "actual" : "volumeDownAll",
+              "count" : 479,
+              "expected" : "volumeDownAll"
+            },
+            {
+              "actual" : "volumeUp",
+              "count" : 477,
+              "expected" : "volumeUp"
+            },
+            {
+              "actual" : "volumeUpAll",
+              "count" : 3,
+              "expected" : "unmuteAll"
+            },
+            {
+              "actual" : "volumeUpAll",
+              "count" : 476,
+              "expected" : "volumeUpAll"
+            }
+          ],
+          "statsByLabel" : {
+            "cancel" : {
+              "count" : 367,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.9972826086956522,
+                  "recall" : 1
+                }
+              }
+            },
+            "confirm" : {
+              "count" : 454,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 0.9977973568281938
+                }
+              }
+            },
+            "joinSpeaker" : {
+              "count" : 478,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "leaveSpeaker" : {
+              "count" : 475,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "listFavorites" : {
+              "count" : 412,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "mute" : {
+              "count" : 393,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.9746192893401016,
+                  "recall" : 0.9770992366412213
+                }
+              }
+            },
+            "muteAll" : {
+              "count" : 362,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.9835616438356164,
+                  "recall" : 0.9917127071823204
+                }
+              }
+            },
+            "pause" : {
+              "count" : 440,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 0.9954545454545455
+                }
+              }
+            },
+            "pauseAll" : {
+              "count" : 300,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.9966777408637874,
+                  "recall" : 1
+                }
+              }
+            },
+            "playDefault" : {
+              "count" : 451,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 0.991130820399113
+                }
+              }
+            },
+            "playFavoriteByNumber" : {
+              "count" : 472,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "playNamed" : {
+              "count" : 476,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "resume" : {
+              "count" : 476,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.9916666666666667,
+                  "recall" : 1
+                }
+              }
+            },
+            "resumeAll" : {
+              "count" : 329,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "setVolume" : {
+              "count" : 481,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "stop" : {
+              "count" : 484,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.9937238493723849,
+                  "recall" : 0.981404958677686
+                }
+              }
+            },
+            "stopAll" : {
+              "count" : 379,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.9869451697127938,
+                  "recall" : 0.9973614775725593
+                }
+              }
+            },
+            "unknown" : {
+              "count" : 475,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "unmute" : {
+              "count" : 397,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.9974489795918368,
+                  "recall" : 0.9848866498740554
+                }
+              }
+            },
+            "unmuteAll" : {
+              "count" : 382,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.9820051413881749,
+                  "recall" : 1
+                }
+              }
+            },
+            "volumeDown" : {
+              "count" : 469,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "volumeDownAll" : {
+              "count" : 479,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "volumeUp" : {
+              "count" : 477,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "volumeUpAll" : {
+              "count" : 479,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 0.9937369519832986
+                }
+              }
+            }
+          }
+        }
+      },
+      "id" : "30a755f4-07c4-497f-ae95-f55773e10e66"
+    },
+    "validationEvaluationEntity" : {
+      "analysedDataType" : "auto",
+      "createdDate" : "2026-05-05T09:38:13Z",
+      "dataResult" : {
+        "createdDate" : "2026-05-05T09:38:42Z"
+      },
+      "evaluationResult" : {
+        "textClassifier" : {
+          "accuracy" : 0.989010989010989,
+          "confusionMatrix" : [
+            {
+              "actual" : "cancel",
+              "count" : 16,
+              "expected" : "cancel"
+            },
+            {
+              "actual" : "confirm",
+              "count" : 33,
+              "expected" : "confirm"
+            },
+            {
+              "actual" : "joinSpeaker",
+              "count" : 22,
+              "expected" : "joinSpeaker"
+            },
+            {
+              "actual" : "leaveSpeaker",
+              "count" : 25,
+              "expected" : "leaveSpeaker"
+            },
+            {
+              "actual" : "listFavorites",
+              "count" : 20,
+              "expected" : "listFavorites"
+            },
+            {
+              "actual" : "mute",
+              "count" : 21,
+              "expected" : "mute"
+            },
+            {
+              "actual" : "mute",
+              "count" : 3,
+              "expected" : "unmute"
+            },
+            {
+              "actual" : "muteAll",
+              "count" : 20,
+              "expected" : "muteAll"
+            },
+            {
+              "actual" : "pause",
+              "count" : 20,
+              "expected" : "pause"
+            },
+            {
+              "actual" : "pauseAll",
+              "count" : 19,
+              "expected" : "pauseAll"
+            },
+            {
+              "actual" : "playDefault",
+              "count" : 31,
+              "expected" : "playDefault"
+            },
+            {
+              "actual" : "playFavoriteByNumber",
+              "count" : 28,
+              "expected" : "playFavoriteByNumber"
+            },
+            {
+              "actual" : "playNamed",
+              "count" : 24,
+              "expected" : "playNamed"
+            },
+            {
+              "actual" : "resume",
+              "count" : 24,
+              "expected" : "resume"
+            },
+            {
+              "actual" : "resumeAll",
+              "count" : 11,
+              "expected" : "resumeAll"
+            },
+            {
+              "actual" : "setVolume",
+              "count" : 19,
+              "expected" : "setVolume"
+            },
+            {
+              "actual" : "stop",
+              "count" : 1,
+              "expected" : "mute"
+            },
+            {
+              "actual" : "stop",
+              "count" : 14,
+              "expected" : "stop"
+            },
+            {
+              "actual" : "stopAll",
+              "count" : 26,
+              "expected" : "stopAll"
+            },
+            {
+              "actual" : "unknown",
+              "count" : 25,
+              "expected" : "unknown"
+            },
+            {
+              "actual" : "unmute",
+              "count" : 19,
+              "expected" : "unmute"
+            },
+            {
+              "actual" : "unmute",
+              "count" : 2,
+              "expected" : "unmuteAll"
+            },
+            {
+              "actual" : "unmuteAll",
+              "count" : 27,
+              "expected" : "unmuteAll"
+            },
+            {
+              "actual" : "volumeDown",
+              "count" : 31,
+              "expected" : "volumeDown"
+            },
+            {
+              "actual" : "volumeDownAll",
+              "count" : 21,
+              "expected" : "volumeDownAll"
+            },
+            {
+              "actual" : "volumeUp",
+              "count" : 23,
+              "expected" : "volumeUp"
+            },
+            {
+              "actual" : "volumeUpAll",
+              "count" : 21,
+              "expected" : "volumeUpAll"
+            }
+          ],
+          "statsByLabel" : {
+            "cancel" : {
+              "count" : 16,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "confirm" : {
+              "count" : 33,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "joinSpeaker" : {
+              "count" : 22,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "leaveSpeaker" : {
+              "count" : 25,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "listFavorites" : {
+              "count" : 20,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "mute" : {
+              "count" : 24,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.9545454545454546,
+                  "recall" : 0.875
+                }
+              }
+            },
+            "muteAll" : {
+              "count" : 20,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "pause" : {
+              "count" : 20,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "pauseAll" : {
+              "count" : 19,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "playDefault" : {
+              "count" : 31,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "playFavoriteByNumber" : {
+              "count" : 28,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "playNamed" : {
+              "count" : 24,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "resume" : {
+              "count" : 24,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "resumeAll" : {
+              "count" : 11,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "setVolume" : {
+              "count" : 19,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "stop" : {
+              "count" : 15,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 0.9333333333333333
+                }
+              }
+            },
+            "stopAll" : {
+              "count" : 26,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "unknown" : {
+              "count" : 25,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "unmute" : {
+              "count" : 21,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.8636363636363636,
+                  "recall" : 0.9047619047619048
+                }
+              }
+            },
+            "unmuteAll" : {
+              "count" : 27,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 0.9310344827586207,
+                  "recall" : 1
+                }
+              }
+            },
+            "volumeDown" : {
+              "count" : 31,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "volumeDownAll" : {
+              "count" : 21,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "volumeUp" : {
+              "count" : 23,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            },
+            "volumeUpAll" : {
+              "count" : 21,
+              "precisionRecall" : {
+                "success" : {
+                  "precision" : 1,
+                  "recall" : 1
+                }
+              }
+            }
+          }
+        }
+      },
+      "id" : "7d2ce412-db82-47cf-a6b0-bb7539867c3a"
+    }
+  },
+  "evaluationEntity" : {
+    "analysedDataType" : "none",
+    "dataResult" : {
+
+    },
+    "id" : "ea39d31e-95f1-487a-814a-f60445cd6f95"
+  },
+  "evaluationState" : "uninitialized",
+  "id" : "DAF20D4B-E4B2-404E-BF62-56DC2B18AF5E",
+  "modelEntity" : {
+    "createdDate" : "2026-05-05T09:38:13Z",
+    "experimentID" : "DAF20D4B-E4B2-404E-BF62-56DC2B18AF5E",
+    "id" : "0F19E90E-C1DE-41FE-B95A-46B5A8DDBFB5",
+    "modelURL" : "Models/VoxioCommandModel%205.mlmodel",
+    "modifiedDate" : "2026-05-05T09:38:13Z",
+    "title" : "",
+    "version" : "1.0"
+  },
+  "modifiedDate" : "2026-05-05T09:38:48Z",
+  "preferredFilename" : "VoxioCommandModel 5",
+  "settingEntity" : {
+    "algorithmType" : "maxEnt",
+    "augmentations" : [
+
+    ],
+    "featureNames" : [
+
+    ],
+    "handActionClassifierAugmentations" : [
+
+    ],
+    "handPoseClassifierAugmentations" : [
+
+    ],
+    "harVideoAugmentations" : 0,
+    "iterationCount" : 10,
+    "seedType" : "default",
+    "styleTransferAlgorithmType" : "image",
+    "taskType" : "textClassifier",
+    "textClassifierArabicLanguage" : "automatic",
+    "textClassifierCJKLanguage" : "automatic",
+    "textClassifierCyrillicLanguage" : "automatic",
+    "textClassifierIndicLanguage" : "automatic",
+    "textClassifierLatin" : "automatic",
+    "textClassifierScript" : "latin",
+    "textClassifierThaiLanguage" : "automatic"
+  },
+  "snapshotRole" : {
+    "withoutSnapshots" : 0
+  },
+  "state" : "trained",
+  "title" : "VoxioCommandModel 5",
+  "trainingEntity" : {
+    "analysedDataType" : "datasource",
+    "checkpointMetrics" : {
+
+    },
+    "dataResult" : {
+      "classesCount" : 24,
+      "createdDate" : "2026-05-05T09:38:42Z",
+      "dataAnalysis" : {
+        "classifierAnalysis" : {
+          "labelStats" : {
+            "cancel" : 383,
+            "confirm" : 487,
+            "joinSpeaker" : 500,
+            "leaveSpeaker" : 500,
+            "listFavorites" : 432,
+            "mute" : 417,
+            "muteAll" : 382,
+            "pause" : 460,
+            "pauseAll" : 319,
+            "playDefault" : 482,
+            "playFavoriteByNumber" : 500,
+            "playNamed" : 500,
+            "resume" : 500,
+            "resumeAll" : 340,
+            "setVolume" : 500,
+            "stop" : 499,
+            "stopAll" : 405,
+            "unknown" : 500,
+            "unmute" : 418,
+            "unmuteAll" : 409,
+            "volumeDown" : 500,
+            "volumeDownAll" : 500,
+            "volumeUp" : 500,
+            "volumeUpAll" : 500
+          }
+        },
+        "issues" : [
+          {
+            "description" : "24 classes found, including volumeDownAll, leaveSpeaker, playFavoriteByNumber",
+            "severity" : "debug"
+          },
+          {
+            "description" : "10933 texts found, automatically creating validation set",
+            "severity" : "good"
+          },
+          {
+            "description" : "Smallest class is \"pauseAll\" with 319 texts",
+            "severity" : "debug"
+          },
+          {
+            "description" : "Largest class is \"volumeDownAll\" with 500 text",
+            "severity" : "debug"
+          }
+        ],
+        "objectDetectorAnalysis" : {
+          "details" : {
+
+          }
+        },
+        "summary" : {
+          "canUseValidation" : 1,
+          "classCount" : 24,
+          "sampleCount" : 10933
+        }
+      },
+      "dataSourceID" : "1E1C7AE5-58C8-40FB-B1C6-DF49CD570497",
+      "dataURL" : "file:///Users/mrandersen/Projects/SwftExperiments/Resources/parsing/corpus-training.csv",
+      "itemsCount" : 10933
+    },
+    "dataSourceID" : "1E1C7AE5-58C8-40FB-B1C6-DF49CD570497",
+    "featureExtractionCheckpointMayBeAvailable" : false,
+    "finishTime" : "2026-05-05T09:38:48Z",
+    "progress" : [
+      {
+        "count" : 1,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 10,
+          "trainingAccuracy" : 0.045730240643024445,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 2,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 9,
+          "trainingAccuracy" : 0.8428805470466614,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 3,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 8,
+          "trainingAccuracy" : 0.927794337272644,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 4,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 7,
+          "trainingAccuracy" : 0.9752575159072876,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 5,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 6,
+          "trainingAccuracy" : 0.9910464882850647,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 6,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 5,
+          "trainingAccuracy" : 0.9943197965621948,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 7,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 4,
+          "trainingAccuracy" : 0.9949937462806702,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 8,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 3,
+          "trainingAccuracy" : 0.9955713748931885,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 9,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 2,
+          "trainingAccuracy" : 0.9962453246116638,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 10,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : true,
+        "tableIndex" : 1,
+        "tcTrainingColumnHeader" : {
+          "elapsedTime" : 0,
+          "hasTraining" : true,
+          "hasValidation" : false,
+          "remainingIterationCount" : 1,
+          "trainingAccuracy" : 0.9963415861129761,
+          "validationAccuracy" : 0
+        }
+      },
+      {
+        "count" : 87,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 187,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 287,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 387,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 487,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 587,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 687,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 787,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 887,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 987,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 1087,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 1187,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 1287,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 1387,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 1487,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 1587,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 1687,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 1787,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 1887,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 1987,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 2087,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 2187,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 2287,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 2387,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 2487,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 2587,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 2687,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 2787,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 2887,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 2987,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 3087,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 3187,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 3287,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 3387,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 3487,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 3587,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 3687,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 3787,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 3887,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 3987,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 4087,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 4187,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 4287,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 4387,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 4487,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 4587,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 4687,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 4787,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 4887,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 4987,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 5087,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 5187,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 5287,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 5387,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 5487,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 5587,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 5687,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 5787,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 5887,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 5987,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 6087,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 6187,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 6287,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 6387,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 6487,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 6587,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 6687,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 6787,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 6887,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 6987,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 7087,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 7187,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 7287,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 7387,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 7487,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 7587,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 7687,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 7787,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 7887,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 7987,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 8087,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 8187,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 8287,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 8387,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 8487,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 8587,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 8687,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 8787,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 8887,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 8987,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 9087,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 9187,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 9287,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 9387,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 9487,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 9587,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 9687,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 9787,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 9887,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 9987,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 10087,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 10187,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 10287,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : false,
+        "tableIndex" : 0
+      },
+      {
+        "count" : 10387,
+        "currentRowIndex" : 0,
+        "isLast" : false,
+        "percentComplete" : 0,
+        "tableDone" : true,
+        "tableIndex" : 0
+      }
+    ],
+    "snapshottableCheckpoints" : {
+
+    },
+    "startTime" : "2026-05-05T09:38:47Z",
+    "trainingAccuracy" : 0.9963415808221816,
+    "trainingResults" : {
+      "textClassifier" : {
+        "accuracy" : 0.9963415808221816,
+        "confusionMatrix" : [
+          {
+            "actual" : "cancel",
+            "count" : 367,
+            "expected" : "cancel"
+          },
+          {
+            "actual" : "confirm",
+            "count" : 453,
+            "expected" : "confirm"
+          },
+          {
+            "actual" : "confirm",
+            "count" : 1,
+            "expected" : "stopAll"
+          },
+          {
+            "actual" : "joinSpeaker",
+            "count" : 478,
+            "expected" : "joinSpeaker"
+          },
+          {
+            "actual" : "leaveSpeaker",
+            "count" : 475,
+            "expected" : "leaveSpeaker"
+          },
+          {
+            "actual" : "listFavorites",
+            "count" : 412,
+            "expected" : "listFavorites"
+          },
+          {
+            "actual" : "mute",
+            "count" : 384,
+            "expected" : "mute"
+          },
+          {
+            "actual" : "mute",
+            "count" : 5,
+            "expected" : "muteAll"
+          },
+          {
+            "actual" : "mute",
+            "count" : 3,
+            "expected" : "stop"
+          },
+          {
+            "actual" : "mute",
+            "count" : 1,
+            "expected" : "unmute"
+          },
+          {
+            "actual" : "muteAll",
+            "count" : 1,
+            "expected" : "mute"
+          },
+          {
+            "actual" : "muteAll",
+            "count" : 359,
+            "expected" : "muteAll"
+          },
+          {
+            "actual" : "muteAll",
+            "count" : 2,
+            "expected" : "stopAll"
+          },
+          {
+            "actual" : "pause",
+            "count" : 1,
+            "expected" : "cancel"
+          },
+          {
+            "actual" : "pause",
+            "count" : 438,
+            "expected" : "pause"
+          },
+          {
+            "actual" : "pause",
+            "count" : 1,
+            "expected" : "pauseAll"
+          },
+          {
+            "actual" : "pauseAll",
+            "count" : 300,
+            "expected" : "pauseAll"
+          },
+          {
+            "actual" : "playDefault",
+            "count" : 447,
+            "expected" : "playDefault"
+          },
+          {
+            "actual" : "playDefault",
+            "count" : 4,
+            "expected" : "resume"
+          },
+          {
+            "actual" : "playFavoriteByNumber",
+            "count" : 472,
+            "expected" : "playFavoriteByNumber"
+          },
+          {
+            "actual" : "playNamed",
+            "count" : 476,
+            "expected" : "playNamed"
+          },
+          {
+            "actual" : "resume",
+            "count" : 476,
+            "expected" : "resume"
+          },
+          {
+            "actual" : "resumeAll",
+            "count" : 329,
+            "expected" : "resumeAll"
+          },
+          {
+            "actual" : "setVolume",
+            "count" : 481,
+            "expected" : "setVolume"
+          },
+          {
+            "actual" : "stop",
+            "count" : 7,
+            "expected" : "mute"
+          },
+          {
+            "actual" : "stop",
+            "count" : 475,
+            "expected" : "stop"
+          },
+          {
+            "actual" : "stop",
+            "count" : 2,
+            "expected" : "stopAll"
+          },
+          {
+            "actual" : "stopAll",
+            "count" : 1,
+            "expected" : "muteAll"
+          },
+          {
+            "actual" : "stopAll",
+            "count" : 378,
+            "expected" : "stopAll"
+          },
+          {
+            "actual" : "unknown",
+            "count" : 475,
+            "expected" : "unknown"
+          },
+          {
+            "actual" : "unmute",
+            "count" : 2,
+            "expected" : "mute"
+          },
+          {
+            "actual" : "unmute",
+            "count" : 391,
+            "expected" : "unmute"
+          },
+          {
+            "actual" : "unmute",
+            "count" : 4,
+            "expected" : "unmuteAll"
+          },
+          {
+            "actual" : "unmuteAll",
+            "count" : 382,
+            "expected" : "unmuteAll"
+          },
+          {
+            "actual" : "volumeDown",
+            "count" : 469,
+            "expected" : "volumeDown"
+          },
+          {
+            "actual" : "volumeDownAll",
+            "count" : 479,
+            "expected" : "volumeDownAll"
+          },
+          {
+            "actual" : "volumeUp",
+            "count" : 477,
+            "expected" : "volumeUp"
+          },
+          {
+            "actual" : "volumeUpAll",
+            "count" : 3,
+            "expected" : "unmuteAll"
+          },
+          {
+            "actual" : "volumeUpAll",
+            "count" : 476,
+            "expected" : "volumeUpAll"
+          }
+        ],
+        "statsByLabel" : {
+          "cancel" : {
+            "count" : 367,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.9972826086956522,
+                "recall" : 1
+              }
+            }
+          },
+          "confirm" : {
+            "count" : 454,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 0.9977973568281938
+              }
+            }
+          },
+          "joinSpeaker" : {
+            "count" : 478,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "leaveSpeaker" : {
+            "count" : 475,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "listFavorites" : {
+            "count" : 412,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "mute" : {
+            "count" : 393,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.9746192893401016,
+                "recall" : 0.9770992366412213
+              }
+            }
+          },
+          "muteAll" : {
+            "count" : 362,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.9835616438356164,
+                "recall" : 0.9917127071823204
+              }
+            }
+          },
+          "pause" : {
+            "count" : 440,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 0.9954545454545455
+              }
+            }
+          },
+          "pauseAll" : {
+            "count" : 300,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.9966777408637874,
+                "recall" : 1
+              }
+            }
+          },
+          "playDefault" : {
+            "count" : 451,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 0.991130820399113
+              }
+            }
+          },
+          "playFavoriteByNumber" : {
+            "count" : 472,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "playNamed" : {
+            "count" : 476,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "resume" : {
+            "count" : 476,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.9916666666666667,
+                "recall" : 1
+              }
+            }
+          },
+          "resumeAll" : {
+            "count" : 329,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "setVolume" : {
+            "count" : 481,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "stop" : {
+            "count" : 484,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.9937238493723849,
+                "recall" : 0.981404958677686
+              }
+            }
+          },
+          "stopAll" : {
+            "count" : 379,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.9869451697127938,
+                "recall" : 0.9973614775725593
+              }
+            }
+          },
+          "unknown" : {
+            "count" : 475,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "unmute" : {
+            "count" : 397,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.9974489795918368,
+                "recall" : 0.9848866498740554
+              }
+            }
+          },
+          "unmuteAll" : {
+            "count" : 382,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.9820051413881749,
+                "recall" : 1
+              }
+            }
+          },
+          "volumeDown" : {
+            "count" : 469,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "volumeDownAll" : {
+            "count" : 479,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "volumeUp" : {
+            "count" : 477,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "volumeUpAll" : {
+            "count" : 479,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 0.9937369519832986
+              }
+            }
+          }
+        }
+      }
+    },
+    "validationAccuracy" : 0.989010989010989,
+    "validationResults" : {
+      "textClassifier" : {
+        "accuracy" : 0.989010989010989,
+        "confusionMatrix" : [
+          {
+            "actual" : "cancel",
+            "count" : 16,
+            "expected" : "cancel"
+          },
+          {
+            "actual" : "confirm",
+            "count" : 33,
+            "expected" : "confirm"
+          },
+          {
+            "actual" : "joinSpeaker",
+            "count" : 22,
+            "expected" : "joinSpeaker"
+          },
+          {
+            "actual" : "leaveSpeaker",
+            "count" : 25,
+            "expected" : "leaveSpeaker"
+          },
+          {
+            "actual" : "listFavorites",
+            "count" : 20,
+            "expected" : "listFavorites"
+          },
+          {
+            "actual" : "mute",
+            "count" : 21,
+            "expected" : "mute"
+          },
+          {
+            "actual" : "mute",
+            "count" : 3,
+            "expected" : "unmute"
+          },
+          {
+            "actual" : "muteAll",
+            "count" : 20,
+            "expected" : "muteAll"
+          },
+          {
+            "actual" : "pause",
+            "count" : 20,
+            "expected" : "pause"
+          },
+          {
+            "actual" : "pauseAll",
+            "count" : 19,
+            "expected" : "pauseAll"
+          },
+          {
+            "actual" : "playDefault",
+            "count" : 31,
+            "expected" : "playDefault"
+          },
+          {
+            "actual" : "playFavoriteByNumber",
+            "count" : 28,
+            "expected" : "playFavoriteByNumber"
+          },
+          {
+            "actual" : "playNamed",
+            "count" : 24,
+            "expected" : "playNamed"
+          },
+          {
+            "actual" : "resume",
+            "count" : 24,
+            "expected" : "resume"
+          },
+          {
+            "actual" : "resumeAll",
+            "count" : 11,
+            "expected" : "resumeAll"
+          },
+          {
+            "actual" : "setVolume",
+            "count" : 19,
+            "expected" : "setVolume"
+          },
+          {
+            "actual" : "stop",
+            "count" : 1,
+            "expected" : "mute"
+          },
+          {
+            "actual" : "stop",
+            "count" : 14,
+            "expected" : "stop"
+          },
+          {
+            "actual" : "stopAll",
+            "count" : 26,
+            "expected" : "stopAll"
+          },
+          {
+            "actual" : "unknown",
+            "count" : 25,
+            "expected" : "unknown"
+          },
+          {
+            "actual" : "unmute",
+            "count" : 19,
+            "expected" : "unmute"
+          },
+          {
+            "actual" : "unmute",
+            "count" : 2,
+            "expected" : "unmuteAll"
+          },
+          {
+            "actual" : "unmuteAll",
+            "count" : 27,
+            "expected" : "unmuteAll"
+          },
+          {
+            "actual" : "volumeDown",
+            "count" : 31,
+            "expected" : "volumeDown"
+          },
+          {
+            "actual" : "volumeDownAll",
+            "count" : 21,
+            "expected" : "volumeDownAll"
+          },
+          {
+            "actual" : "volumeUp",
+            "count" : 23,
+            "expected" : "volumeUp"
+          },
+          {
+            "actual" : "volumeUpAll",
+            "count" : 21,
+            "expected" : "volumeUpAll"
+          }
+        ],
+        "statsByLabel" : {
+          "cancel" : {
+            "count" : 16,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "confirm" : {
+            "count" : 33,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "joinSpeaker" : {
+            "count" : 22,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "leaveSpeaker" : {
+            "count" : 25,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "listFavorites" : {
+            "count" : 20,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "mute" : {
+            "count" : 24,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.9545454545454546,
+                "recall" : 0.875
+              }
+            }
+          },
+          "muteAll" : {
+            "count" : 20,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "pause" : {
+            "count" : 20,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "pauseAll" : {
+            "count" : 19,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "playDefault" : {
+            "count" : 31,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "playFavoriteByNumber" : {
+            "count" : 28,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "playNamed" : {
+            "count" : 24,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "resume" : {
+            "count" : 24,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "resumeAll" : {
+            "count" : 11,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "setVolume" : {
+            "count" : 19,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "stop" : {
+            "count" : 15,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 0.9333333333333333
+              }
+            }
+          },
+          "stopAll" : {
+            "count" : 26,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "unknown" : {
+            "count" : 25,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "unmute" : {
+            "count" : 21,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.8636363636363636,
+                "recall" : 0.9047619047619048
+              }
+            }
+          },
+          "unmuteAll" : {
+            "count" : 27,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 0.9310344827586207,
+                "recall" : 1
+              }
+            }
+          },
+          "volumeDown" : {
+            "count" : 31,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "volumeDownAll" : {
+            "count" : 21,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "volumeUp" : {
+            "count" : 23,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          },
+          "volumeUpAll" : {
+            "count" : 21,
+            "precisionRecall" : {
+              "success" : {
+                "precision" : 1,
+                "recall" : 1
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "validationEntity" : {
+    "analysedDataType" : "auto",
+    "dataResult" : {
+      "createdDate" : "2026-05-05T09:38:42Z"
+    },
+    "splitOptions" : {
+      "strategy" : {
+        "automatic" : {
+
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

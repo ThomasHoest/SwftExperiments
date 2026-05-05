@@ -45,7 +45,24 @@
       "Bash(curl -s \"https://api.github.com/repos/ThomasHoest/TheCheapPowerCompany/contents/apps/marketing-site\")",
       "Bash(python3 -c \"import sys,json; [print\\(f['name']\\) for f in json.load\\(sys.stdin\\)]\")",
       "Bash(curl -s \"https://api.github.com/repos/ThomasHoest/TheCheapPowerCompany/contents/.github/workflows\")",
-      "Bash(curl -s \"https://api.github.com/repos/ThomasHoest/TheCheapPowerCompany/contents/infrastructure\")"
+      "Bash(curl -s \"https://api.github.com/repos/ThomasHoest/TheCheapPowerCompany/contents/infrastructure\")",
+      "Bash(pnpm install *)",
+      "Bash(pnpm test:unit)",
+      "Bash(npx tsc *)",
+      "Bash(npx vitest *)",
+      "WebFetch(domain:azure.microsoft.com)",
+      "WebFetch(domain:dev.to)",
+      "WebFetch(domain:neon.com)",
+      "Bash(pnpm tsc *)",
+      "Bash(xcrun --sdk iphonesimulator --show-sdk-path)",
+      "Bash(swift --version)",
+      "Bash(md5 /Users/mrandersen/Projects/SwftExperiments/iOS/Voxio/Features/Home/HomeView.swift)",
+      "Bash(xcode-select -p)",
+      "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -list -project /Users/mrandersen/Projects/SwftExperiments/iOS/Voxio.xcodeproj)",
+      "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project /Users/mrandersen/Projects/SwftExperiments/iOS/Voxio.xcodeproj -scheme Voxio -destination \"platform=iOS Simulator,name=iPhone 16\" -testPlan VoxioTests -only-testing:VoxioTests/HelpSectionTests)",
+      "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project /Users/mrandersen/Projects/SwftExperiments/iOS/Voxio.xcodeproj -scheme Voxio -destination \"platform=iOS Simulator,name=iPhone 16\")",
+      "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild build-for-testing -project /Users/mrandersen/Projects/SwftExperiments/iOS/Voxio.xcodeproj -scheme Voxio -destination \"platform=iOS Simulator,name=iPhone 16\")",
+      "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild build-for-testing -project /Users/mrandersen/Projects/SwftExperiments/iOS/Voxio.xcodeproj -scheme Voxio -destination \"platform=iOS Simulator,arch=arm64,id=B2CFFAD4-320A-4549-B8BF-EDEA347E63E5\")"
     ]
   }
 }
