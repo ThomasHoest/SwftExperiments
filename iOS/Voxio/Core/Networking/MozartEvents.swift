@@ -1,4 +1,5 @@
 import Foundation
+import Network
 
 class MozartEvents {
     private let host: String
@@ -8,16 +9,41 @@ class MozartEvents {
     private var cancelled = false
     private let decoder = JSONDecoder()
 
+    // Path monitoring — pause retries on cellular, resume on WiFi
+    private let pathMonitor: NWPathMonitor
+    private let pathQueue = DispatchQueue(label: "mozart.path", qos: .utility)
+    private var pathSatisfied = false
+    private var pendingReconnect = false
+
     var onEvent: ((BeoEvent) -> Void)?
 
     init(host: String) {
         self.host = host
         url = URL(string: "ws://\(host):9339/")!
+        pathMonitor = NWPathMonitor()
+        setupPathMonitor()
     }
 
     func connect() {
         cancelled = false
         openSocket()
+    }
+
+    private func setupPathMonitor() {
+        pathMonitor.pathUpdateHandler = { [weak self] path in
+            guard let self else { return }
+            let nowSatisfied = path.status == .satisfied && !path.isExpensive
+            let wasSatisfied = self.pathSatisfied
+            self.pathSatisfied = nowSatisfied
+
+            if nowSatisfied && !wasSatisfied && self.pendingReconnect && !self.cancelled {
+                Log.info("[WS:\(self.host)] WiFi restored — reconnecting")
+                self.pendingReconnect = false
+                self.retryCount = 0
+                self.openSocket()
+            }
+        }
+        pathMonitor.start(queue: pathQueue)
     }
 
     private func openSocket() {
@@ -37,10 +63,15 @@ class MozartEvents {
                 if case .string(let text) = message { self.processMessage(text) }
                 self.receive()
             case .failure(let error):
-                let delay = min(pow(2.0, Double(self.retryCount)), 30.0)
-                Log.info("[WS:\(self.host)] disconnected (\(error.localizedDescription)) — reconnecting in \(Int(delay))s")
-                self.retryCount = min(self.retryCount + 1, 5)
-                DispatchQueue.global().asyncAfter(deadline: .now() + delay) { self.openSocket() }
+                if self.pathSatisfied {
+                    let delay = min(pow(2.0, Double(self.retryCount)), 30.0)
+                    Log.info("[WS:\(self.host)] disconnected (\(error.localizedDescription)) — retrying in \(Int(delay))s")
+                    self.retryCount = min(self.retryCount + 1, 5)
+                    DispatchQueue.global().asyncAfter(deadline: .now() + delay) { self.openSocket() }
+                } else {
+                    Log.info("[WS:\(self.host)] disconnected — no WiFi, parked until path restores")
+                    self.pendingReconnect = true
+                }
             }
         }
     }
@@ -86,6 +117,8 @@ class MozartEvents {
     func disconnect() {
         Log.info("[WS:\(host)] disconnecting")
         cancelled = true
+        pendingReconnect = false
+        pathMonitor.cancel()
         task?.cancel(with: .normalClosure, reason: nil)
     }
 }

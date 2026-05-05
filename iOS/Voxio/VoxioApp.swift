@@ -10,6 +10,12 @@ import SwiftUI
 struct VoxioApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
+    init() {
+        Log.addListener(ConsoleLogListener())
+        Log.addListener(FileLogListener.shared)
+        FileLogListener.shared.pruneOldLogs()
+    }
+
     var body: some Scene {
         WindowGroup {
             HomeView()
@@ -19,6 +25,7 @@ struct VoxioApp: App {
             switch phase {
             case .background, .inactive:
                 Task { @MainActor in WidgetStateWriter.markAppRunning(false) }
+                FileLogListener.shared.flushSync()
             case .active:
                 Task { @MainActor in WidgetStateWriter.markAppRunning(true) }
             @unknown default:

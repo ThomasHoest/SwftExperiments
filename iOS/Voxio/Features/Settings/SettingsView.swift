@@ -6,6 +6,8 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var langService = LanguageService.shared
     @AppStorage("telemetryEnabled") private var telemetryEnabled = false
+    @State private var showLogExporter = false
+    @State private var exportURLs: [URL] = []
 
     private var str: SettingsStrings { .forLanguage(langService.activeLanguage) }
 
@@ -46,6 +48,12 @@ struct SettingsView: View {
                 Section(footer: Text(str.telemetryFooter)) {
                     Toggle(str.telemetryToggle, isOn: $telemetryEnabled)
                 }
+
+                Section("Developer") {
+                    Button(action: exportLogs) {
+                        Label("Export Logs", systemImage: "square.and.arrow.up")
+                    }
+                }
             }
             .navigationTitle(str.title)
             .navigationBarTitleDisplayMode(.inline)
@@ -54,6 +62,18 @@ struct SettingsView: View {
                     Button(str.done) { dismiss() }
                 }
             }
+            .sheet(isPresented: $showLogExporter) {
+                ActivityShareSheet(items: exportURLs)
+                    .preferredColorScheme(.dark)
+            }
         }
+    }
+
+    private func exportLogs() {
+        FileLogListener.shared.flushSync()
+        let urls = FileLogListener.shared.logFileURLs()
+        guard !urls.isEmpty else { return }
+        exportURLs = urls
+        showLogExporter = true
     }
 }
