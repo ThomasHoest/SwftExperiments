@@ -12,6 +12,17 @@ struct AliasRecord: Identifiable {
     let createdAt: Date
 }
 
+// MARK: - ConfirmedCommandRecord
+
+struct ConfirmedCommandRecord: Identifiable {
+    let id: UUID
+    let speakerId: String
+    let transcription: String
+    let intent: CommandIntent
+    let lastUsedAt: Date
+    let useCount: Int64
+}
+
 // MARK: - PersonalisationStore
 
 @MainActor
@@ -34,14 +45,64 @@ final class PersonalisationStore {
 
     // MARK: - Alias CRUD
 
+    enum SaveAliasError: Error {
+        case reservedWord   // phrase contains "voxio"
+        case duplicatePhrase
+    }
+
     func saveAlias(speakerId: String, phrase: String, intent: CommandIntent, slots: [String: String]) throws {
+        let normalised = phrase.lowercased()
+        guard !normalised.contains("voxio") else {
+            throw SaveAliasError.reservedWord
+        }
+
+        // Check for duplicate phrase on the same speaker — block, do not overwrite.
+        let duplicateRequest: NSFetchRequest<Alias> = Alias.fetchRequest()
+        duplicateRequest.predicate = NSPredicate(format: "phrase == %@ AND speakerId == %@", normalised, speakerId)
+        duplicateRequest.fetchLimit = 1
+        let existing = try context.fetch(duplicateRequest)
+        guard existing.isEmpty else {
+            throw SaveAliasError.duplicatePhrase
+        }
+
         let alias = Alias(context: context)
         alias.id = UUID()
         alias.speakerId = speakerId
-        alias.phrase = phrase.lowercased()
+        alias.phrase = normalised
         alias.intentRaw = intent.rawValue
         alias.slotsJSON = encodeSlotsJSON(slots)
         alias.createdAt = Date()
+        try saveContext()
+    }
+
+    func updateAlias(id: UUID, speakerId: String, phrase: String, intent: CommandIntent, slots: [String: String]) throws {
+        let normalised = phrase.lowercased()
+        guard !normalised.contains("voxio") else {
+            throw SaveAliasError.reservedWord
+        }
+
+        let request: NSFetchRequest<Alias> = Alias.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+        request.fetchLimit = 1
+        let results = try context.fetch(request)
+        guard let alias = results.first else { return }
+
+        // Check for duplicate phrase on the target speaker, excluding this alias itself.
+        let duplicateRequest: NSFetchRequest<Alias> = Alias.fetchRequest()
+        duplicateRequest.predicate = NSPredicate(
+            format: "phrase == %@ AND speakerId == %@ AND id != %@",
+            normalised, speakerId, id as CVarArg
+        )
+        duplicateRequest.fetchLimit = 1
+        let existing = try context.fetch(duplicateRequest)
+        guard existing.isEmpty else {
+            throw SaveAliasError.duplicatePhrase
+        }
+
+        alias.speakerId  = speakerId
+        alias.phrase     = normalised
+        alias.intentRaw  = intent.rawValue
+        alias.slotsJSON  = encodeSlotsJSON(slots)
         try saveContext()
     }
 
@@ -117,10 +178,38 @@ final class PersonalisationStore {
         try saveContext()
     }
 
+    func confirmedCommands(for speakerId: String) -> [ConfirmedCommandRecord] {
+        let request: NSFetchRequest<ConfirmedCommand> = ConfirmedCommand.fetchRequest()
+        request.predicate = NSPredicate(format: "speakerId == %@", speakerId)
+        request.sortDescriptors = [NSSortDescriptor(key: "lastUsedAt", ascending: false)]
+        do {
+            let results = try context.fetch(request)
+            return results.compactMap { confirmedCommandRecord(from: $0) }
+        } catch {
+            Log.error("[PersonalisationStore] confirmedCommands(for:) fetch failed: \(error)")
+            return []
+        }
+    }
+
+    func allConfirmedCommandRecords() -> [ConfirmedCommandRecord] {
+        let request: NSFetchRequest<ConfirmedCommand> = ConfirmedCommand.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(key: "lastUsedAt", ascending: false)]
+        do {
+            let results = try context.fetch(request)
+            return results.compactMap { confirmedCommandRecord(from: $0) }
+        } catch {
+            Log.error("[PersonalisationStore] allConfirmedCommandRecords fetch failed: \(error)")
+            return []
+        }
+    }
+
     func clearAllConfirmedCommands() throws {
         let request: NSFetchRequest<NSFetchRequestResult> = ConfirmedCommand.fetchRequest()
         let batchDelete = NSBatchDeleteRequest(fetchRequest: request)
         try context.execute(batchDelete)
+        // NSBatchDeleteRequest bypasses context change-tracking; refreshAllObjects ensures
+        // in-memory objects reflect the cleared state immediately (ADR E-34).
+        context.refreshAllObjects()
         try saveContext()
     }
 
@@ -234,5 +323,22 @@ final class PersonalisationStore {
               let createdAt = alias.createdAt else { return nil }
         let slots = decodeSlotsJSON(alias.slotsJSON)
         return AliasRecord(id: id, speakerId: speakerId, phrase: phrase, intent: intent, slots: slots, createdAt: createdAt)
+    }
+
+    private func confirmedCommandRecord(from entry: ConfirmedCommand) -> ConfirmedCommandRecord? {
+        guard let id           = entry.id,
+              let speakerId    = entry.speakerId,
+              let transcription = entry.transcription,
+              let intentRaw    = entry.intentRaw,
+              let intent       = CommandIntent(rawValue: intentRaw),
+              let lastUsedAt   = entry.lastUsedAt else { return nil }
+        return ConfirmedCommandRecord(
+            id: id,
+            speakerId: speakerId,
+            transcription: transcription,
+            intent: intent,
+            lastUsedAt: lastUsedAt,
+            useCount: Int64(entry.useCount)
+        )
     }
 }
