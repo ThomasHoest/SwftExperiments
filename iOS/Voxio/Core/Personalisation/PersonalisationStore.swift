@@ -257,6 +257,43 @@ final class PersonalisationStore {
         }
     }
 
+    // MARK: - Cross-speaker match
+
+    /// Searches aliases and confirmed commands across all speakers for `phrase`.
+    /// Used when no speaker name appears in the transcript (e.g. "musik til arbejdet").
+    func matchPersonalisedCommandAcrossAllSpeakers(phrase: String) -> (command: ParsedCommand, speakerId: String)? {
+        let normalised = phrase.trimmingCharacters(in: .whitespaces).lowercased()
+
+        let aliasRequest: NSFetchRequest<Alias> = Alias.fetchRequest()
+        aliasRequest.predicate = NSPredicate(format: "phrase == %@", normalised)
+        aliasRequest.fetchLimit = 1
+        if let alias = try? context.fetch(aliasRequest).first,
+           let speakerId = alias.speakerId,
+           let intentRaw = alias.intentRaw,
+           let intent = CommandIntent(rawValue: intentRaw) {
+            let cmd = buildParsedCommand(intent: intent, slots: decodeSlotsJSON(alias.slotsJSON))
+            Log.info("[PersonalisationStore] cross-speaker alias match for phrase '\(normalised)' → speakerId \(speakerId)")
+            return (cmd, speakerId)
+        }
+
+        let ccRequest: NSFetchRequest<ConfirmedCommand> = ConfirmedCommand.fetchRequest()
+        ccRequest.predicate = NSPredicate(format: "transcription == %@", normalised)
+        ccRequest.fetchLimit = 1
+        if let entry = try? context.fetch(ccRequest).first,
+           let speakerId = entry.speakerId,
+           let intentRaw = entry.intentRaw,
+           let intent = CommandIntent(rawValue: intentRaw) {
+            entry.lastUsedAt = Date()
+            entry.useCount += 1
+            try? saveContext()
+            let cmd = buildParsedCommand(intent: intent, slots: decodeSlotsJSON(entry.slotsJSON))
+            Log.info("[PersonalisationStore] cross-speaker confirmed-command match for '\(normalised)' → speakerId \(speakerId)")
+            return (cmd, speakerId)
+        }
+
+        return nil
+    }
+
     // MARK: - Private helpers
 
     private func evictOldestConfirmedCommands(for speakerId: String) throws {

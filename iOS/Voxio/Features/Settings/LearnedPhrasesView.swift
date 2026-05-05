@@ -2,9 +2,8 @@ import SwiftUI
 
 struct LearnedPhrasesView: View {
     let store: PersonalisationStore
+    @ObservedObject private var langService = LanguageService.shared
 
-    // Speaker IDs to group by; discovered speakers are not required here —
-    // we group by whatever speakerIds exist in the learned-commands store.
     @State private var speakerGroups: [(speakerId: String, records: [ConfirmedCommandRecord])] = []
     @State private var showClearAllAlert = false
     @State private var deleteTarget: ConfirmedCommandRecord?
@@ -12,6 +11,7 @@ struct LearnedPhrasesView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    private var str: SettingsStrings { .forLanguage(langService.activeLanguage) }
     private var isEmpty: Bool { speakerGroups.isEmpty }
 
     var body: some View {
@@ -24,13 +24,13 @@ struct LearnedPhrasesView: View {
                 phraseList
             }
         }
-        .navigationTitle("Learned Phrases")
+        .navigationTitle(str.learnedPhrasesTitle)
         .navigationBarTitleDisplayMode(.large)
         .toolbarBackground(BeoColor.bg, for: .navigationBar)
         .toolbar {
             if !isEmpty {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Clear all") {
+                    Button(str.clearAll) {
                         showClearAllAlert = true
                     }
                     .font(BeoType.body)
@@ -38,21 +38,21 @@ struct LearnedPhrasesView: View {
                 }
             }
         }
-        .alert("Clear all learned phrases?", isPresented: $showClearAllAlert) {
-            Button("Clear All", role: .destructive) {
+        .alert(str.clearAllAlertTitle, isPresented: $showClearAllAlert) {
+            Button(str.clearAll, role: .destructive) {
                 performClearAll()
             }
-            Button("Cancel", role: .cancel) {}
+            Button(str.cancel, role: .cancel) {}
         } message: {
-            Text("This will permanently remove all learned phrases. This cannot be undone.")
+            Text(str.clearAllAlertMessage)
         }
-        .alert("Delete phrase?", isPresented: $showDeleteAlert, presenting: deleteTarget) { target in
-            Button("Delete", role: .destructive) {
+        .alert(str.deleteAlertTitle, isPresented: $showDeleteAlert, presenting: deleteTarget) { target in
+            Button(str.delete, role: .destructive) {
                 performDelete(target)
             }
-            Button("Cancel", role: .cancel) {}
+            Button(str.cancel, role: .cancel) {}
         } message: { target in
-            Text("This will permanently remove \"\(target.transcription)\".")
+            Text(str.deleteAlertMessage(phrase: target.transcription))
         }
         .preferredColorScheme(.dark)
         .onAppear(perform: reload)
@@ -75,12 +75,12 @@ struct LearnedPhrasesView: View {
             .accessibilityHidden(true)
 
             VStack(spacing: Spacing.s12) {
-                Text("No learned phrases yet")
+                Text(str.emptyTitle)
                     .font(BeoType.speakerName)
                     .foregroundStyle(BeoColor.text)
                     .multilineTextAlignment(.center)
 
-                Text("Voxio remembers commands you confirm. They'll appear here after you use voice control.")
+                Text(str.emptySubtitle)
                     .font(BeoType.body)
                     .foregroundStyle(BeoColor.muted)
                     .multilineTextAlignment(.center)
@@ -97,11 +97,18 @@ struct LearnedPhrasesView: View {
     private var phraseList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
+                Text(str.learnedPhrasesIntro)
+                    .font(BeoType.body)
+                    .foregroundStyle(BeoColor.muted)
+                    .padding(.horizontal, Spacing.s16)
+                    .padding(.top, Spacing.s20)
+                    .padding(.bottom, Spacing.s8)
+
                 ForEach(speakerGroups, id: \.speakerId) { group in
                     speakerSection(group)
                 }
             }
-            .padding(.vertical, Spacing.s20)
+            .padding(.bottom, Spacing.s20)
         }
     }
 
@@ -146,7 +153,7 @@ struct LearnedPhrasesView: View {
                     .truncationMode(.tail)
 
                 HStack(spacing: Spacing.s8) {
-                    Text(intentLabel(record.intent))
+                    Text(str.intentLabel(for: record.intent))
                         .font(BeoType.body)
                         .foregroundStyle(BeoColor.muted)
 
@@ -175,29 +182,21 @@ struct LearnedPhrasesView: View {
                 deleteTarget = record
                 showDeleteAlert = true
             } label: {
-                Label("Delete", systemImage: "trash")
+                Label(str.delete, systemImage: "trash")
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(record.transcription). \(intentLabel(record.intent)). \(usageLabel(record)). Last used \(relativeDateLabel(record.lastUsedAt)).")
+        .accessibilityLabel("\(record.transcription). \(str.intentLabel(for: record.intent)). \(usageLabel(record)). Last used \(relativeDateLabel(record.lastUsedAt)).")
     }
 
     // MARK: - Actions
 
     private func reload() {
-        // Collect all speaker IDs that have confirmed commands.
-        // We don't have direct access to a distinct list of speakerIds, so we
-        // load progressively: fetch per speaker using whatever IDs we know,
-        // plus a broad fetch to surface any speaker ID present in the store.
-        let allRecords = fetchAllConfirmedCommands()
+        let allRecords = store.allConfirmedCommandRecords()
         let ids = Set(allRecords.map(\.speakerId))
         speakerGroups = ids
             .map { sid in (sid, allRecords.filter { $0.speakerId == sid }) }
             .sorted { $0.0.localizedCaseInsensitiveCompare($1.0) == .orderedAscending }
-    }
-
-    private func fetchAllConfirmedCommands() -> [ConfirmedCommandRecord] {
-        store.allConfirmedCommandRecords()
     }
 
     private func performDelete(_ record: ConfirmedCommandRecord) {
@@ -216,42 +215,14 @@ struct LearnedPhrasesView: View {
 
     // MARK: - Formatters
 
-    private func intentLabel(_ intent: CommandIntent) -> String {
-        switch intent {
-        case .playNamed:            return "Play favourite"
-        case .playFavoriteByNumber: return "Play by number"
-        case .playDefault:          return "Play"
-        case .setVolume:            return "Set volume"
-        case .volumeUp:             return "Volume up"
-        case .volumeDown:           return "Volume down"
-        case .mute:                 return "Mute"
-        case .unmute:               return "Unmute"
-        case .stop:                 return "Stop"
-        case .pause:                return "Pause"
-        case .resume:               return "Resume"
-        case .joinSpeaker:          return "Join speaker"
-        case .leaveSpeaker:         return "Leave group"
-        case .listFavorites:        return "List favourites"
-        case .confirm:              return "Confirm"
-        case .cancel:               return "Cancel"
-        case .stopAll:              return "Stop all"
-        case .pauseAll:             return "Pause all"
-        case .resumeAll:            return "Resume all"
-        case .volumeUpAll:          return "Volume up all"
-        case .volumeDownAll:        return "Volume down all"
-        case .muteAll:              return "Mute all"
-        case .unmuteAll:            return "Unmute all"
-        case .unknown:              return "Unknown"
-        }
-    }
-
     private func usageLabel(_ record: ConfirmedCommandRecord) -> String {
-        record.useCount == 1 ? "Used once" : "Used \(record.useCount) times"
+        record.useCount == 1 ? str.usedOnce : str.usedTimes(count: record.useCount)
     }
 
     private func relativeDateLabel(_ date: Date) -> String {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
+        formatter.locale = langService.activeLanguage.locale
         return formatter.localizedString(for: date, relativeTo: Date())
     }
 }

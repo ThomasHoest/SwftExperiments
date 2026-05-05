@@ -58,13 +58,33 @@ final class TelemetryUploader {
     // MARK: - attemptUploadIfDue
 
     func attemptUploadIfDue() async {
-        guard isEnabled else { return }
-        guard currentPath?.status == .satisfied else { return }
-        guard currentPath?.isExpensive == false else { return }
-        guard !ProcessInfo.processInfo.isLowPowerModeEnabled else { return }
+        guard isEnabled else {
+            Log.info("[TelemetryUploader] skipping — telemetry disabled")
+            return
+        }
 
+#if DEBUG
+        // In debug builds: skip network and interval guards so every call uploads immediately.
+        Log.info("[TelemetryUploader] DEBUG — bypassing Wi-Fi and interval guards")
+#else
+        guard currentPath?.status == .satisfied else {
+            Log.info("[TelemetryUploader] skipping — no network path")
+            return
+        }
+        guard currentPath?.isExpensive == false else {
+            Log.info("[TelemetryUploader] skipping — cellular/expensive network")
+            return
+        }
+        guard !ProcessInfo.processInfo.isLowPowerModeEnabled else {
+            Log.info("[TelemetryUploader] skipping — low power mode")
+            return
+        }
         let lastUpload = UserDefaults.standard.object(forKey: "lastTelemetryUploadDate") as? Date
-        if let last = lastUpload, Date().timeIntervalSince(last) < 86_400 { return }
+        if let last = lastUpload, Date().timeIntervalSince(last) < 86_400 {
+            Log.info("[TelemetryUploader] skipping — uploaded less than 24h ago")
+            return
+        }
+#endif
 
         guard let url = baseURL?.appendingPathComponent("telemetry/events") else { return }
 
@@ -96,12 +116,19 @@ final class TelemetryUploader {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try JSONEncoder().encode(payload)
 
-            let (_, response) = try await session.data(for: request)
-            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { return }
+            Log.info("[TelemetryUploader] uploading \(batch.count) event(s) to \(url)")
+            let (data, response) = try await session.data(for: request)
+            guard let http = response as? HTTPURLResponse else { return }
+            Log.info("[TelemetryUploader] server responded \(http.statusCode)")
+            if let body = String(data: data, encoding: .utf8), !body.isEmpty {
+                Log.info("[TelemetryUploader] response body: \(body)")
+            }
+            guard (200..<300).contains(http.statusCode) else { return }
 
             let uploadedIds = batch.map(\.id)
             try buffer.markUploaded(uploadedIds)
             UserDefaults.standard.set(Date(), forKey: "lastTelemetryUploadDate")
+            Log.info("[TelemetryUploader] marked \(uploadedIds.count) event(s) uploaded")
         } catch {
             Log.error("[TelemetryUploader] upload failed: \(error)")
         }

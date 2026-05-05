@@ -416,16 +416,30 @@ struct HomeView: View {
                 let words = text.lowercased()
                     .components(separatedBy: .whitespaces)
                     .filter { !$0.isEmpty }
-                guard let (speaker, remaining) = discovery.resolve(words: words) else {
+
+                // Speaker resolution: name-matcher first, then alias cross-speaker fallback
+                // (handles phrases like "musik til arbejdet" that contain no speaker name).
+                var resolvedSpeaker: Speaker? = nil
+                var commandText: String = text
+                if let (spk, remaining) = discovery.resolve(words: words) {
+                    resolvedSpeaker = spk
+                    commandText = remaining.isEmpty ? text : remaining.joined(separator: " ")
+                } else if personalisationStore.isEnabled,
+                          let aliasMatch = personalisationStore.matchPersonalisedCommandAcrossAllSpeakers(phrase: text),
+                          let aliasedSpeaker = discovery.groups.flatMap(\.members)
+                              .first(where: { $0.id.uuidString == aliasMatch.speakerId }) {
+                    Log.info("[HomeView] alias pre-resolve → \(aliasedSpeaker.name) for: \(text)")
+                    resolvedSpeaker = aliasedSpeaker
+                } else {
                     Log.info("[HomeView] no speaker resolved for: \(text)")
                     let available = discovery.groups.flatMap(\.members).map(\.name)
                     handleError(.noSpeakerSpoken(available: available))
                     transcriptController.clearAfterCommand()
                     return
                 }
+                guard let speaker = resolvedSpeaker else { return }
                 selectedSpeaker = speaker
 
-                let commandText = remaining.isEmpty ? text : remaining.joined(separator: " ")
                 let command = await commandRouter.parse(commandText, speakerId: speaker.id.uuidString)
                 Log.info("[HomeView] → \(speaker.name): \(command)")
                 if case .unknown = command { } else { HapticEngine.shared.commandRecognised() }
@@ -505,6 +519,7 @@ struct HomeView: View {
                                 if count == 50 && !hasSeenTelemetryPrompt {
                                     showTelemetryPrompt = true
                                 }
+                                await telemetryUploader.attemptUploadIfDue()
                             case .cancelled:
                                 try? personalisationStore.deleteConfirmedCommand(
                                     transcription: commandText.lowercased(),
@@ -520,6 +535,7 @@ struct HomeView: View {
                                     outcome: .cancelled,
                                     locale: Locale.current.identifier
                                 )
+                                await telemetryUploader.attemptUploadIfDue()
                             }
                         }
                     }
