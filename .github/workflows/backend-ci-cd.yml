@@ -24,7 +24,7 @@ env:
 
 jobs:
   lint:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Lint
     steps:
@@ -45,7 +45,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
 
   unit:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Unit tests
     steps:
@@ -66,7 +66,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
 
   build:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     needs: [lint, unit]
     runs-on: ubuntu-latest
     name: Build
@@ -88,7 +88,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
 
   deploy:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     needs: [build]
     runs-on: ubuntu-latest
     name: Deploy
@@ -106,13 +106,10 @@ jobs:
           app_location: backend
           api_location: ""
           output_location: ""
-          deployment_environment: >-
-            ${{
-              github.ref == 'refs/heads/develop' && 'staging' || ''
-            }}
+          deployment_environment: ${{ (github.ref == 'refs/heads/develop' && 'staging') || '' }}
 
   migrate:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     needs: [deploy]
     runs-on: ubuntu-latest
     name: Run migrations
@@ -131,10 +128,10 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
       - name: Run migrations
         run: |
-          # Only migrate on direct branch pushes — not on PR events.
+          # Only migrate on push or workflow_dispatch — not on PR events.
           # PRs deploy to ephemeral SWA preview environments which share
           # the staging DB; running migrations there would affect staging.
-          if [ "$GITHUB_EVENT_NAME" != "push" ]; then
+          if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
             echo "Skipping migrations for pull_request event"
             exit 0
           fi
@@ -145,15 +142,10 @@ jobs:
           pnpm migrate:up
         working-directory: ${{ env.WORKING_DIR }}
         env:
-          DATABASE_URL: >-
-            ${{
-              github.ref == 'refs/heads/main'    && secrets.DATABASE_URL         ||
-              github.ref == 'refs/heads/develop' && secrets.STAGING_DATABASE_URL ||
-              ''
-            }}
+          DATABASE_URL: ${{ (github.ref == 'refs/heads/main' && secrets.DATABASE_URL) || (github.ref == 'refs/heads/develop' && secrets.STAGING_DATABASE_URL) || '' }}
 
   e2e:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     needs: [migrate]
     runs-on: ubuntu-latest
     name: E2E tests

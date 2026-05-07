@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LearnedPhrasesView: View {
     let store: PersonalisationStore
+    var discoveredSpeakers: [Speaker] = []
     @ObservedObject private var langService = LanguageService.shared
 
     @State private var speakerGroups: [(speakerId: String, records: [ConfirmedCommandRecord])] = []
@@ -56,6 +57,8 @@ struct LearnedPhrasesView: View {
         }
         .preferredColorScheme(.dark)
         .onAppear(perform: reload)
+        .onAppear { BreadcrumbTracker.shared.push("Settings.LearnedPhrases") }
+        .onDisappear { BreadcrumbTracker.shared.pop() }
     }
 
     // MARK: - Empty State
@@ -112,11 +115,18 @@ struct LearnedPhrasesView: View {
         }
     }
 
+    private func displayName(for speakerId: String) -> String {
+        if let speaker = discoveredSpeakers.first(where: { $0.stableId == speakerId }) {
+            return speaker.name
+        }
+        return speakerId
+    }
+
     private func speakerSection(
         _ group: (speakerId: String, records: [ConfirmedCommandRecord])
     ) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(group.speakerId.uppercased())
+            Text(displayName(for: group.speakerId).uppercased())
                 .font(BeoType.caption)
                 .foregroundStyle(BeoColor.muted)
                 .padding(.leading, Spacing.s16)
@@ -232,7 +242,8 @@ struct LearnedPhrasesView: View {
 #Preview("LearnedPhrasesView — empty") {
     NavigationStack {
         LearnedPhrasesView(
-            store: PersonalisationStore(context: PersistenceController.preview.viewContext)
+            store: PersonalisationStore(context: PersistenceController.preview.viewContext),
+            discoveredSpeakers: []
         )
     }
 }

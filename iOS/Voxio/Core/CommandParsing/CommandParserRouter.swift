@@ -36,32 +36,52 @@ final class CommandParserRouter {
     /// Unmatched utterances proceed to Tier 1 (Foundation Models) → Tier 2 (NLModel) → Tier 3 (regex full pass).
     func parse(_ transcript: String, speakerId: String) async -> VoiceCommand {
         Log.info("[CommandParserRouter] parsing: \"\(transcript)\"")
+        let t0 = Date()
         let text = transcript.trimmingCharacters(in: .whitespaces).lowercased()
+
+        let tPers = Date()
         if let personalised = personalisationParser.parse(text, speakerId: speakerId) {
             let result = toVoiceCommand(personalised)
             let path = personalisationParser.lastPath ?? "PersonalisationAlias"
-            Log.info("[CommandParserRouter] result: \(result) (\(path))")
+            Log.info("[CommandParserRouter] result: \(result) (\(path)) [pers:\(ms(tPers))ms total:\(ms(t0))ms]")
             lastParserPath = path
             return result
         }
+        let persMs = ms(tPers)
+
+        let tKw = Date()
         if let fast = fallback.parseStage1(text, raw: transcript) {
             let result = toVoiceCommand(fast)
-            Log.info("[CommandParserRouter] result: \(result) (KeywordRegex)")
+            Log.info("[CommandParserRouter] result: \(result) (KeywordRegex) [pers:\(persMs)ms kw:\(ms(tKw))ms total:\(ms(t0))ms]")
             lastParserPath = "KeywordRegex"
             return result
         }
+        let kwMs = ms(tKw)
+
 #if canImport(FoundationModels)
         if #available(iOS 26, *) {
+            let tFM = Date()
             if let result = await tryFoundationModel(transcript) {
+                Log.info("[CommandParserRouter] result: \(result) (FoundationModels) [pers:\(persMs)ms kw:\(kwMs)ms fm:\(ms(tFM))ms total:\(ms(t0))ms]")
                 lastParserPath = "FoundationModels"
                 return result
             }
+            let fmMs = ms(tFM)
+            let tNL = Date()
+            let fallbackResult = parseFallback(transcript)
+            Log.info("[Timing][CommandParserRouter] pers:\(persMs)ms kw:\(kwMs)ms fm:\(fmMs)ms nl:\(ms(tNL))ms total:\(ms(t0))ms")
+            lastParserPath = "NLModel"
+            return fallbackResult
         }
 #endif
+        let tNL = Date()
         let fallbackResult = parseFallback(transcript)
+        Log.info("[Timing][CommandParserRouter] pers:\(persMs)ms kw:\(kwMs)ms nl:\(ms(tNL))ms total:\(ms(t0))ms")
         lastParserPath = "NLModel"
         return fallbackResult
     }
+
+    private func ms(_ start: Date) -> Int { Int(Date().timeIntervalSince(start) * 1000) }
 
     /// Returns the broadcast `VoiceCommand` if `text` matches a Stage 1 broadcast pattern,
     /// without running speaker resolution or personalisation. Called before `discovery.resolve()`

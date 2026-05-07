@@ -47,7 +47,10 @@ class AVService {
         if wasRunning { stopRecording() }
         recognizer = newRecognizer
         Log.info("[AVService] locale → \(locale.identifier)")
-        if wasRunning { try? startRecording() }
+        if wasRunning {
+            do { try startRecording() }
+            catch { Log.error("[AVService] setLocale: restart recording failed: \(error)") }
+        }
     }
 
     func startRecording() throws {
@@ -55,7 +58,7 @@ class AVService {
         audioQueue.sync {
             let session = AVAudioSession.sharedInstance()
             do {
-                try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
+                try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers])
                 try session.setActive(true)
             } catch {
                 startError = error
@@ -174,7 +177,8 @@ class AVService {
                         self.startRequest()
                     }
                 }
-            } else if error != nil {
+            } else if let error {
+                Log.error("[AVService] recognition error: \(error.localizedDescription)")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     guard self.requestGeneration == generation else { return }
                     self.startRequest()

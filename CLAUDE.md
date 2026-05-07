@@ -53,6 +53,73 @@ iOS/Voxio/
 
 ---
 
+## Backend (`backend/`)
+
+Next.js 15 app deployed to Azure Static Web Apps. Database: Neon (PostgreSQL serverless via `@neondatabase/serverless`).
+
+### Folder structure
+
+```
+backend/
+├── app/api/
+│   ├── health/                  — GET /api/health
+│   ├── telemetry/
+│   │   ├── batch/               — POST /api/telemetry/batch  (iOS event upload)
+│   │   └── [deviceId]/          — DELETE /api/telemetry/:deviceId
+│   ├── incidents/
+│   │   └── report/              — POST /api/incidents/report  (iOS crash ingest)
+│   ├── agent/
+│   │   └── incidents/           — GET /api/agent/incidents (list, cursor-paginated)
+│   │       └── [fingerprint]/   — GET + PATCH /api/agent/incidents/:fingerprint
+│   └── admin/                   — admin-only routes (SWA role: "admin")
+├── src/lib/
+│   ├── db.ts                    — query<T>(text, params) over Neon serverless
+│   ├── logger.ts                — logInfo / logWarn / logError (JSON lines)
+│   ├── auth.ts                  — requireApiKey(request) — reads x-api-key vs TELEMETRY_API_KEY
+│   ├── telemetry-key.ts         — requireTelemetryKey(request) — reads x-telemetry-key vs TELEMETRY_API_KEY
+│   └── agent-auth.ts            — requireAgentKey(request) — reads x-agent-key vs AGENT_API_KEY
+├── migrations/                  — node-pg-migrate TypeScript migrations (run via pnpm migrate:up)
+│   ├── 1746350000000_create_devices.ts
+│   ├── 1746350001000_create_events.ts
+│   ├── 1746350002000_create_labels.ts
+│   └── 1746350003000_incident_tables.ts   — incidents + incident_occurrences (E-51)
+└── agent/scripts/
+    └── open-incident-pr.ts      — standalone script: fetches open incidents, opens GitHub draft PR
+```
+
+### Auth conventions
+Three separate auth helpers — do not confuse them:
+- `requireApiKey` — `x-api-key` header — used by admin and telemetry-delete routes
+- `requireTelemetryKey` — `x-telemetry-key` header — used by `POST /api/incidents/report` and telemetry batch
+- `requireAgentKey` — `x-agent-key` header — used by all `/api/agent/*` routes
+
+### Key tables
+- `devices` / `events` / `labels` — telemetry pipeline (E-43/E-45)
+- `incidents` — one row per unique error fingerprint; tracks status, pr_url, pr_number
+- `incident_occurrences` — one row per iOS report; capped at 50 rows per fingerprint (pruned on ingest)
+
+### Accumulated telemetry intents
+Command intents flow: iOS `TelemetryBuffer` → `POST /api/telemetry/batch` (header: `x-telemetry-key`) → `events` table. Each row stores `intent`, `transcription_anonymised`, `parser_path`, `outcome`, `locale`, `app_version`.
+
+To query accumulated intents directly:
+```sql
+SELECT intent, outcome, parser_path, COUNT(*) as n
+  FROM events
+ GROUP BY intent, outcome, parser_path
+ ORDER BY n DESC;
+```
+
+### E-49 — corpus export (not yet implemented)
+E-49 (`Specification/Voxio 1.3/epics-and-tasks-agent-api.md`) adds agent routes for labelling events and exporting a training corpus (CSV/JSONL). It was blocked by E-48 (now resolved via E-51). Auth: `requireAgentKey`. Next tasks: T-4901–T-4910.
+
+### CI/CD
+`.github/workflows/backend-ci-cd.yml` — lint → unit → build → deploy (Azure SWA) → migrate → e2e.
+- Migrations run on `push` to `main`/`develop` only (not `workflow_dispatch`, not PRs).
+- `DATABASE_URL` secret → production Neon; `STAGING_DATABASE_URL` secret → staging Neon.
+- `pnpm migrate:up` to run locally (requires `DATABASE_URL` env var).
+
+---
+
 ## B&O Mozart Open API notes
 
 - REST base: `http://<speaker-ip>/api/v1/`
