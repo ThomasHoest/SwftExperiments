@@ -187,7 +187,9 @@ describe('GET /api/agent/incidents — no params (default page)', () => {
     vi.mocked(query).mockResolvedValueOnce({ rows: [] })
     await GET(makeRequest())
     const sql = vi.mocked(query).mock.calls[0][0]
-    expect(sql).toMatch(/LIMIT 21/i)
+    const params = vi.mocked(query).mock.calls[0][1]
+    expect(sql).toMatch(/LIMIT \$4/i)
+    expect(params?.[3]).toBe(21)
   })
 
   it('incident summary shape includes all required fields', async () => {

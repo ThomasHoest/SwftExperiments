@@ -32,13 +32,13 @@ vi.mock('@/lib/logger', () => ({
 // requireTelemetryKey is in its own lib file — mock it for isolation where
 // needed, but by default we let the real implementation run against the env
 // var we set in makeRequest().  We mock the db instead.
-vi.mock('../../../src/lib/telemetry-key', () => ({
+vi.mock('../../../../src/lib/telemetry-key', () => ({
   requireTelemetryKey: vi.fn(),
 }))
 
 import { query } from '@/lib/db'
-import { requireTelemetryKey } from '../../../src/lib/telemetry-key'
-import { POST } from '../../../app/api/incidents/report/route'
+import { requireTelemetryKey } from '../../../../src/lib/telemetry-key'
+import { POST } from '../../../../app/api/incidents/report/route'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -100,16 +100,20 @@ function denyAuth(status: number, error: string): void {
 }
 
 /**
- * Configures query mock for a successful 3-step DB path.
- *   call 1: incidents upsert → [{ fingerprint }]
- *   call 2: occurrence insert → []
- *   call 3: prune old occurrences → []
+ * Configures query mock for a successful transaction (5 calls).
+ *   call 1: BEGIN → []
+ *   call 2: incidents upsert → [{ fingerprint }]
+ *   call 3: occurrence insert → []
+ *   call 4: prune old occurrences → []
+ *   call 5: COMMIT → []
  */
 function mockDbForSuccess(fingerprint = VALID_FINGERPRINT): void {
   vi.mocked(query)
-    .mockResolvedValueOnce({ rows: [{ fingerprint }] })
-    .mockResolvedValueOnce({ rows: [] })
-    .mockResolvedValueOnce({ rows: [] })
+    .mockResolvedValueOnce({ rows: [] })                    // BEGIN
+    .mockResolvedValueOnce({ rows: [{ fingerprint }] })     // upsert
+    .mockResolvedValueOnce({ rows: [] })                    // insert occurrence
+    .mockResolvedValueOnce({ rows: [] })                    // prune
+    .mockResolvedValueOnce({ rows: [] })                    // COMMIT
 }
 
 // ---------------------------------------------------------------------------
@@ -275,36 +279,36 @@ describe('POST /api/incidents/report — happy path: first report', () => {
     expect(body.fingerprint).toBe(VALID_FINGERPRINT)
   })
 
-  it('issues exactly 3 DB queries: upsert incidents, insert occurrence, prune', async () => {
+  it('issues exactly 5 DB queries: BEGIN, upsert incidents, insert occurrence, prune, COMMIT', async () => {
     mockDbForSuccess()
     const req = makeRequest(validPayload())
     await POST(req)
-    expect(vi.mocked(query)).toHaveBeenCalledTimes(3)
+    expect(vi.mocked(query)).toHaveBeenCalledTimes(5)
   })
 
   it('first DB call is the incidents upsert (contains INSERT INTO incidents)', async () => {
     mockDbForSuccess()
     const req = makeRequest(validPayload())
     await POST(req)
-    const firstCall = vi.mocked(query).mock.calls[0]
-    expect(firstCall[0]).toMatch(/INSERT INTO incidents/i)
+    const upsertCall = vi.mocked(query).mock.calls[1] // [0] is BEGIN
+    expect(upsertCall[0]).toMatch(/INSERT INTO incidents/i)
   })
 
   it('second DB call inserts into incident_occurrences', async () => {
     mockDbForSuccess()
     const req = makeRequest(validPayload())
     await POST(req)
-    const secondCall = vi.mocked(query).mock.calls[1]
-    expect(secondCall[0]).toMatch(/INSERT INTO incident_occurrences/i)
+    const occurrenceCall = vi.mocked(query).mock.calls[2]
+    expect(occurrenceCall[0]).toMatch(/INSERT INTO incident_occurrences/i)
   })
 
   it('third DB call prunes old occurrences (DELETE ... OFFSET 50)', async () => {
     mockDbForSuccess()
     const req = makeRequest(validPayload())
     await POST(req)
-    const thirdCall = vi.mocked(query).mock.calls[2]
-    expect(thirdCall[0]).toMatch(/DELETE FROM incident_occurrences/i)
-    expect(thirdCall[0]).toMatch(/OFFSET 50/i)
+    const pruneCall = vi.mocked(query).mock.calls[3]
+    expect(pruneCall[0]).toMatch(/DELETE FROM incident_occurrences/i)
+    expect(pruneCall[0]).toMatch(/OFFSET 50/i)
   })
 })
 
@@ -317,9 +321,11 @@ describe('POST /api/incidents/report — second report: same fingerprint', () =>
   it('returns 201 on second report for same fingerprint', async () => {
     // Second report — upsert returns same fingerprint (ON CONFLICT DO UPDATE)
     vi.mocked(query)
-      .mockResolvedValueOnce({ rows: [{ fingerprint: VALID_FINGERPRINT }] })
-      .mockResolvedValueOnce({ rows: [] })
-      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })                            // BEGIN
+      .mockResolvedValueOnce({ rows: [{ fingerprint: VALID_FINGERPRINT }] }) // upsert
+      .mockResolvedValueOnce({ rows: [] })                            // insert occurrence
+      .mockResolvedValueOnce({ rows: [] })                            // prune
+      .mockResolvedValueOnce({ rows: [] })                            // COMMIT
     const req = makeRequest(validPayload())
     const res = await POST(req)
     expect(res.status).toBe(201)
@@ -329,21 +335,23 @@ describe('POST /api/incidents/report — second report: same fingerprint', () =>
 
   it('occurrence insert fires on second report (verified via query call count)', async () => {
     vi.mocked(query)
-      .mockResolvedValueOnce({ rows: [{ fingerprint: VALID_FINGERPRINT }] })
-      .mockResolvedValueOnce({ rows: [] })
-      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })                            // BEGIN
+      .mockResolvedValueOnce({ rows: [{ fingerprint: VALID_FINGERPRINT }] }) // upsert
+      .mockResolvedValueOnce({ rows: [] })                            // insert occurrence
+      .mockResolvedValueOnce({ rows: [] })                            // prune
+      .mockResolvedValueOnce({ rows: [] })                            // COMMIT
     const req = makeRequest(validPayload())
     await POST(req)
     // Verify occurrence INSERT still runs on repeated fingerprint
-    const secondCall = vi.mocked(query).mock.calls[1]
-    expect(secondCall[0]).toMatch(/INSERT INTO incident_occurrences/i)
+    const occurrenceCall = vi.mocked(query).mock.calls[2] // [0]=BEGIN [1]=upsert [2]=occurrence
+    expect(occurrenceCall[0]).toMatch(/INSERT INTO incident_occurrences/i)
   })
 
   it('upsert SQL does not update error_line on conflict (no SET error_line)', async () => {
     mockDbForSuccess()
     const req = makeRequest(validPayload())
     await POST(req)
-    const upsertSql = vi.mocked(query).mock.calls[0][0]
+    const upsertSql = vi.mocked(query).mock.calls[1][0] // [0] is BEGIN
     // The ON CONFLICT clause must not include error_line in SET
     expect(upsertSql).not.toMatch(/SET.*error_line/i)
   })
@@ -355,13 +363,13 @@ describe('POST /api/incidents/report — pruning: 51st report', () => {
     allowAuth()
   })
 
-  it('prune query fires on every report (verified via query call at position 3)', async () => {
+  it('prune query fires on every report (verified via query call at position 4)', async () => {
     mockDbForSuccess()
     const req = makeRequest(validPayload())
     await POST(req)
-    // The prune DELETE should always run (it is the 3rd query)
-    expect(vi.mocked(query)).toHaveBeenCalledTimes(3)
-    const pruneCall = vi.mocked(query).mock.calls[2]
+    // 5 calls: BEGIN, upsert, insert, prune, COMMIT
+    expect(vi.mocked(query)).toHaveBeenCalledTimes(5)
+    const pruneCall = vi.mocked(query).mock.calls[3] // [0]=BEGIN [1]=upsert [2]=insert [3]=prune
     expect(pruneCall[0]).toMatch(/DELETE FROM incident_occurrences/i)
   })
 
@@ -369,7 +377,7 @@ describe('POST /api/incidents/report — pruning: 51st report', () => {
     mockDbForSuccess()
     const req = makeRequest(validPayload())
     await POST(req)
-    const pruneCall = vi.mocked(query).mock.calls[2]
+    const pruneCall = vi.mocked(query).mock.calls[3]
     expect(pruneCall[0]).toMatch(/OFFSET 50/i)
   })
 
@@ -377,7 +385,7 @@ describe('POST /api/incidents/report — pruning: 51st report', () => {
     mockDbForSuccess()
     const req = makeRequest(validPayload())
     await POST(req)
-    const pruneCall = vi.mocked(query).mock.calls[2]
+    const pruneCall = vi.mocked(query).mock.calls[3]
     // The fingerprint param must be bound to the prune query
     expect(pruneCall[1]).toContain(VALID_FINGERPRINT)
   })
@@ -414,8 +422,9 @@ describe('POST /api/incidents/report — DB error', () => {
 
   it('returns 500 when occurrence insert throws (after successful upsert)', async () => {
     vi.mocked(query)
-      .mockResolvedValueOnce({ rows: [{ fingerprint: VALID_FINGERPRINT }] })
-      .mockRejectedValueOnce(new Error('insert failed'))
+      .mockResolvedValueOnce({ rows: [] })                            // BEGIN
+      .mockResolvedValueOnce({ rows: [{ fingerprint: VALID_FINGERPRINT }] }) // upsert
+      .mockRejectedValueOnce(new Error('insert failed'))              // occurrence insert
     const req = makeRequest(validPayload())
     const res = await POST(req)
     expect(res.status).toBe(500)
