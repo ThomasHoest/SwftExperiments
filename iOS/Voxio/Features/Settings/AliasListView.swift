@@ -93,6 +93,8 @@ struct AliasListView: View {
         }
         .preferredColorScheme(.dark)
         .onAppear(perform: reloadAliases)
+        .onAppear { BreadcrumbTracker.shared.push("Settings.Aliases") }
+        .onDisappear { BreadcrumbTracker.shared.pop() }
     }
 
     // MARK: - Empty State

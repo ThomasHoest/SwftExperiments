@@ -263,7 +263,8 @@ final class PersonalisationStore {
             // Update last-used metadata
             entry.lastUsedAt = Date()
             entry.useCount += 1
-            try? saveContext()
+            do { try saveContext() }
+            catch { Log.error("[PersonalisationStore] matchConfirmedCommand: saveContext failed: \(error)") }
 
             let slots = decodeSlotsJSON(entry.slotsJSON)
             return buildParsedCommand(intent: intent, slots: slots)
@@ -301,7 +302,8 @@ final class PersonalisationStore {
            let intent = CommandIntent(rawValue: intentRaw) {
             entry.lastUsedAt = Date()
             entry.useCount += 1
-            try? saveContext()
+            do { try saveContext() }
+            catch { Log.error("[PersonalisationStore] matchPersonalisedCommandAcrossAllSpeakers: saveContext failed: \(error)") }
             let cmd = buildParsedCommand(intent: intent, slots: decodeSlotsJSON(entry.slotsJSON))
             Log.info("[PersonalisationStore] cross-speaker confirmed-command match for '\(normalised)' → speakerId \(speakerId)")
             return (cmd, speakerId)

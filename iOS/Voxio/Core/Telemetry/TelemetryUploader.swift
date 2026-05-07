@@ -145,11 +145,14 @@ final class TelemetryUploader {
             Log.info("[TelemetryUploader] uploading \(batch.count) event(s) to \(url)")
             let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse else { return }
+            guard (200..<300).contains(http.statusCode) else {
+                Log.error("[TelemetryUploader] upload failed — HTTP \(http.statusCode)")
+                return
+            }
             Log.info("[TelemetryUploader] server responded \(http.statusCode)")
             if let body = String(data: data, encoding: .utf8), !body.isEmpty {
                 Log.info("[TelemetryUploader] response body: \(body)")
             }
-            guard (200..<300).contains(http.statusCode) else { return }
 
             let uploadedIds = batch.map(\.id)
             try buffer.markUploaded(uploadedIds)

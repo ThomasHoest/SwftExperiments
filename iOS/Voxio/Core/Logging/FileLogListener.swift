@@ -11,6 +11,20 @@ final class FileLogListener: LogListener {
     let flushInterval: TimeInterval
     let bufferCapacity: Int
 
+    // MARK: - Ring buffer
+
+    /// Maximum number of lines retained in the ring buffer.
+    public static let ringBufferCapacity: Int = 25
+
+    /// Internal ring buffer storage: array of at most `ringBufferCapacity` lines.
+    private var ringBuffer: [String] = []
+
+    /// Returns a copy of the most recent log lines (oldest first, newest last).
+    /// At most `ringBufferCapacity` entries. Safe to call from any thread.
+    public func ringBufferSnapshot() -> [String] {
+        queue.sync { ringBuffer }
+    }
+
     // MARK: - Private state
 
     private let queue = DispatchQueue(label: "voxio.filelog", qos: .utility)
@@ -51,10 +65,31 @@ final class FileLogListener: LogListener {
         }
         queue.async { [weak self] in
             guard let self else { return }
+            // Append to ring buffer (capacity-bounded)
+            if self.ringBuffer.count >= Self.ringBufferCapacity {
+                self.ringBuffer.removeFirst()
+            }
+            self.ringBuffer.append(fileLine)
+            // Append to write buffer
             self.buffer.append(fileLine)
             if self.buffer.count >= self.bufferCapacity {
                 self.flush()
             }
+        }
+    }
+
+    // MARK: - Test seams
+
+    /// Clears the ring buffer. For use in unit tests only.
+    func resetRingBuffer() {
+        queue.sync { ringBuffer.removeAll() }
+    }
+
+    /// Appends a pre-formatted line directly to the ring buffer. For use in unit tests only.
+    func injectLine(_ line: String) {
+        queue.sync {
+            if ringBuffer.count >= Self.ringBufferCapacity { ringBuffer.removeFirst() }
+            ringBuffer.append(line)
         }
     }
 
@@ -126,13 +161,18 @@ final class FileLogListener: LogListener {
     private func writeToFile(_ lines: [String]) {
         let url = logFileURL()
         guard let data = (lines.joined(separator: "\n") + "\n").data(using: .utf8) else { return }
-        if FileManager.default.fileExists(atPath: url.path) {
-            guard let handle = try? FileHandle(forWritingTo: url) else { return }
-            handle.seekToEndOfFile()
-            handle.write(data)
-            try? handle.close()
-        } else {
-            try? data.write(to: url, options: .atomic)
+        do {
+            if FileManager.default.fileExists(atPath: url.path) {
+                let handle = try FileHandle(forWritingTo: url)
+                handle.seekToEndOfFile()
+                handle.write(data)
+                try handle.close()
+            } else {
+                try data.write(to: url, options: .atomic)
+            }
+        } catch {
+            // Log is unavailable here (would recurse). Fall back to stderr.
+            print("[FileLogListener] writeToFile failed: \(error)")
         }
     }
 }

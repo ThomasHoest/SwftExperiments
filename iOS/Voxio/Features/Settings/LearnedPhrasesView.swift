@@ -57,6 +57,8 @@ struct LearnedPhrasesView: View {
         }
         .preferredColorScheme(.dark)
         .onAppear(perform: reload)
+        .onAppear { BreadcrumbTracker.shared.push("Settings.LearnedPhrases") }
+        .onDisappear { BreadcrumbTracker.shared.pop() }
     }
 
     // MARK: - Empty State

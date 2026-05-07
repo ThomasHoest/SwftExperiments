@@ -77,12 +77,15 @@ class MozartEvents {
     }
 
     private func processMessage(_ json: String) {
-        guard let msgData  = json.data(using: .utf8),
-              let obj      = try? JSONSerialization.jsonObject(with: msgData) as? [String: Any],
-              let type     = obj["eventType"] as? String,
-              let body     = obj["eventData"] as? [String: Any],
+        guard let msgData = json.data(using: .utf8),
+              let obj     = try? JSONSerialization.jsonObject(with: msgData) as? [String: Any],
+              let type    = obj["eventType"] as? String,
+              let body    = obj["eventData"] as? [String: Any],
               let bodyData = try? JSONSerialization.data(withJSONObject: body)
-        else { return }
+        else {
+            Log.error("[WS:\(host)] malformed message — eventType/eventData missing or unparseable")
+            return
+        }
 
         let event = parse(type: type, data: bodyData)
         Log.verbose("[WS:\(host)] \(type)")
@@ -111,7 +114,8 @@ class MozartEvents {
     }
 
     private func decode<T: Decodable>(_ type: T.Type, from data: Data) -> T? {
-        try? decoder.decode(type, from: data)
+        do { return try decoder.decode(type, from: data) }
+        catch { Log.error("[WS:\(host)] decode \(type) failed: \(error)"); return nil }
     }
 
     func disconnect() {

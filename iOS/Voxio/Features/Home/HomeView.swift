@@ -147,6 +147,8 @@ struct HomeView: View {
             }
         }
         .onAppear(perform: onAppear)
+        .onAppear { BreadcrumbTracker.shared.push("Home") }
+        .onDisappear { BreadcrumbTracker.shared.pop() }
         // ADR §Consequences point 2 — re-fire startListening when hasCompletedOnboarding flips
         .onChange(of: hasCompletedOnboarding) { _, completed in
             if completed { startListeningIfReady() }
@@ -407,17 +409,21 @@ struct HomeView: View {
                         : cs.broadcastExecuted(result.successCount, result.totalCount)
                     showToast(Toast(kind: .success(message: message)))
                     transcriptController.clearAfterCommand()
-                    try? telemetryBuffer.record(
-                        transcription: text,
-                        speakerName: "",
-                        speakerId: "",
-                        intent: cmd.toCommandIntent().rawValue,
-                        slots: [:],
-                        parserPath: commandRouter.lastParserPath ?? "KeywordRegex",
-                        outcome: .confirmed,
-                        locale: Locale.current.identifier,
-                        flags: .broadcast
-                    )
+                    do {
+                        try telemetryBuffer.record(
+                            transcription: text,
+                            speakerName: "",
+                            speakerId: "",
+                            intent: cmd.toCommandIntent().rawValue,
+                            slots: [:],
+                            parserPath: commandRouter.lastParserPath ?? "KeywordRegex",
+                            outcome: .confirmed,
+                            locale: Locale.current.identifier,
+                            flags: .broadcast
+                        )
+                    } catch {
+                        Log.error("[HomeView] telemetryBuffer.record failed: \(error)")
+                    }
                     Log.info("[Timing] broadcast — classify:\(classifyMs)ms total:\(Int(Date().timeIntervalSince(t0) * 1000))ms")
 
                 case .personalised(let speaker, let parsed):
@@ -452,16 +458,20 @@ struct HomeView: View {
                     let available = discovery.groups.flatMap(\.members).map(\.name)
                     handleError(.noSpeakerSpoken(available: available))
                     transcriptController.clearAfterCommand()
-                    try? telemetryBuffer.record(
-                        transcription: text,
-                        speakerName: "",
-                        speakerId: "",
-                        intent: CommandIntent.unknown.rawValue,
-                        slots: [:],
-                        parserPath: commandRouter.lastParserPath ?? "unknown",
-                        outcome: .unknown,
-                        locale: Locale.current.identifier
-                    )
+                    do {
+                        try telemetryBuffer.record(
+                            transcription: text,
+                            speakerName: "",
+                            speakerId: "",
+                            intent: CommandIntent.unknown.rawValue,
+                            slots: [:],
+                            parserPath: commandRouter.lastParserPath ?? "unknown",
+                            outcome: .unknown,
+                            locale: Locale.current.identifier
+                        )
+                    } catch {
+                        Log.error("[HomeView] telemetryBuffer.record failed: \(error)")
+                    }
                     Log.info("[Timing] unresolved — classify:\(classifyMs)ms")
                 }
             }
@@ -646,16 +656,20 @@ struct HomeView: View {
             let isUnknown: Bool
             if case .unknown = command { handleError(.voiceNotRecognised); isUnknown = true } else { isUnknown = false }
             await dispatch(command: command, to: speaker)
-            try? telemetryBuffer.record(
-                transcription: commandText,
-                speakerName: speaker.name,
-                speakerId: speaker.stableId,
-                intent: command.toCommandIntent().rawValue,
-                slots: [:],
-                parserPath: commandRouter.lastParserPath ?? "unknown",
-                outcome: isUnknown ? .unknown : .confirmed,
-                locale: Locale.current.identifier
-            )
+            do {
+                try telemetryBuffer.record(
+                    transcription: commandText,
+                    speakerName: speaker.name,
+                    speakerId: speaker.stableId,
+                    intent: command.toCommandIntent().rawValue,
+                    slots: [:],
+                    parserPath: commandRouter.lastParserPath ?? "unknown",
+                    outcome: isUnknown ? .unknown : .confirmed,
+                    locale: Locale.current.identifier
+                )
+            } catch {
+                Log.error("[HomeView] telemetryBuffer.record failed: \(error)")
+            }
             transcriptController.clearAfterCommand()
             return
         }
@@ -684,22 +698,30 @@ struct HomeView: View {
                 Task { @MainActor in
                     switch resolution {
                     case .fired:
-                        try? personalisationStore.recordConfirmedCommand(
-                            speakerId: speaker.stableId,
-                            transcription: commandText.lowercased(),
-                            intent: command.toCommandIntent(),
-                            slots: [:]
-                        )
-                        try? telemetryBuffer.record(
-                            transcription: commandText,
-                            speakerName: speaker.name,
-                            speakerId: speaker.stableId,
-                            intent: command.toCommandIntent().rawValue,
-                            slots: [:],
-                            parserPath: capturedParserPath,
-                            outcome: .confirmed,
-                            locale: Locale.current.identifier
-                        )
+                        do {
+                            try personalisationStore.recordConfirmedCommand(
+                                speakerId: speaker.stableId,
+                                transcription: commandText.lowercased(),
+                                intent: command.toCommandIntent(),
+                                slots: [:]
+                            )
+                        } catch {
+                            Log.error("[HomeView] recordConfirmedCommand failed: \(error)")
+                        }
+                        do {
+                            try telemetryBuffer.record(
+                                transcription: commandText,
+                                speakerName: speaker.name,
+                                speakerId: speaker.stableId,
+                                intent: command.toCommandIntent().rawValue,
+                                slots: [:],
+                                parserPath: capturedParserPath,
+                                outcome: .confirmed,
+                                locale: Locale.current.identifier
+                            )
+                        } catch {
+                            Log.error("[HomeView] telemetryBuffer.record failed: \(error)")
+                        }
                         let count = UserDefaults.standard.integer(forKey: "confirmedCommandCount") + 1
                         UserDefaults.standard.set(count, forKey: "confirmedCommandCount")
                         if count == 50 && !hasSeenTelemetryPrompt {
@@ -707,20 +729,28 @@ struct HomeView: View {
                         }
                         await telemetryUploader.attemptUploadIfDue()
                     case .cancelled:
-                        try? personalisationStore.deleteConfirmedCommand(
-                            transcription: commandText.lowercased(),
-                            speakerId: speaker.stableId
-                        )
-                        try? telemetryBuffer.record(
-                            transcription: commandText,
-                            speakerName: speaker.name,
-                            speakerId: speaker.stableId,
-                            intent: command.toCommandIntent().rawValue,
-                            slots: [:],
-                            parserPath: capturedParserPath,
-                            outcome: .cancelled,
-                            locale: Locale.current.identifier
-                        )
+                        do {
+                            try personalisationStore.deleteConfirmedCommand(
+                                transcription: commandText.lowercased(),
+                                speakerId: speaker.stableId
+                            )
+                        } catch {
+                            Log.error("[HomeView] deleteConfirmedCommand failed: \(error)")
+                        }
+                        do {
+                            try telemetryBuffer.record(
+                                transcription: commandText,
+                                speakerName: speaker.name,
+                                speakerId: speaker.stableId,
+                                intent: command.toCommandIntent().rawValue,
+                                slots: [:],
+                                parserPath: capturedParserPath,
+                                outcome: .cancelled,
+                                locale: Locale.current.identifier
+                            )
+                        } catch {
+                            Log.error("[HomeView] telemetryBuffer.record failed: \(error)")
+                        }
                         await telemetryUploader.attemptUploadIfDue()
                     }
                 }

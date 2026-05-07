@@ -104,28 +104,40 @@ class Speaker: Identifiable {
     }
 
     private func loadPlaybackState() async {
-        guard let ps = try? await client.getPlaybackState() else { return }
-        switch ps {
-        case .playing:   state = .playing
-        case .paused:    state = .paused
-        case .stopped:   state = .stopped
-        case .buffering: state = .buffering
+        do {
+            let ps = try await client.getPlaybackState()
+            switch ps {
+            case .playing:   state = .playing
+            case .paused:    state = .paused
+            case .stopped:   state = .stopped
+            case .buffering: state = .buffering
+            }
+        } catch {
+            Log.error("[\(host)] loadPlaybackState failed: \(error)")
         }
     }
 
     private func loadVolume() async {
-        guard let vol = try? await client.getVolume() else { return }
-        volume = vol
-        // MozartClient exposes the mute flag via getMozartVolume(); cast to access it.
-        if let mozartClient = client as? MozartClient,
-           let volResp = try? await mozartClient.getMozartVolume() {
-            isMuted = volResp.volume.muted ?? false
+        do {
+            let vol = try await client.getVolume()
+            volume = vol
+            // MozartClient exposes the mute flag via getMozartVolume(); cast to access it.
+            if let mozartClient = client as? MozartClient,
+               let volResp = try? await mozartClient.getMozartVolume() {
+                isMuted = volResp.volume.muted ?? false
+            }
+        } catch {
+            Log.error("[\(host)] loadVolume failed: \(error)")
         }
     }
 
     private func loadBattery() async {
-        guard let bat = try? await client.getBattery() else { return }
-        if bat.batteryLevel > 0 || bat.isCharging { batteryLevel = bat.batteryLevel }
+        do {
+            guard let bat = try await client.getBattery() else { return }
+            if bat.batteryLevel > 0 || bat.isCharging { batteryLevel = bat.batteryLevel }
+        } catch {
+            Log.error("[\(host)] loadBattery failed: \(error)")
+        }
     }
 
     private func loadSource() async {

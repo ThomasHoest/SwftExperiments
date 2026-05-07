@@ -13,6 +13,8 @@ struct VoxioApp: App {
     init() {
         Log.addListener(ConsoleLogListener())
         Log.addListener(FileLogListener.shared)
+        Log.addListener(IncidentReporter.shared)
+        WiFiPathMonitor.shared.start()
         FileLogListener.shared.pruneOldLogs()
     }
 
