@@ -66,6 +66,8 @@ struct SettingsView: View {
                 ActivityShareSheet(items: exportURLs)
                     .preferredColorScheme(.dark)
             }
+            .onAppear { BreadcrumbTracker.shared.push("Settings") }
+            .onDisappear { BreadcrumbTracker.shared.pop() }
         }
     }
 

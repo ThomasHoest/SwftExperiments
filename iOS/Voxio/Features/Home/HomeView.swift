@@ -147,6 +147,8 @@ struct HomeView: View {
             }
         }
         .onAppear(perform: onAppear)
+        .onAppear { BreadcrumbTracker.shared.push("Home") }
+        .onDisappear { BreadcrumbTracker.shared.pop() }
         // ADR §Consequences point 2 — re-fire startListening when hasCompletedOnboarding flips
         .onChange(of: hasCompletedOnboarding) { _, completed in
             if completed { startListeningIfReady() }
