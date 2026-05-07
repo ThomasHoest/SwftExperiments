@@ -105,7 +105,7 @@ class Speaker: Identifiable {
 
     private func loadPlaybackState() async {
         do {
-            guard let ps = try await client.getPlaybackState() else { return }
+            let ps = try await client.getPlaybackState()
             switch ps {
             case .playing:   state = .playing
             case .paused:    state = .paused
@@ -119,7 +119,7 @@ class Speaker: Identifiable {
 
     private func loadVolume() async {
         do {
-            guard let vol = try await client.getVolume() else { return }
+            let vol = try await client.getVolume()
             volume = vol
             // MozartClient exposes the mute flag via getMozartVolume(); cast to access it.
             if let mozartClient = client as? MozartClient,
