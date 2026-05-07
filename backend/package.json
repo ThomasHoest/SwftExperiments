@@ -12,9 +12,9 @@
     "test:coverage": "vitest run --coverage",
     "test:integration": "TEST_BASE_URL=${TEST_BASE_URL:-http://localhost:3000} vitest run tests/integration",
     "test:e2e": "playwright test",
-    "migrate:up": "node-pg-migrate --migrations-dir migrations up",
-    "migrate:down": "node-pg-migrate --migrations-dir migrations down",
-    "migrate:create": "node-pg-migrate --migrations-dir migrations create",
+    "migrate:up": "tsx ./node_modules/.bin/node-pg-migrate --migrations-dir migrations up",
+    "migrate:down": "tsx ./node_modules/.bin/node-pg-migrate --migrations-dir migrations down",
+    "migrate:create": "tsx ./node_modules/.bin/node-pg-migrate --migrations-dir migrations create",
     "db:seed": "tsx scripts/seed-dev.ts"
   },
   "dependencies": {
