@@ -161,13 +161,18 @@ final class FileLogListener: LogListener {
     private func writeToFile(_ lines: [String]) {
         let url = logFileURL()
         guard let data = (lines.joined(separator: "\n") + "\n").data(using: .utf8) else { return }
-        if FileManager.default.fileExists(atPath: url.path) {
-            guard let handle = try? FileHandle(forWritingTo: url) else { return }
-            handle.seekToEndOfFile()
-            handle.write(data)
-            try? handle.close()
-        } else {
-            try? data.write(to: url, options: .atomic)
+        do {
+            if FileManager.default.fileExists(atPath: url.path) {
+                let handle = try FileHandle(forWritingTo: url)
+                handle.seekToEndOfFile()
+                handle.write(data)
+                try handle.close()
+            } else {
+                try data.write(to: url, options: .atomic)
+            }
+        } catch {
+            // Log is unavailable here (would recurse). Fall back to stderr.
+            print("[FileLogListener] writeToFile failed: \(error)")
         }
     }
 }

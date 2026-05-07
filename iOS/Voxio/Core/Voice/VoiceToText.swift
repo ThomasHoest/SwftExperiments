@@ -88,7 +88,8 @@ class VoiceToText {
                 object: nil,
                 queue: .main
             ) { [weak self] _ in
-                try? self?.recorder.startRecording()
+                do { try self?.recorder.startRecording() }
+                catch { Log.error("[VoiceToText] foreground restore: restart recording failed: \(error)") }
                 onStatus(UIStrings.forLanguage(self?.currentLanguage ?? .english).listening)
             }
         }
