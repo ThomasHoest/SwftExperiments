@@ -1,3 +1,4 @@
+// E-51: agent key authentication
 import { createHash, timingSafeEqual } from 'node:crypto'
 
 function safeEqual(a: string, b: string): boolean {
