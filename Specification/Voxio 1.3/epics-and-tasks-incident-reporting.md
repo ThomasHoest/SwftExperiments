@@ -1,7 +1,7 @@
 # Epics & Tasks: Error Incident Reporting (Voxio 1.3)
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Draft
-**Date:** 2026-05-06
+**Date:** 2026-05-07
 **References:** ADR-006 (`docs/decisions/ADR-006-incident-reporting.md`), `epics-and-tasks-agent-api.md` (E-48 – E-49, format reference and `AGENT_API_KEY` dependency), `epics-and-tasks-telemetry-backend.md` (E-41 – E-47, `TELEMETRY_API_KEY` and SWA + Neon stack), VoxioSpecification-1.3.md, CLAUDE.md
 **Stack (iOS):** Swift 6, SwiftUI, `@Observable`, `NWPathMonitor`, `URLSession`, `CryptoKit`, `Logger.swift` `LogListener` protocol
 **Stack (Backend):** TypeScript, Next.js 15 App Router (hybrid mode), Postgres (Neon serverless), deployed to Azure Static Web Apps Standard plan
@@ -14,7 +14,7 @@ This document covers two epics — **E-50: On-Device Incident Capture** and
 **E-51: Incident Backend & Agent Interface** — that introduce automated
 error incident reporting for the Voxio iOS app. When the on-device logger
 emits an `.error` line, the iOS client captures the surrounding context
-(75 anonymised log lines + breadcrumb trail of recent screens), fingerprints
+(25 anonymised log lines + breadcrumb trail of recent screens), fingerprints
 the error, deduplicates per fingerprint over a 24-hour window, and uploads
 the incident to the existing telemetry backend over WiFi only. The backend
 stores incidents grouped by fingerprint, and exposes them to the AI agent
@@ -114,7 +114,7 @@ test at T-5107 uses synthetic payloads).
 
   Compile each `NSRegularExpression` once at `init()` (or via a `static let`)
   and reuse across calls — this method is called for every log line in the
-  ring buffer (75 lines per incident) and must not allocate a new regex
+  ring buffer (25 lines per incident) and must not allocate a new regex
   per call.
 
   Use Swift's standard `String` API and `NSRegularExpression`. Do not pull
@@ -150,14 +150,14 @@ test at T-5107 uses synthetic payloads).
 
 - [ ] **T-5002** Extend `FileLogListener` (existing file at
   `iOS/Voxio/Core/Logging/FileLogListener.swift`) with an in-memory
-  75-line circular ring buffer of the most recent log lines, exposed via
+  25-line circular ring buffer of the most recent log lines, exposed via
   a thread-safe snapshot method `ringBufferSnapshot()`.
 
   Add to `FileLogListener`:
 
   ```swift
   /// Maximum number of lines retained in the ring buffer.
-  public static let ringBufferCapacity: Int = 75
+  public static let ringBufferCapacity: Int = 25
 
   /// Returns a copy of the most recent log lines (oldest first, newest last).
   /// At most `ringBufferCapacity` entries.
@@ -165,7 +165,7 @@ test at T-5107 uses synthetic payloads).
   ```
 
   Internal state:
-  - A private `[String]` storage of capacity 75, plus the index of the
+  - A private `[String]` storage of capacity 25, plus the index of the
     oldest entry (or use a Swift `Deque`-style approach — choose whichever
     is simpler given the existing file's style).
   - A private `DispatchQueue` (serial) — or reuse the existing serial
@@ -188,8 +188,8 @@ test at T-5107 uses synthetic payloads).
   - After a fresh `FileLogListener.shared` (or test instance) receives 10
     log lines, `ringBufferSnapshot()` returns those 10 lines in order
     (oldest first).
-  - After receiving 100 lines, `ringBufferSnapshot()` returns exactly 75
-    lines, all of which are the most recent 75 (lines 26..100).
+  - After receiving 100 lines, `ringBufferSnapshot()` returns exactly 25
+    lines, all of which are the most recent 25 (lines 76..100).
   - `ringBufferSnapshot()` returns a copy: mutating the returned array
     does not affect a subsequent call's result.
   - Concurrent log writes from multiple threads do not corrupt the buffer
@@ -670,7 +670,7 @@ and link draft PRs back to the incident record.
     appVersion: string;           // 1..32 chars
     osVersion: string;            // 1..32 chars
     deviceModel: string;          // 1..64 chars
-    contextLines: string[];       // 0..75 entries, each <= 4096 chars
+    contextLines: string[];       // 0..25 entries, each <= 4096 chars
     breadcrumbs: string;          // 0..1024 chars
     errorLine: string;            // 1..4096 chars
   }
@@ -679,8 +679,8 @@ and link draft PRs back to the incident record.
   Validation rules:
   - `fingerprint` matches `/^[0-9a-f]{16}$/` — else 400
     `{ "error": "invalid_fingerprint" }`.
-  - `contextLines.length` ≤ 75 — else 400
-    `{ "error": "context_too_long", "detail": "max 75 lines" }`.
+  - `contextLines.length` ≤ 25 — else 400
+    `{ "error": "context_too_long", "detail": "max 25 lines" }`.
   - Each `contextLines[i]` length ≤ 4096 — else 400
     `{ "error": "line_too_long" }`.
   - `errorLine` length 1..4096 — else 400
@@ -708,6 +708,20 @@ and link draft PRs back to the incident record.
      VALUES ($1, $2, $3, $4, $5::jsonb, $6);
      ```
      `context_lines` is bound as a JSON array (use `JSON.stringify(body.contextLines)`).
+
+  3. Prune old occurrences — keep only the most recent 50 per fingerprint:
+     ```sql
+     DELETE FROM incident_occurrences
+      WHERE id IN (
+        SELECT id FROM incident_occurrences
+         WHERE fingerprint = $1
+         ORDER BY reported_at DESC
+         OFFSET 50
+      );
+     ```
+     This keeps the `incident_occurrences` table permanently bounded regardless
+     of incident frequency. The most recent 50 occurrences are always available
+     to the agent. Run this as the third statement within the same transaction.
 
   Commit. On any DB error, rollback and return 500
   `{ "error": "internal_error" }` — log the underlying error at error
@@ -739,12 +753,14 @@ and link draft PRs back to the incident record.
     rows.
   - Invalid fingerprint format (`"ABC"`, `"abc123"`, mixed case, or 17
     chars): 400 `invalid_fingerprint`.
-  - `contextLines` of length 76: 400 `context_too_long`.
+  - `contextLines` of length 26: 400 `context_too_long`.
   - One context line of length 4097: 400 `line_too_long`.
   - Empty `contextLines` array (length 0): accepted, occurrence row
     contains `[]`.
   - Missing `x-telemetry-key` header: 401.
   - Wrong `x-telemetry-key`: 401.
+  - After 51 reports for the same fingerprint: `incident_occurrences` contains
+    exactly 50 rows for that fingerprint (the oldest row has been pruned).
   - DB transaction failure (e.g. simulated): 500 `internal_error`, no
     rows persisted.
 
@@ -1139,7 +1155,7 @@ and link draft PRs back to the incident record.
       gone.
   13. **Invalid input cases.** One call each:
       - Ingest with malformed fingerprint → 400 `invalid_fingerprint`.
-      - Ingest with 76 context lines → 400 `context_too_long`.
+      - Ingest with 26 context lines → 400 `context_too_long`.
       - List with `status=bogus` → 400 `invalid_status`.
       - Detail for `xxxxxxxxxxxxxxxx` (well-formed but unknown) → 404
         `incident_not_found`.
