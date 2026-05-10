@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 700" font-family="'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <filter id="sketch" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" seed="7" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="sketchHeavy" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="3" seed="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.8" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+
+    <!-- Glow for orb -->
+    <radialGradient id="orbGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2B6CB0" stop-opacity="0.8"/>
+      <stop offset="60%" stop-color="#1E3A5F" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#1A1D26" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Dim orb for offline -->
+    <radialGradient id="orbGlowDim" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2B6CB0" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#1A1D26" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Paper background -->
+  <rect width="860" height="700" fill="#FAFAF8"/>
+
+  <!-- Title -->
+  <text x="430" y="36" text-anchor="middle" font-size="15" font-weight="600" fill="#222" letter-spacing="0.5">Home Screen — Discovery &amp; Offline States</text>
+  <line x1="60" y1="48" x2="800" y2="48" stroke="#bbb" stroke-width="0.8" stroke-dasharray="4,3" filter="url(#sketch)"/>
+
+  <!-- ═══════════════════════════════════════════
+       LEFT PHONE — DISCOVERING (pre-settle)
+       ═══════════════════════════════════════════ -->
+
+  <text x="185" y="74" text-anchor="middle" font-size="12" fill="#555" font-weight="600" font-style="italic">Discovering…</text>
+  <text x="185" y="88" text-anchor="middle" font-size="9" fill="#999" font-style="italic">(pre-settle · WiFi connected · no speakers yet)</text>
+
+  <!-- Phone shell -->
+  <rect x="95" y="100" width="180" height="560" rx="26" fill="#1A1D26" stroke="#333" stroke-width="2" filter="url(#sketchHeavy)"/>
+  <rect x="148" y="110" width="54" height="13" rx="6.5" fill="#111" filter="url(#sketch)"/>
+
+  <!-- Status bar -->
+  <text x="112" y="138" font-size="7.5" fill="#aaa">08.34</text>
+  <text x="264" y="138" text-anchor="end" font-size="7.5" fill="#aaa">5G</text>
+
+  <!-- Top bar: ? / searching chip / gear -->
+  <circle cx="116" cy="162" r="10" fill="none" stroke="#666" stroke-width="1" filter="url(#sketch)"/>
+  <text x="116" y="166" text-anchor="middle" font-size="8" fill="#888">?</text>
+
+  <!-- Chip: Searching... -->
+  <rect x="148" y="153" width="74" height="20" rx="10" fill="#1E2235" stroke="#555" stroke-width="0.8" filter="url(#sketch)"/>
+  <text x="159" y="167" font-size="7" fill="#aaa">⟳ Searching…</text>
+
+  <circle cx="264" cy="162" r="10" fill="none" stroke="#666" stroke-width="1" filter="url(#sketch)"/>
+  <text x="264" y="166" text-anchor="middle" font-size="8" fill="#888">⚙</text>
+
+  <!-- Orb glow blob -->
+  <circle cx="185" cy="340" r="90" fill="url(#orbGlow)" filter="url(#sketch)"/>
+
+  <!-- Pulse rings — 3 concentric, fading -->
+  <circle cx="185" cy="340" r="62" fill="none" stroke="#C8A97E" stroke-width="1.2" opacity="0.35" filter="url(#sketch)"/>
+  <circle cx="185" cy="340" r="80" fill="none" stroke="#C8A97E" stroke-width="1" opacity="0.2" filter="url(#sketch)"/>
+  <circle cx="185" cy="340" r="98" fill="none" stroke="#C8A97E" stroke-width="0.8" opacity="0.1" filter="url(#sketch)"/>
+
+  <!-- Orb (core) -->
+  <circle cx="185" cy="340" r="40" fill="#1E3A5F" stroke="#2B6CB0" stroke-width="1" filter="url(#sketch)"/>
+  <ellipse cx="178" cy="330" rx="14" ry="10" fill="#3B82B0" opacity="0.5" filter="url(#sketch)"/>
+
+  <!-- Searching label -->
+  <text x="185" y="432" text-anchor="middle" font-size="9" fill="#aaa">Searching for speakers…</text>
+
+  <!-- Annotations -->
+  <line x1="285" y1="295" x2="325" y2="280" stroke="#999" stroke-width="0.8" stroke-dasharray="3,2" filter="url(#sketch)"/>
+  <text x="328" y="278" font-size="8.5" fill="#555" font-style="italic">Pulse rings — 3 staggered</text>
+  <text x="328" y="289" font-size="8.5" fill="#555" font-style="italic">expand + fade, accent colour</text>
+
+  <line x1="225" y1="340" x2="328" y2="310" stroke="#999" stroke-width="0.8" stroke-dasharray="3,2" filter="url(#sketch)"/>
+  <text x="328" y="308" font-size="8.5" fill="#555" font-style="italic">Orb — idle pulse unchanged</text>
+
+  <line x1="209" y1="162" x2="225" y2="148" stroke="#999" stroke-width="0.8" stroke-dasharray="3,2" filter="url(#sketch)"/>
+  <line x1="222" y1="148" x2="328" y2="148" stroke="#999" stroke-width="0.8" stroke-dasharray="3,2" filter="url(#sketch)"/>
+  <text x="328" y="146" font-size="8.5" fill="#555" font-style="italic">Chip: "Searching…"</text>
+
+  <!-- No bottom bar note -->
+  <text x="185" y="570" text-anchor="middle" font-size="8" fill="#888" font-style="italic">No card · No bottom bar</text>
+  <text x="185" y="582" text-anchor="middle" font-size="8" fill="#888" font-style="italic">until first speaker found</text>
+
+
+  <!-- ═══════════════════════════════════════════
+       CENTRE — NO SPEAKERS FOUND (post-settle)
+       ═══════════════════════════════════════════ -->
+
+  <text x="430" y="74" text-anchor="middle" font-size="12" fill="#555" font-weight="600" font-style="italic">No Speakers Found</text>
+  <text x="430" y="88" text-anchor="middle" font-size="9" fill="#999" font-style="italic">(post-settle · WiFi connected · no B&amp;O speakers detected)</text>
+
+  <!-- Phone shell -->
+  <rect x="340" y="100" width="180" height="560" rx="26" fill="#1A1D26" stroke="#333" stroke-width="2" filter="url(#sketchHeavy)"/>
+  <rect x="393" y="110" width="54" height="13" rx="6.5" fill="#111" filter="url(#sketch)"/>
+
+  <!-- Status bar -->
+  <text x="357" y="138" font-size="7.5" fill="#aaa">08.34</text>
+  <text x="509" y="138" text-anchor="end" font-size="7.5" fill="#aaa">5G</text>
+
+  <!-- Top bar -->
+  <circle cx="361" cy="162" r="10" fill="none" stroke="#666" stroke-width="1" filter="url(#sketch)"/>
+  <text x="361" y="166" text-anchor="middle" font-size="8" fill="#888">?</text>
+  <rect x="390" y="153" width="58" height="20" rx="10" fill="#1E2235" stroke="#555" stroke-width="0.8" filter="url(#sketch)"/>
+  <text x="403" y="167" font-size="7" fill="#aaa">≈ 0</text>
+  <circle cx="509" cy="162" r="10" fill="none" stroke="#666" stroke-width="1" filter="url(#sketch)"/>
+  <text x="509" y="166" text-anchor="middle" font-size="8" fill="#888">⚙</text>
+
+  <!-- Dim orb -->
+  <circle cx="430" cy="310" r="70" fill="url(#orbGlowDim)" filter="url(#sketch)"/>
+  <circle cx="430" cy="310" r="40" fill="#1E2235" stroke="#2B3A55" stroke-width="1" opacity="0.4" filter="url(#sketch)"/>
+
+  <!-- No speakers title -->
+  <text x="430" y="382" text-anchor="middle" font-size="11" font-weight="600" fill="#DDD">No speakers found</text>
+
+  <!-- Body copy -->
+  <text x="430" y="400" text-anchor="middle" font-size="8" fill="#888">Make sure your B&amp;O speaker</text>
+  <text x="430" y="413" text-anchor="middle" font-size="8" fill="#888">is on and on the same</text>
+  <text x="430" y="426" text-anchor="middle" font-size="8" fill="#888">Wi-Fi network.</text>
+
+  <!-- Search again button -->
+  <rect x="375" y="442" width="110" height="30" rx="15" fill="#1E2235" stroke="#666" stroke-width="0.8" filter="url(#sketchHeavy)"/>
+  <text x="430" y="461" text-anchor="middle" font-size="8.5" fill="#CCC">Search again</text>
+
+  <!-- ═══════════════════════════════════════════
+       RIGHT PHONE — OFFLINE (no WiFi)
+       ═══════════════════════════════════════════ -->
+
+  <text x="675" y="74" text-anchor="middle" font-size="12" fill="#555" font-weight="600" font-style="italic">Offline</text>
+  <text x="675" y="88" text-anchor="middle" font-size="9" fill="#999" font-style="italic">(no WiFi · NWPathMonitor detects · auto-recover when restored)</text>
+
+  <!-- Phone shell -->
+  <rect x="585" y="100" width="180" height="560" rx="26" fill="#1A1D26" stroke="#333" stroke-width="2" filter="url(#sketchHeavy)"/>
+  <rect x="638" y="110" width="54" height="13" rx="6.5" fill="#111" filter="url(#sketch)"/>
+
+  <!-- Status bar -->
+  <text x="602" y="138" font-size="7.5" fill="#aaa">08.34</text>
+  <text x="754" y="138" text-anchor="end" font-size="7.5" fill="#aaa">No Signal</text>
+
+  <!-- Top bar -->
+  <circle cx="606" cy="162" r="10" fill="none" stroke="#666" stroke-width="1" filter="url(#sketch)"/>
+  <text x="606" y="166" text-anchor="middle" font-size="8" fill="#888">?</text>
+
+  <!-- Chip: No Wi-Fi — wifi.slash icon approximated -->
+  <rect x="634" y="153" width="66" height="20" rx="10" fill="#1E2235" stroke="#555" stroke-width="0.8" filter="url(#sketch)"/>
+  <text x="648" y="167" font-size="7" fill="#888">⌁ No Wi-Fi</text>
+
+  <circle cx="754" cy="162" r="10" fill="none" stroke="#666" stroke-width="1" filter="url(#sketch)"/>
+  <text x="754" y="166" text-anchor="middle" font-size="8" fill="#888">⚙</text>
+
+  <!-- Very dim orb -->
+  <circle cx="675" cy="305" r="55" fill="url(#orbGlowDim)" opacity="0.5" filter="url(#sketch)"/>
+  <circle cx="675" cy="305" r="40" fill="#1A1E2A" stroke="#2B3A55" stroke-width="1" opacity="0.25" filter="url(#sketch)"/>
+
+  <!-- No WiFi title -->
+  <text x="675" y="375" text-anchor="middle" font-size="13" font-weight="600" fill="#CCC">No Wi-Fi</text>
+
+  <!-- Body copy -->
+  <text x="675" y="396" text-anchor="middle" font-size="8" fill="#777">Connect to the same Wi-Fi</text>
+  <text x="675" y="409" text-anchor="middle" font-size="8" fill="#777">network as your B&amp;O speakers</text>
+  <text x="675" y="422" text-anchor="middle" font-size="8" fill="#777">to get started.</text>
+
+  <!-- No retry button — auto-recovers -->
+  <text x="675" y="452" text-anchor="middle" font-size="7.5" fill="#666" font-style="italic">Recovers automatically</text>
+  <text x="675" y="464" text-anchor="middle" font-size="7.5" fill="#666" font-style="italic">when WiFi reconnects</text>
+
+  <!-- No waveform in offline state -->
+  <text x="675" y="510" text-anchor="middle" font-size="7.5" fill="#555" font-style="italic">Waveform hidden</text>
+  <text x="675" y="522" text-anchor="middle" font-size="7.5" fill="#555" font-style="italic">(mic not started)</text>
+
+  <!-- Annotation: NWPathMonitor -->
+  <line x1="700" y1="162" x2="780" y2="140" stroke="#999" stroke-width="0.8" stroke-dasharray="3,2" filter="url(#sketch)"/>
+  <text x="784" y="138" font-size="7.5" fill="#555" font-style="italic">NWPathMonitor</text>
+  <text x="784" y="148" font-size="7.5" fill="#555" font-style="italic">drives chip + state</text>
+
+  <!-- ─── State flow diagram at bottom ─── -->
+  <line x1="60" y1="610" x2="800" y2="610" stroke="#ccc" stroke-width="0.8" stroke-dasharray="4,3" filter="url(#sketch)"/>
+
+  <text x="80" y="630" font-size="9" font-weight="600" fill="#444">State flow:</text>
+
+  <!-- Boxes -->
+  <rect x="148" y="618" width="70" height="24" rx="5" fill="#1E2235" stroke="#C8A97E" stroke-width="0.8" filter="url(#sketch)"/>
+  <text x="183" y="634" text-anchor="middle" font-size="7.5" fill="#C8A97E">WiFi on</text>
+
+  <line x1="218" y1="630" x2="240" y2="630" stroke="#777" stroke-width="1" filter="url(#sketch)"/>
+  <polygon points="240,627 246,630 240,633" fill="#777" filter="url(#sketch)"/>
+
+  <rect x="246" y="618" width="80" height="24" rx="5" fill="#1E2235" stroke="#888" stroke-width="0.8" filter="url(#sketch)"/>
+  <text x="286" y="634" text-anchor="middle" font-size="7.5" fill="#aaa">Discovering</text>
+
+  <line x1="326" y1="630" x2="348" y2="630" stroke="#777" stroke-width="1" filter="url(#sketch)"/>
+  <polygon points="348,627 354,630 348,633" fill="#777" filter="url(#sketch)"/>
+
+  <rect x="354" y="618" width="72" height="24" rx="5" fill="#1E2235" stroke="#888" stroke-width="0.8" filter="url(#sketch)"/>
+  <text x="390" y="634" text-anchor="middle" font-size="7.5" fill="#aaa">No speakers</text>
+
+  <line x1="426" y1="630" x2="448" y2="630" stroke="#777" stroke-width="1" filter="url(#sketch)"/>
+  <polygon points="448,627 454,630 448,633" fill="#777" filter="url(#sketch)"/>
+
+  <rect x="454" y="618" width="72" height="24" rx="5" fill="#1A2E1A" stroke="#4CAF50" stroke-width="0.8" filter="url(#sketch)"/>
+  <text x="490" y="634" text-anchor="middle" font-size="7.5" fill="#88CC88">Home screen</text>
+
+  <!-- Offline branch -->
+  <rect x="148" y="656" width="70" height="24" rx="5" fill="#1E2235" stroke="#888" stroke-width="0.8" filter="url(#sketch)"/>
+  <text x="183" y="672" text-anchor="middle" font-size="7.5" fill="#888">WiFi off</text>
+
+  <line x1="183" y1="642" x2="183" y2="656" stroke="#777" stroke-width="1" filter="url(#sketch)"/>
+
+  <line x1="218" y1="668" x2="246" y2="668" stroke="#777" stroke-width="1" filter="url(#sketch)"/>
+  <polygon points="246,665 252,668 246,671" fill="#777" filter="url(#sketch)"/>
+
+  <rect x="252" y="656" width="60" height="24" rx="5" fill="#2E1A1A" stroke="#CC4444" stroke-width="0.8" filter="url(#sketch)"/>
+  <text x="282" y="672" text-anchor="middle" font-size="7.5" fill="#CC8888">Offline</text>
+
+  <line x1="312" y1="668" x2="330" y2="650" stroke="#777" stroke-width="0.8" stroke-dasharray="3,2" filter="url(#sketch)"/>
+  <text x="332" y="648" font-size="7.5" fill="#999" font-style="italic">auto-recover on WiFi restore</text>
+
+  <!-- Footer -->
+  <text x="430" y="695" text-anchor="middle" font-size="9" fill="#aaa" font-style="italic">Rough sketch — §4 &amp; §5 of design-spec-home-screen-redesign.md</text>
+</svg>

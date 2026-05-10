@@ -1,0 +1,388 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 680" width="960" height="680" font-family="SF Pro Display, -apple-system, Helvetica Neue, sans-serif">
+  <defs>
+    <linearGradient id="cardGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2E2B24" stop-opacity="0.97"/>
+      <stop offset="100%" stop-color="#211F19" stop-opacity="0.97"/>
+    </linearGradient>
+    <linearGradient id="screenBg" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#1A1710"/>
+      <stop offset="100%" stop-color="#0E0D0A"/>
+    </linearGradient>
+    <linearGradient id="frameGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3A3830"/>
+      <stop offset="100%" stop-color="#28261E"/>
+    </linearGradient>
+    <linearGradient id="volFill" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#C8A97E"/>
+      <stop offset="100%" stop-color="#B8956A"/>
+    </linearGradient>
+    <linearGradient id="nowPlayingBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.04"/>
+    </linearGradient>
+    <linearGradient id="chipBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.06"/>
+    </linearGradient>
+    <linearGradient id="transportBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.08"/>
+    </linearGradient>
+    <linearGradient id="barBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1E1C16" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#161410" stop-opacity="0.98"/>
+    </linearGradient>
+    <linearGradient id="goldGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C8A97E" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#C8A97E" stop-opacity="0.04"/>
+    </linearGradient>
+    <linearGradient id="pillPlaying" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#C8A97E" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#B8956A" stop-opacity="0.16"/>
+    </linearGradient>
+    <!-- Filter for gold border glow on drop zone -->
+    <filter id="goldGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0.8 0.3 0 0  0.8 0.6 0.2 0 0  0 0 0 0 0  0 0 0 0.7 0" result="colored"/>
+      <feMerge>
+        <feMergeNode in="colored"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Subtle drop shadow for ghost pill -->
+    <filter id="pillShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- BACKGROUND -->
+  <rect width="960" height="680" fill="#0E0D0A"/>
+
+  <!-- HEADER -->
+  <text x="480" y="36" text-anchor="middle" font-size="15" font-weight="600" fill="#C8A97E" letter-spacing="0.5">MULTIROOM GROUPING  —  FEATURE 2</text>
+  <text x="480" y="56" text-anchor="middle" font-size="11" fill="#8A8275" letter-spacing="0.3">Drag a speaker pill onto the session card to join · Tap chip to remove</text>
+
+  <!-- Panel labels -->
+  <text x="162" y="634" text-anchor="middle" font-size="11" fill="#8A8275">1. Idle</text>
+  <text x="480" y="634" text-anchor="middle" font-size="11" fill="#8A8275">2. Drag in progress</text>
+  <text x="798" y="634" text-anchor="middle" font-size="11" fill="#8A8275">3. After drop</text>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- PANEL 1 — Idle state -->
+  <!-- Phone: x=36 to x=290, y=66 to y=616  (254×550) -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <rect x="36" y="66" width="254" height="556" rx="36" fill="url(#frameGrad)" stroke="#3A3830" stroke-width="1.5"/>
+  <rect x="43" y="73" width="240" height="542" rx="30" fill="url(#screenBg)"/>
+
+  <!-- Status bar P1 -->
+  <text x="60" y="97" font-size="10" fill="#6A6860">9:41</text>
+  <text x="275" y="97" text-anchor="end" font-size="10" fill="#6A6860">●●●</text>
+
+  <!-- Session card P1 -->
+  <rect x="51" y="106" width="218" height="352" rx="20" fill="url(#cardGrad)" stroke="#3A3830" stroke-width="0.8"/>
+
+  <!-- Card header -->
+  <text x="68" y="130" font-size="13" font-weight="700" fill="#F5F0E8">Badeværelse</text>
+  <rect x="228" y="119" width="32" height="14" rx="7" fill="none" stroke="#4A4840" stroke-width="0.8"/>
+  <text x="244" y="129" text-anchor="middle" font-size="7" fill="#6A6860" letter-spacing="0.3">beolink</text>
+
+  <!-- State -->
+  <circle cx="68" cy="143" r="4" fill="#C8A97E"/>
+  <text x="78" y="147" font-size="10" fill="#C8A97E" font-weight="500">Playing</text>
+
+  <!-- Divider -->
+  <line x1="51" y1="158" x2="269" y2="158" stroke="#3A3830" stroke-width="0.5"/>
+
+  <!-- Now playing P1 -->
+  <rect x="58" y="165" width="202" height="46" rx="10" fill="url(#nowPlayingBg)"/>
+  <text x="70" y="183" font-size="11" font-weight="600" fill="#F5F0E8">DR P1</text>
+  <text x="70" y="197" font-size="9" fill="#8A8275">dr.dk/p1</text>
+  <rect x="234" y="175" width="3.5" height="10" rx="1.5" fill="#C8A97E"/>
+  <rect x="240" y="170" width="3.5" height="15" rx="1.5" fill="#C8A97E"/>
+  <rect x="246" y="178" width="3.5" height="8" rx="1.5" fill="#C8A97E"/>
+  <!-- Divider -->
+  <line x1="51" y1="220" x2="269" y2="220" stroke="#3A3830" stroke-width="0.5"/>
+
+  <!-- Volume P1 -->
+  <rect x="68" y="232" width="156" height="3.5" rx="1.75" fill="#2E2B24"/>
+  <rect x="68" y="232" width="104" height="3.5" rx="1.75" fill="url(#volFill)"/>
+  <text x="234" y="238" text-anchor="end" font-size="9" fill="#8A8275">20</text>
+  <!-- Divider -->
+  <line x1="51" y1="248" x2="269" y2="248" stroke="#3A3830" stroke-width="0.5"/>
+
+  <!-- Transport P1 -->
+  <rect x="82" y="257" width="136" height="36" rx="18" fill="url(#transportBg)" stroke="#4A4840" stroke-width="0.5"/>
+  <rect x="147" y="266" width="4.5" height="17" rx="2" fill="#F5F0E8"/>
+  <rect x="155" y="266" width="4.5" height="17" rx="2" fill="#F5F0E8"/>
+  <!-- Divider -->
+  <line x1="51" y1="303" x2="269" y2="303" stroke="#3A3830" stroke-width="0.5"/>
+
+  <!-- Favorites P1 -->
+  <rect x="60" y="311" width="52" height="18" rx="9" fill="url(#chipBg)" stroke="#3A3830" stroke-width="0.5"/>
+  <text x="86" y="324" text-anchor="middle" font-size="8" fill="#8A8275">Morning</text>
+  <rect x="118" y="311" width="38" height="18" rx="9" fill="url(#chipBg)" stroke="#3A3830" stroke-width="0.5"/>
+  <text x="137" y="324" text-anchor="middle" font-size="8" fill="#8A8275">Dinner</text>
+  <rect x="162" y="311" width="28" height="18" rx="9" fill="url(#chipBg)" stroke="#3A3830" stroke-width="0.5"/>
+  <text x="176" y="324" text-anchor="middle" font-size="8" fill="#8A8275">Jazz</text>
+  <!-- Divider -->
+  <line x1="51" y1="340" x2="269" y2="340" stroke="#3A3830" stroke-width="0.5"/>
+
+  <!-- Group chip row P1 — existing member: Kitchen -->
+  <rect x="60" y="350" width="62" height="20" rx="10" fill="url(#chipBg)" stroke="#4A4840" stroke-width="0.5"/>
+  <text x="91" y="364" text-anchor="middle" font-size="9" fill="#8A8275">+ Kitchen</text>
+
+  <!-- Annotation: chip row -->
+  <text x="163" y="362" font-size="9" fill="#6A6860" font-style="italic">tap to remove</text>
+
+  <!-- Bottom area of card -->
+  <rect x="51" y="106" width="218" height="352" rx="20" fill="none" stroke="#3A3830" stroke-width="0.8"/>
+
+  <!-- ── BOTTOM BAR P1 ── -->
+  <rect x="43" y="486" width="240" height="84" rx="0" fill="url(#barBg)"/>
+  <!-- Top edge blend -->
+  <rect x="43" y="484" width="240" height="6" fill="url(#screenBg)"/>
+  <!-- Separator line -->
+  <line x1="43" y1="488" x2="283" y2="488" stroke="#3A3830" stroke-width="0.5"/>
+  <!-- Round bottom corners of bar area -->
+  <rect x="43" y="542" width="240" height="73" rx="0" fill="url(#barBg)"/>
+  <rect x="43" y="570" width="240" height="45" rx="30" fill="url(#barBg)"/>
+
+  <!-- Playing pill: Badeværelse (not draggable) -->
+  <rect x="56" y="499" width="76" height="24" rx="12" fill="url(#pillPlaying)" stroke="#C8A97E" stroke-width="0.6" stroke-opacity="0.5"/>
+  <circle cx="67" cy="511" r="3.5" fill="#C8A97E" fill-opacity="0.8"/>
+  <text x="72" y="515" font-size="8.5" fill="#C8A97E" font-weight="600">Badeværelse</text>
+
+  <!-- Draggable pill: Stue -->
+  <rect x="140" y="499" width="38" height="24" rx="12" fill="url(#chipBg)" stroke="#4A4840" stroke-width="0.6"/>
+  <text x="159" y="515" text-anchor="middle" font-size="8.5" fill="#C4BEB4">Stue</text>
+
+  <!-- Draggable pill: Kitchen -->
+  <rect x="184" y="499" width="50" height="24" rx="12" fill="url(#chipBg)" stroke="#4A4840" stroke-width="0.6"/>
+  <text x="209" y="515" text-anchor="middle" font-size="8.5" fill="#C4BEB4">Kitchen</text>
+
+  <!-- Coach mark hint -->
+  <text x="159" y="542" text-anchor="middle" font-size="8.5" fill="#C8A97E" fill-opacity="0.7" font-style="italic">Drag to join this session</text>
+
+  <!-- Annotation: drag from Stue -->
+  <line x1="159" y1="496" x2="159" y2="476" stroke="#C8A97E" stroke-width="0.8" stroke-dasharray="3,2" opacity="0.5"/>
+  <polygon points="159,470 155,478 163,478" fill="#C8A97E" fill-opacity="0.5"/>
+  <text x="200" y="472" font-size="8.5" fill="#8A8275">long press</text>
+  <text x="200" y="483" font-size="8.5" fill="#8A8275">+ drag up</text>
+
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- PANEL 2 — Drag in progress -->
+  <!-- Phone: x=354 to x=608 -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <rect x="354" y="66" width="254" height="556" rx="36" fill="url(#frameGrad)" stroke="#3A3830" stroke-width="1.5"/>
+  <rect x="361" y="73" width="240" height="542" rx="30" fill="url(#screenBg)"/>
+
+  <!-- Status bar P2 -->
+  <text x="378" y="97" font-size="10" fill="#6A6860">9:41</text>
+  <text x="593" y="97" text-anchor="end" font-size="10" fill="#6A6860">●●●</text>
+
+  <!-- Session card P2 — DROP ZONE ACTIVE: gold border + subtle gold inner glow -->
+  <!-- Outer glow layer -->
+  <rect x="51" y="106" width="218" height="352" rx="20" fill="#C8A97E" fill-opacity="0.06" transform="translate(318,0)"/>
+  <!-- Card -->
+  <rect x="369" y="106" width="218" height="352" rx="20" fill="url(#cardGrad)" stroke="#C8A97E" stroke-width="1.6"/>
+
+  <!-- Card header P2 -->
+  <text x="386" y="130" font-size="13" font-weight="700" fill="#F5F0E8">Badeværelse</text>
+  <rect x="546" y="119" width="32" height="14" rx="7" fill="none" stroke="#4A4840" stroke-width="0.8"/>
+  <text x="562" y="129" text-anchor="middle" font-size="7" fill="#6A6860" letter-spacing="0.3">beolink</text>
+
+  <!-- State P2 -->
+  <circle cx="386" cy="143" r="4" fill="#C8A97E"/>
+  <text x="396" y="147" font-size="10" fill="#C8A97E" font-weight="500">Playing</text>
+
+  <!-- Divider -->
+  <line x1="369" y1="158" x2="587" y2="158" stroke="#3A3830" stroke-width="0.5"/>
+
+  <!-- Now playing P2 -->
+  <rect x="376" y="165" width="202" height="46" rx="10" fill="url(#nowPlayingBg)"/>
+  <text x="388" y="183" font-size="11" font-weight="600" fill="#F5F0E8">DR P1</text>
+  <text x="388" y="197" font-size="9" fill="#8A8275">dr.dk/p1</text>
+  <rect x="552" y="175" width="3.5" height="10" rx="1.5" fill="#C8A97E"/>
+  <rect x="558" y="170" width="3.5" height="15" rx="1.5" fill="#C8A97E"/>
+  <rect x="564" y="178" width="3.5" height="8" rx="1.5" fill="#C8A97E"/>
+  <line x1="369" y1="220" x2="587" y2="220" stroke="#3A3830" stroke-width="0.5"/>
+
+  <!-- Volume P2 -->
+  <rect x="386" y="232" width="156" height="3.5" rx="1.75" fill="#2E2B24"/>
+  <rect x="386" y="232" width="104" height="3.5" rx="1.75" fill="url(#volFill)"/>
+  <text x="552" y="238" text-anchor="end" font-size="9" fill="#8A8275">20</text>
+  <line x1="369" y1="248" x2="587" y2="248" stroke="#3A3830" stroke-width="0.5"/>
+
+  <!-- Transport P2 -->
+  <rect x="400" y="257" width="136" height="36" rx="18" fill="url(#transportBg)" stroke="#4A4840" stroke-width="0.5"/>
+  <rect x="464" y="266" width="4.5" height="17" rx="2" fill="#F5F0E8"/>
+  <rect x="472" y="266" width="4.5" height="17" rx="2" fill="#F5F0E8"/>
+  <line x1="369" y1="303" x2="587" y2="303" stroke="#3A3830" stroke-width="0.5"/>
+
+  <!-- Favorites P2 -->
+  <rect x="378" y="311" width="52" height="18" rx="9" fill="url(#chipBg)" stroke="#3A3830" stroke-width="0.5"/>
+  <text x="404" y="324" text-anchor="middle" font-size="8" fill="#8A8275">Morning</text>
+  <rect x="436" y="311" width="38" height="18" rx="9" fill="url(#chipBg)" stroke="#3A3830" stroke-width="0.5"/>
+  <text x="455" y="324" text-anchor="middle" font-size="8" fill="#8A8275">Dinner</text>
+  <rect x="480" y="311" width="28" height="18" rx="9" fill="url(#chipBg)" stroke="#3A3830" stroke-width="0.5"/>
+  <text x="494" y="324" text-anchor="middle" font-size="8" fill="#8A8275">Jazz</text>
+  <line x1="369" y1="340" x2="587" y2="340" stroke="#3A3830" stroke-width="0.5"/>
+
+  <!-- Group chip row P2 — existing member: Kitchen -->
+  <rect x="378" y="350" width="62" height="20" rx="10" fill="url(#chipBg)" stroke="#4A4840" stroke-width="0.5"/>
+  <text x="409" y="364" text-anchor="middle" font-size="9" fill="#8A8275">+ Kitchen</text>
+
+  <!-- Drop zone hint text inside card -->
+  <text x="481" y="398" text-anchor="middle" font-size="9" fill="#C8A97E" fill-opacity="0.7" font-style="italic">Drop to join</text>
+
+  <!-- Card border glow annotation -->
+  <line x1="590" y1="200" x2="618" y2="200" stroke="#C8A97E" stroke-width="0.8" stroke-dasharray="3,2"/>
+  <text x="622" y="196" font-size="8.5" fill="#C8A97E">gold border</text>
+  <text x="622" y="208" font-size="8.5" fill="#C8A97E">drop zone</text>
+
+  <!-- Card frame -->
+  <rect x="369" y="106" width="218" height="352" rx="20" fill="none" stroke="#C8A97E" stroke-width="1.6"/>
+
+  <!-- ── GHOST PILL (floating mid-drag) ── -->
+  <!-- Drag path (dotted) from bottom bar up to ghost -->
+  <line x1="481" y1="510" x2="481" y2="424" stroke="#C8A97E" stroke-width="0.8" stroke-dasharray="4,3" opacity="0.4"/>
+  <polygon points="481,416 477,425 485,425" fill="#C8A97E" fill-opacity="0.4"/>
+
+  <!-- Ghost pill — floating at y~420, above card bottom edge -->
+  <rect x="447" y="410" width="68" height="28" rx="14" fill="#2A2820" fill-opacity="0.92" stroke="#C8A97E" stroke-width="0.8" stroke-opacity="0.5" filter="url(#pillShadow)"/>
+  <text x="481" y="428" text-anchor="middle" font-size="10" fill="#E8E0D4" font-weight="500">Stue</text>
+  <!-- Ghost opacity label -->
+  <text x="524" y="420" font-size="8" fill="#C8A97E" fill-opacity="0.8" font-style="italic">ghost pill</text>
+  <text x="524" y="432" font-size="8" fill="#6A6860" font-style="italic">follows finger</text>
+
+  <!-- ── BOTTOM BAR P2 ── -->
+  <rect x="361" y="486" width="240" height="84" rx="0" fill="url(#barBg)"/>
+  <rect x="361" y="484" width="240" height="6" fill="url(#screenBg)"/>
+  <line x1="361" y1="488" x2="601" y2="488" stroke="#3A3830" stroke-width="0.5"/>
+  <rect x="361" y="542" width="240" height="73" rx="0" fill="url(#barBg)"/>
+  <rect x="361" y="570" width="240" height="45" rx="30" fill="url(#barBg)"/>
+
+  <!-- Playing pill P2 -->
+  <rect x="374" y="499" width="76" height="24" rx="12" fill="url(#pillPlaying)" stroke="#C8A97E" stroke-width="0.6" stroke-opacity="0.5"/>
+  <circle cx="385" cy="511" r="3.5" fill="#C8A97E" fill-opacity="0.8"/>
+  <text x="390" y="515" font-size="8.5" fill="#C8A97E" font-weight="600">Badeværelse</text>
+
+  <!-- Stue pill — dimmed (being dragged) -->
+  <rect x="458" y="499" width="38" height="24" rx="12" fill="url(#chipBg)" stroke="#4A4840" stroke-width="0.6" opacity="0.25"/>
+  <text x="477" y="515" text-anchor="middle" font-size="8.5" fill="#C4BEB4" opacity="0.25">Stue</text>
+
+  <!-- Kitchen pill P2 -->
+  <rect x="502" y="499" width="50" height="24" rx="12" fill="url(#chipBg)" stroke="#4A4840" stroke-width="0.6"/>
+  <text x="527" y="515" text-anchor="middle" font-size="8.5" fill="#C4BEB4">Kitchen</text>
+
+  <!-- "Stue" dimmed annotation -->
+  <text x="477" y="536" text-anchor="middle" font-size="8" fill="#6A6860" font-style="italic">dimmed</text>
+
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- PANEL 3 — After drop (joined) -->
+  <!-- Phone: x=672 to x=926 -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <rect x="672" y="66" width="254" height="556" rx="36" fill="url(#frameGrad)" stroke="#3A3830" stroke-width="1.5"/>
+  <rect x="679" y="73" width="240" height="542" rx="30" fill="url(#screenBg)"/>
+
+  <!-- Status bar P3 -->
+  <text x="696" y="97" font-size="10" fill="#6A6860">9:41</text>
+  <text x="911" y="97" text-anchor="end" font-size="10" fill="#6A6860">●●●</text>
+
+  <!-- Session card P3 — back to normal border -->
+  <rect x="687" y="106" width="218" height="352" rx="20" fill="url(#cardGrad)" stroke="#3A3830" stroke-width="0.8"/>
+
+  <!-- Card header P3 -->
+  <text x="704" y="130" font-size="13" font-weight="700" fill="#F5F0E8">Badeværelse</text>
+  <rect x="864" y="119" width="32" height="14" rx="7" fill="none" stroke="#4A4840" stroke-width="0.8"/>
+  <text x="880" y="129" text-anchor="middle" font-size="7" fill="#6A6860" letter-spacing="0.3">beolink</text>
+
+  <!-- State P3 -->
+  <circle cx="704" cy="143" r="4" fill="#C8A97E"/>
+  <text x="714" y="147" font-size="10" fill="#C8A97E" font-weight="500">Playing</text>
+
+  <!-- Divider -->
+  <line x1="687" y1="158" x2="905" y2="158" stroke="#3A3830" stroke-width="0.5"/>
+
+  <!-- Now playing P3 -->
+  <rect x="694" y="165" width="202" height="46" rx="10" fill="url(#nowPlayingBg)"/>
+  <text x="706" y="183" font-size="11" font-weight="600" fill="#F5F0E8">DR P1</text>
+  <text x="706" y="197" font-size="9" fill="#8A8275">dr.dk/p1</text>
+  <rect x="870" y="175" width="3.5" height="10" rx="1.5" fill="#C8A97E"/>
+  <rect x="876" y="170" width="3.5" height="15" rx="1.5" fill="#C8A97E"/>
+  <rect x="882" y="178" width="3.5" height="8" rx="1.5" fill="#C8A97E"/>
+  <line x1="687" y1="220" x2="905" y2="220" stroke="#3A3830" stroke-width="0.5"/>
+
+  <!-- Volume P3 -->
+  <rect x="704" y="232" width="156" height="3.5" rx="1.75" fill="#2E2B24"/>
+  <rect x="704" y="232" width="104" height="3.5" rx="1.75" fill="url(#volFill)"/>
+  <text x="870" y="238" text-anchor="end" font-size="9" fill="#8A8275">20</text>
+  <line x1="687" y1="248" x2="905" y2="248" stroke="#3A3830" stroke-width="0.5"/>
+
+  <!-- Transport P3 -->
+  <rect x="718" y="257" width="136" height="36" rx="18" fill="url(#transportBg)" stroke="#4A4840" stroke-width="0.5"/>
+  <rect x="783" y="266" width="4.5" height="17" rx="2" fill="#F5F0E8"/>
+  <rect x="791" y="266" width="4.5" height="17" rx="2" fill="#F5F0E8"/>
+  <line x1="687" y1="303" x2="905" y2="303" stroke="#3A3830" stroke-width="0.5"/>
+
+  <!-- Favorites P3 -->
+  <rect x="696" y="311" width="52" height="18" rx="9" fill="url(#chipBg)" stroke="#3A3830" stroke-width="0.5"/>
+  <text x="722" y="324" text-anchor="middle" font-size="8" fill="#8A8275">Morning</text>
+  <rect x="754" y="311" width="38" height="18" rx="9" fill="url(#chipBg)" stroke="#3A3830" stroke-width="0.5"/>
+  <text x="773" y="324" text-anchor="middle" font-size="8" fill="#8A8275">Dinner</text>
+  <rect x="798" y="311" width="28" height="18" rx="9" fill="url(#chipBg)" stroke="#3A3830" stroke-width="0.5"/>
+  <text x="812" y="324" text-anchor="middle" font-size="8" fill="#8A8275">Jazz</text>
+  <line x1="687" y1="340" x2="905" y2="340" stroke="#3A3830" stroke-width="0.5"/>
+
+  <!-- Group chip row P3 — Kitchen + NEW: Stue -->
+  <rect x="696" y="350" width="62" height="20" rx="10" fill="url(#chipBg)" stroke="#4A4840" stroke-width="0.5"/>
+  <text x="727" y="364" text-anchor="middle" font-size="9" fill="#8A8275">+ Kitchen</text>
+
+  <!-- NEW Stue chip — highlighted with subtle gold pulse state -->
+  <rect x="764" y="350" width="46" height="20" rx="10" fill="#C8A97E" fill-opacity="0.12" stroke="#C8A97E" stroke-width="0.6" stroke-opacity="0.5"/>
+  <text x="787" y="364" text-anchor="middle" font-size="9" fill="#C8A97E" font-weight="500">+ Stue</text>
+
+  <!-- NEW chip annotation -->
+  <line x1="787" y1="348" x2="787" y2="330" stroke="#C8A97E" stroke-width="0.8" stroke-dasharray="3,2"/>
+  <text x="822" y="328" font-size="8.5" fill="#C8A97E">new chip</text>
+  <text x="822" y="340" font-size="8.5" fill="#C8A97E">spring entry</text>
+
+  <!-- Card frame P3 -->
+  <rect x="687" y="106" width="218" height="352" rx="20" fill="none" stroke="#3A3830" stroke-width="0.8"/>
+
+  <!-- ── BOTTOM BAR P3 ── -->
+  <rect x="679" y="486" width="240" height="84" rx="0" fill="url(#barBg)"/>
+  <rect x="679" y="484" width="240" height="6" fill="url(#screenBg)"/>
+  <line x1="679" y1="488" x2="919" y2="488" stroke="#3A3830" stroke-width="0.5"/>
+  <rect x="679" y="542" width="240" height="73" rx="0" fill="url(#barBg)"/>
+  <rect x="679" y="570" width="240" height="45" rx="30" fill="url(#barBg)"/>
+
+  <!-- Playing pill P3 -->
+  <rect x="692" y="499" width="76" height="24" rx="12" fill="url(#pillPlaying)" stroke="#C8A97E" stroke-width="0.6" stroke-opacity="0.5"/>
+  <circle cx="703" cy="511" r="3.5" fill="#C8A97E" fill-opacity="0.8"/>
+  <text x="708" y="515" font-size="8.5" fill="#C8A97E" font-weight="600">Badeværelse</text>
+
+  <!-- Group connector line between Badeværelse and Stue -->
+  <line x1="768" y1="511" x2="775" y2="511" stroke="#8A8275" stroke-width="1" stroke-opacity="0.4"/>
+
+  <!-- Stue pill P3 — now connected, shown with subtle gold tint -->
+  <rect x="776" y="499" width="38" height="24" rx="12" fill="url(#pillPlaying)" fill-opacity="0.5" stroke="#C8A97E" stroke-width="0.5" stroke-opacity="0.3"/>
+  <text x="795" y="515" text-anchor="middle" font-size="8.5" fill="#C8A97E" fill-opacity="0.7">Stue</text>
+
+  <!-- Kitchen pill P3 -->
+  <rect x="820" y="499" width="50" height="24" rx="12" fill="url(#chipBg)" stroke="#4A4840" stroke-width="0.6"/>
+  <text x="845" y="515" text-anchor="middle" font-size="8.5" fill="#C4BEB4">Kitchen</text>
+
+  <!-- Connector annotation -->
+  <line x1="771" y1="493" x2="771" y2="477" stroke="#C8A97E" stroke-width="0.8" stroke-dasharray="3,2" opacity="0.5"/>
+  <text x="771" y="472" text-anchor="middle" font-size="8" fill="#8A8275">group</text>
+  <text x="771" y="463" text-anchor="middle" font-size="8" fill="#8A8275">connector</text>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- LEGEND -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <text x="480" y="660" text-anchor="middle" font-size="10" fill="#6A6860">Long press pill → drag upward → drop on card  ·  Gold border = drop zone active  ·  Tap group chip to remove</text>
+
+</svg>
