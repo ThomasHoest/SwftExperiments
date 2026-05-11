@@ -465,7 +465,7 @@ struct HomeView: View {
                             speakerId: "",
                             intent: CommandIntent.unknown.rawValue,
                             slots: [:],
-                            parserPath: commandRouter.lastParserPath ?? "unknown",
+                            parserPath: commandRouter.lastParserPath ?? "Unknown",
                             outcome: .unknown,
                             locale: Locale.current.identifier
                         )
@@ -663,7 +663,7 @@ struct HomeView: View {
                     speakerId: speaker.stableId,
                     intent: command.toCommandIntent().rawValue,
                     slots: [:],
-                    parserPath: commandRouter.lastParserPath ?? "unknown",
+                    parserPath: commandRouter.lastParserPath ?? "Unknown",
                     outcome: isUnknown ? .unknown : .confirmed,
                     locale: Locale.current.identifier
                 )
@@ -683,7 +683,7 @@ struct HomeView: View {
 
         Log.info("[HomeView][clear] path=countdown command=\(command) → clearAfterCommand deferred to action")
 
-        let capturedParserPath = commandRouter.lastParserPath ?? "unknown"
+        let capturedParserPath = commandRouter.lastParserPath ?? "Unknown"
 
         coordinator.startCountdown(
             action: {

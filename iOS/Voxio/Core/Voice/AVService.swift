@@ -178,7 +178,12 @@ class AVService {
                     }
                 }
             } else if let error {
-                Log.error("[AVService] recognition error: \(error.localizedDescription)")
+                let nsErr = error as NSError
+                if nsErr.domain == "kAFAssistantErrorDomain" && nsErr.code == 1110 {
+                    Log.verbose("[AVService] no speech detected — restarting request")
+                } else {
+                    Log.error("[AVService] recognition error: \(error.localizedDescription)")
+                }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     guard self.requestGeneration == generation else { return }
                     self.startRequest()
