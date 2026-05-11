@@ -14,6 +14,12 @@ class MdnsDiscovery: NSObject {
     private var serviceNameToType: [String: SpeakerPlatform] = [:]
     private var browserPlatform: [ObjectIdentifier: SpeakerPlatform] = [:]
 
+    // Retry/backoff state for transient mDNS browse failures (e.g. NSNetServicesErrorCode -72000).
+    private var retryAttempts: [ObjectIdentifier: Int] = [:]
+    private var retryTasks: [ObjectIdentifier: Task<Void, Never>] = [:]
+    private let maxRetryAttempts = 6
+    private var isStarted = false
+
     override init() {
         super.init()
         mozartBrowser.delegate = self
@@ -24,14 +30,60 @@ class MdnsDiscovery: NSObject {
 
     func start() {
         Log.info("[mDNS] started browsing for _bangolufsen._tcp. and _beoremote._tcp.")
+        isStarted = true
+        retryAttempts.removeAll()
+        cancelAllRetries()
         mozartBrowser.searchForServices(ofType: "_bangolufsen._tcp.", inDomain: "local.")
         bnrBrowser.searchForServices(ofType: "_beoremote._tcp.", inDomain: "local.")
     }
 
     func stop() {
         Log.info("[mDNS] stopped browsing")
+        isStarted = false
+        cancelAllRetries()
         mozartBrowser.stop()
         bnrBrowser.stop()
+    }
+
+    private func cancelAllRetries() {
+        for (_, task) in retryTasks { task.cancel() }
+        retryTasks.removeAll()
+    }
+
+    private func serviceType(for platform: SpeakerPlatform) -> String {
+        switch platform {
+        case .mozart: return "_bangolufsen._tcp."
+        case .bnr:    return "_beoremote._tcp."
+        }
+    }
+
+    private func scheduleRetry(for browser: NetServiceBrowser) {
+        guard isStarted else { return }
+        let key = ObjectIdentifier(browser)
+        let platform = browserPlatform[key] ?? .mozart
+        let attempt = (retryAttempts[key] ?? 0) + 1
+        guard attempt <= maxRetryAttempts else {
+            Log.error("[mDNS] giving up retrying \(platform.rawValue) browser after \(attempt - 1) attempts")
+            return
+        }
+        retryAttempts[key] = attempt
+
+        // Exponential backoff with cap: 2, 4, 8, 16, 32, 60 seconds.
+        let delaySeconds = min(60, Int(pow(2.0, Double(attempt))))
+        Log.info("[mDNS] scheduling retry #\(attempt) for \(platform.rawValue) browser in \(delaySeconds)s")
+
+        retryTasks[key]?.cancel()
+        retryTasks[key] = Task { [weak self, weak browser] in
+            try? await Task.sleep(nanoseconds: UInt64(delaySeconds) * 1_000_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                guard let self, let browser, self.isStarted else { return }
+                let type = self.serviceType(for: platform)
+                Log.info("[mDNS] retrying \(platform.rawValue) browser (attempt #\(attempt))")
+                browser.stop()
+                browser.searchForServices(ofType: type, inDomain: "local.")
+            }
+        }
     }
 
     private func ipv4(from data: Data) -> String? {
@@ -51,6 +103,8 @@ extension MdnsDiscovery: NetServiceBrowserDelegate, NetServiceDelegate {
     func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
         let platform = browserPlatform[ObjectIdentifier(browser)] ?? .mozart
         Log.info("[mDNS] found service: \(service.name) type=\(service.type) domain=\(service.domain) platform=\(platform.rawValue)")
+        // Successful find — reset retry counter for this browser.
+        retryAttempts[ObjectIdentifier(browser)] = 0
         serviceNameToType[service.name] = platform
         service.delegate = self
         pendingServices.append(service)
@@ -101,6 +155,11 @@ extension MdnsDiscovery: NetServiceBrowserDelegate, NetServiceDelegate {
     func netServiceBrowser(_ browser: NetServiceBrowser, didNotSearch errorDict: [String: NSNumber]) {
         let platform = browserPlatform[ObjectIdentifier(browser)]?.rawValue ?? "unknown"
         Log.error("[mDNS] browser didNotSearch (\(platform)): \(errorDict)")
+        // NSNetServicesErrorCode -72000 (unknownError) and similar transient failures
+        // can occur when the network stack is briefly unavailable (e.g. Wi-Fi flap,
+        // backgrounding, VPN reconnect). Reschedule the browse with exponential
+        // backoff rather than leaving discovery permanently dead.
+        scheduleRetry(for: browser)
     }
 
     func netService(_ sender: NetService, didNotResolve errorDict: [String: NSNumber]) {
