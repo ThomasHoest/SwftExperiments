@@ -43,26 +43,26 @@ This epic touches `HomeView.swift` (rewires `cardArea`), introduces three new fi
 
 ### Session strip view
 
-- [ ] **T-5201** Create `iOS/Voxio/Features/Home/SessionStripView.swift`. Defines `struct SessionStripView: View` that takes `let groups: [SpeakerGroup]` (already filtered to playing-host groups by the parent), `@Binding var selectedSpeaker: Speaker?`, `let roll: Double`, `let pitch: Double`, and `let isCommandActive: Bool`. Renders a `ScrollView(.horizontal, showsIndicators: false)` with `.scrollTargetBehavior(.viewAligned)` and `.scrollTargetLayout()` on the inner `LazyHStack(spacing: Spacing.s8)`. Each card is a `SpeakerCard` wrapped in a fixed frame: `.frame(width: cardWidth)` where `cardWidth = screenWidth - (Spacing.s16 * 2)`. The trailing 8 pt peek is created by the trailing card's natural overflow plus `.scrollTargetBehavior(.viewAligned)` snap. Use `UIApplication.shared.connectedScenes` to read the true screen width (matching the `SpeakerSelectorPill` workaround for the iOS 26 ZStack inflation issue documented inline in `SpeakerSelectorPill.swift`). When `groups.count == 1`, render the single card without horizontal scroll affordance — frame to full available width minus `Spacing.s16` each side, no peek (use a computed `effectiveCardWidth` that omits the 8 pt peek when single-session).
+- [x] **T-5201** Create `iOS/Voxio/Features/Home/SessionStripView.swift`. Defines `struct SessionStripView: View` that takes `let groups: [SpeakerGroup]` (already filtered to playing-host groups by the parent), `@Binding var selectedSpeaker: Speaker?`, `let roll: Double`, `let pitch: Double`, and `let isCommandActive: Bool`. Renders a `ScrollView(.horizontal, showsIndicators: false)` with `.scrollTargetBehavior(.viewAligned)` and `.scrollTargetLayout()` on the inner `LazyHStack(spacing: Spacing.s8)`. Each card is a `SpeakerCard` wrapped in a fixed frame: `.frame(width: cardWidth)` where `cardWidth = screenWidth - (Spacing.s16 * 2)`. The trailing 8 pt peek is created by the trailing card's natural overflow plus `.scrollTargetBehavior(.viewAligned)` snap. Use `UIApplication.shared.connectedScenes` to read the true screen width (matching the `SpeakerSelectorPill` workaround for the iOS 26 ZStack inflation issue documented inline in `SpeakerSelectorPill.swift`). When `groups.count == 1`, render the single card without horizontal scroll affordance — frame to full available width minus `Spacing.s16` each side, no peek (use a computed `effectiveCardWidth` that omits the 8 pt peek when single-session).
   *Depends on: nothing.*
 
-- [ ] **T-5202** In `SessionStripView` (T-5201), use `ScrollPosition(id: $scrollHostId)` (`@State private var scrollHostId: Speaker.ID?`) bound to `.scrollPosition(id: $scrollHostId, anchor: .center)`. On `onChange(of: scrollHostId)`, set `selectedSpeaker = groups.first(where: { $0.hostSpeaker.id == scrollHostId })?.hostSpeaker`. On `onChange(of: selectedSpeaker?.id)`, if the selected speaker belongs to a group in `groups` (as host or member), animate `scrollHostId = matchingGroup.hostSpeaker.id` using `withAnimation(BeoAnimation.spring)`. This implements the two-way binding required by US-60 and US-62. If the selected speaker is idle (not the host of any session), do not change `scrollHostId` — the strip stays where it was per US-62 acceptance criterion.
+- [x] **T-5202** In `SessionStripView` (T-5201), use `ScrollPosition(id: $scrollHostId)` (`@State private var scrollHostId: Speaker.ID?`) bound to `.scrollPosition(id: $scrollHostId, anchor: .center)`. On `onChange(of: scrollHostId)`, set `selectedSpeaker = groups.first(where: { $0.hostSpeaker.id == scrollHostId })?.hostSpeaker`. On `onChange(of: selectedSpeaker?.id)`, if the selected speaker belongs to a group in `groups` (as host or member), animate `scrollHostId = matchingGroup.hostSpeaker.id` using `withAnimation(BeoAnimation.spring)`. This implements the two-way binding required by US-60 and US-62. If the selected speaker is idle (not the host of any session), do not change `scrollHostId` — the strip stays where it was per US-62 acceptance criterion.
   *Depends on: T-5201.*
 
-- [ ] **T-5203** In `SessionStripView` (T-5201), handle the insertion/removal animation case from US-60: when a group joins or leaves the playing set, do not lose the user's current scroll position. Use `LazyHStack` with `.id(group.id)` per card so SwiftUI's diffing inserts/removes the right card in place. If the currently-visible card is removed, after the animation lands set `scrollHostId = groups.first?.hostSpeaker.id` (the nearest remaining session) — wrap in `.onChange(of: groups.map(\.id))` with a guard that fires only when the previously-visible host is no longer in the new set.
+- [x] **T-5203** In `SessionStripView` (T-5201), handle the insertion/removal animation case from US-60: when a group joins or leaves the playing set, do not lose the user's current scroll position. Use `LazyHStack` with `.id(group.id)` per card so SwiftUI's diffing inserts/removes the right card in place. If the currently-visible card is removed, after the animation lands set `scrollHostId = groups.first?.hostSpeaker.id` (the nearest remaining session) — wrap in `.onChange(of: groups.map(\.id))` with a guard that fires only when the previously-visible host is no longer in the new set.
   *Depends on: T-5202.*
 
 ### Page dots
 
-- [ ] **T-5204** Create `iOS/Voxio/Features/Home/SessionPageDots.swift`. Defines `struct SessionPageDots: View` that takes `let count: Int` and `let activeIndex: Int`. Renders an `HStack(spacing: Spacing.s8)` of `Circle()` shapes per design spec §3.3: active dot 8 pt diameter in `BeoColor.accent`; inactive dots 6 pt diameter in `BeoColor.muted` at 0.4 opacity. Returns `EmptyView()` when `count <= 1`. Apply `.accessibilityHidden(true)` (the cards themselves carry the navigation information per design spec §3.7). Animate active-index changes with `BeoAnimation.toast` (200 ms cross-fade); on Reduce Motion, opacity-only without scale per design spec §Motion.
+- [x] **T-5204** Create `iOS/Voxio/Features/Home/SessionPageDots.swift`. Defines `struct SessionPageDots: View` that takes `let count: Int` and `let activeIndex: Int`. Renders an `HStack(spacing: Spacing.s8)` of `Circle()` shapes per design spec §3.3: active dot 8 pt diameter in `BeoColor.accent`; inactive dots 6 pt diameter in `BeoColor.muted` at 0.4 opacity. Returns `EmptyView()` when `count <= 1`. Apply `.accessibilityHidden(true)` (the cards themselves carry the navigation information per design spec §3.7). Animate active-index changes with `BeoAnimation.toast` (200 ms cross-fade); on Reduce Motion, opacity-only without scale per design spec §Motion.
   *Depends on: nothing.*
 
-- [ ] **T-5205** In `SessionStripView`, derive the active page index from `scrollHostId` (`groups.firstIndex(where: { $0.hostSpeaker.id == scrollHostId }) ?? 0`). Render `SessionPageDots` below the `ScrollView` separated by `Spacing.s8` vertical padding. Wrap the strip + dots in a `VStack(spacing: 0)` so they move together inside `HomeView`.
+- [x] **T-5205** In `SessionStripView`, derive the active page index from `scrollHostId` (`groups.firstIndex(where: { $0.hostSpeaker.id == scrollHostId }) ?? 0`). Render `SessionPageDots` below the `ScrollView` separated by `Spacing.s8` vertical padding. Wrap the strip + dots in a `VStack(spacing: 0)` so they move together inside `HomeView`.
   *Depends on: T-5201, T-5204.*
 
 ### HomeView integration
 
-- [ ] **T-5206** In `iOS/Voxio/Features/Home/HomeView.swift`, replace `private var cardArea: some View` to delegate to a new computed property `playingGroups: [SpeakerGroup]` = `discovery.groups.filter { $0.hostSpeaker.isPlaying }`. Routing logic:
+- [x] **T-5206** In `iOS/Voxio/Features/Home/HomeView.swift`, replace `private var cardArea: some View` to delegate to a new computed property `playingGroups: [SpeakerGroup]` = `discovery.groups.filter { $0.hostSpeaker.isPlaying }`. Routing logic:
   - If `playingGroups.isEmpty && displayedSpeaker != nil` → render the existing `SpeakerCard(speaker: displayedSpeaker, …)` unchanged (covers the "speakers discovered but none playing" idle case).
   - If `playingGroups.isEmpty && displayedSpeaker == nil` → render the existing `emptyState` view (unchanged in F3 — replaced wholesale by E-55).
   - If `!playingGroups.isEmpty` → render `SessionStripView(groups: playingGroups, selectedSpeaker: $selectedSpeaker, roll: motionManager.roll, pitch: motionManager.pitch, isCommandActive: isCommandActive)`.
@@ -72,21 +72,21 @@ This epic touches `HomeView.swift` (rewires `cardArea`), introduces three new fi
 
 ### Single-session fallback (no-regression)
 
-- [ ] **T-5207** Verify the single-session case in `SessionStripView`: when `groups.count == 1`, the layout must be visually indistinguishable from the v1.3 single-card layout. Specifically: no 8 pt peek on the trailing edge (the card occupies the full `screenWidth - Spacing.s16 * 2`), no page dots (handled by T-5204's `count <= 1` guard), no horizontal scroll bounce. Confirm by snapshot test or by manual inspection on a one-speaker network. If the `ScrollView` adds visible bounce even with one child, set `.scrollDisabled(groups.count == 1)`.
+- [x] **T-5207** Verify the single-session case in `SessionStripView`: when `groups.count == 1`, the layout must be visually indistinguishable from the v1.3 single-card layout. Specifically: no 8 pt peek on the trailing edge (the card occupies the full `screenWidth - Spacing.s16 * 2`), no page dots (handled by T-5204's `count <= 1` guard), no horizontal scroll bounce. Confirm by snapshot test or by manual inspection on a one-speaker network. If the `ScrollView` adds visible bounce even with one child, set `.scrollDisabled(groups.count == 1)`.
   *Depends on: T-5205.*
 
 ### Front-most parallax (resolved UQ-7)
 
-- [ ] **T-5208** In `SessionStripView` (T-5201), pass `roll` and `pitch` only to the front-most visible card. Track the visible card via `scrollHostId`; pass `0` for `roll`/`pitch` to all other cards in the `ForEach`. This preserves the existing `SpeakerCard.specularHighlight` parallax on the visible card while freezing offscreen cards per resolved UQ-7. Reduce Motion is already handled inside `SpeakerCard` (`if !reduceMotion { specularHighlight }`).
+- [x] **T-5208** In `SessionStripView` (T-5201), pass `roll` and `pitch` only to the front-most visible card. Track the visible card via `scrollHostId`; pass `0` for `roll`/`pitch` to all other cards in the `ForEach`. This preserves the existing `SpeakerCard.specularHighlight` parallax on the visible card while freezing offscreen cards per resolved UQ-7. Reduce Motion is already handled inside `SpeakerCard` (`if !reduceMotion { specularHighlight }`).
   *Depends on: T-5202.*
 
 ### Verification
 
 - [ ] **T-5209** Manual verification on device or simulator with three concurrent sessions: confirm (a) cards swipe with momentum and snap to alignment, (b) trailing card peeks at 8 pt, (c) page dots reflect the visible card, (d) swiping updates `selectedSpeaker` (visible by the bottom bar's selected pill changing), (e) tapping a different bottom-bar pill scrolls the strip to that speaker's session card, (f) idle-speaker pill tap does not scroll the strip, (g) starting playback on an idle speaker inserts a new card without disturbing the visible card, (h) stopping playback on a non-visible session removes its card without animation jank. Document the test setup in a temporary `docs/manual-test-session-strip.md` (delete on merge).
-  *Depends on: T-5206, T-5208.*
+  *Depends on: T-5206, T-5208.* (deferred: manual verification on device)
 
 - [ ] **T-5210** VoiceOver verification: turn on VoiceOver and confirm (a) each session card is announced as a single accessibility element with the speaker name, state, track, and group members appended per design spec §3.7, (b) page dots are not announced (`.accessibilityHidden(true)` from T-5204), (c) swiping with the standard VoiceOver gesture moves between cards in element-focus order without invoking the native paging gesture, (d) the announced order on the home screen is status bar → session card → page dots region (silent) → voice feedback → bottom bar pills.
-  *Depends on: T-5206.*
+  *Depends on: T-5206.* (deferred: manual verification on device)
 
 ---
 
@@ -186,8 +186,8 @@ This epic extracts the existing private `PlaybackBars` struct from `SpeakerCard.
 
 ### Tap-to-scroll wiring
 
-- [ ] **T-5407** In `HomeView.swift`, the existing `selectedSpeaker` binding flows to both `SessionStripView` (via E-52 T-5202) and `SpeakerSelectorPill`. Confirm that tapping a pill (which sets `selectedSpeaker = speaker`) triggers `SessionStripView.onChange(of: selectedSpeaker?.id)` to scroll the strip — per E-52 T-5202 — to the host of the group containing that speaker. For idle speakers (no playing group), the strip does not scroll (T-5202 acceptance criterion). No new code required here beyond ensuring the bindings are correctly wired.
-  *Depends on: T-5202.* (blocked: E-52 T-5202)
+- [x] **T-5407** In `HomeView.swift`, the existing `selectedSpeaker` binding flows to both `SessionStripView` (via E-52 T-5202) and `SpeakerSelectorPill`. Confirm that tapping a pill (which sets `selectedSpeaker = speaker`) triggers `SessionStripView.onChange(of: selectedSpeaker?.id)` to scroll the strip — per E-52 T-5202 — to the host of the group containing that speaker. For idle speakers (no playing group), the strip does not scroll (T-5202 acceptance criterion). No new code required here beyond ensuring the bindings are correctly wired.
+  *Depends on: T-5202.*
 
 ### Bottom bar always-visible logic
 
@@ -197,10 +197,10 @@ This epic extracts the existing private `PlaybackBars` struct from `SpeakerCard.
 ### Verification
 
 - [ ] **T-5409** Manual verification on a network with three speakers, two in a group and one solo (all playing): confirm (a) all three pills show `PlaybackBars` in gold, (b) the two grouped speakers have a connector line drawn between them in the bar (assuming they appear adjacent in discovery order), (c) the third pill has no connector, (d) tapping the solo pill scrolls the session strip to its card, (e) tapping a grouped pill scrolls the strip to the group's session card. With one of the three speakers paused: confirm its bars disappear with a fade and the pill remains in place. With three speakers none of which is grouped: confirm no connector lines are drawn.
-  *Depends on: T-5407, T-5408.* (blocked: E-52 T-5202)
+  *Depends on: T-5407, T-5408.* (deferred: manual verification on device)
 
 - [ ] **T-5410** VoiceOver verification: confirm a playing pill announces `"<name>, playing"`, the selected pill announces `"<name>, selected"`, and a playing-and-selected pill announces `"<name>, playing, selected"`. Confirm the connector line is not announced (it is a decorative `Rectangle` with no accessibility traits — inherits `.isAccessibilityElement = false` by default, but verify with VoiceOver).
-  *Depends on: T-5405, T-5406.* (blocked: E-52 T-5202)
+  *Depends on: T-5405, T-5406.* (deferred: manual verification on device)
 
 ---
 

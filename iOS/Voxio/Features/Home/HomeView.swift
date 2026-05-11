@@ -260,9 +260,25 @@ struct HomeView: View {
 
     // ── Card area ─────────────────────────────────────────────────────────────
 
+    // T-5206: Pre-filtered list of playing groups — SpeakerGroups whose host is currently playing.
+    private var playingGroups: [SpeakerGroup] {
+        discovery.groups.filter { $0.hostSpeaker.isPlaying }
+    }
+
     @ViewBuilder
     private var cardArea: some View {
-        if let speaker = displayedSpeaker {
+        // T-5206: Three-branch routing per ADR-E52 §7
+        if !playingGroups.isEmpty {
+            // One or more sessions playing — show swipeable strip
+            SessionStripView(
+                groups: playingGroups,
+                selectedSpeaker: $selectedSpeaker,
+                roll: motionManager.roll,
+                pitch: motionManager.pitch,
+                isCommandActive: isCommandActive
+            )
+        } else if let speaker = displayedSpeaker {
+            // Speakers discovered but none playing (idle state)
             SpeakerCard(
                 speaker: speaker,
                 isExpanded: isCommandActive,
