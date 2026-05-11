@@ -227,6 +227,8 @@ Key behavioural contracts the Test Writer should assert:
 8. When a group is added to `groups`, the currently-visible card remains visible (scrollHostId unchanged).
 9. `SessionPageDots` applies `.accessibilityHidden(true)` — confirmed absent from VoiceOver element tree.
 10. Only the card whose `group.hostSpeaker.id == scrollHostId` receives non-zero `roll`/`pitch` values; all others receive `0`/`0`.
+11. **Initial mount:** `scrollHostId` is initialised in `onAppear` to `selectedSpeaker`'s group host if it matches a playing group, otherwise to `groups.first?.hostSpeaker.id`. This assignment must be guarded by `if scrollHostId == nil` so it does not run a second time on view re-render. No animation fires on the initial assignment.
+12. **`discovery.groups` ordering:** the array is appended in discovery order and not re-sorted across renders within a discovery cycle. The Implementer must not introduce a `.sorted(by:)` on the input — doing so would cause spurious page reflows via the `onChange(of: groups.map(\.id))` handler.
 
 ---
 

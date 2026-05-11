@@ -97,7 +97,12 @@ internal struct PlaybackBars: View {
 
     // body is not part of the contract — View conformance only.
     // @Environment(\.accessibilityReduceMotion) consumed internally.
-    // Renders static bars at midpoint heights when reduceMotion == true.
+    // Three bars at (lo, hi) height pairs [(6, 14), (14, 6), (10, 16)] in points
+    // at the reference 20 pt frame; scaled proportionally by (height / 20).
+    // Animation per bar i: .easeInOut(duration: 0.38 + i * 0.06)
+    //   .repeatForever(autoreverses: true).delay(i * 0.12).
+    // Renders static bars at midpoint heights ((lo + hi) / 2 * scale) when
+    // reduceMotion == true.
     // .accessibilityHidden(true) applied internally.
 }
 ```

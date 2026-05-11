@@ -54,13 +54,14 @@ No new type tokens are introduced.
 
 Existing tokens apply throughout. Notable usages:
 
-| Token | Usage in this spec |
-|---|---|
-| `Spacing.s8` | Gap between session card and page dots; gap between member chips |
-| `Spacing.s12` | Vertical padding inside bottom bar pills |
-| `Spacing.s16` | Horizontal page margin for session card strip |
-| `Spacing.s20` | Gap between session strip and voice feedback area |
-| `Spacing.s24` | Internal card horizontal padding (unchanged) |
+| Token | Value | Usage in this spec |
+|---|---|---|
+| `Spacing.s4` | 4 pt | Vertical padding inside group member chips |
+| `Spacing.s8` | 8 pt | Gap between session card and page dots; gap between member chips; gap between page dots |
+| `Spacing.s12` | 12 pt | Vertical padding inside bottom bar pills |
+| `Spacing.s16` | 16 pt | Horizontal page margin for session card strip; horizontal padding inside member chips |
+| `Spacing.s20` | 20 pt | Gap between session strip and voice feedback area |
+| `Spacing.s24` | 24 pt | Internal card horizontal padding (unchanged) |
 
 | Token | Usage |
 |---|---|
@@ -73,7 +74,7 @@ All transitions use existing `BeoAnimation` tokens unless noted.
 
 - **Session card swipe:** native `ScrollView` horizontal paging with momentum. Card entrance uses `BeoAnimation.spring`. **Reduce Motion:** snap without spring.
 - **Page indicator:** dot scale + opacity cross-fade on `BeoAnimation.toast` (200 ms). **Reduce Motion:** opacity only, no scale.
-- **Bottom bar playing indicator:** same staggered animation as existing `PlaybackBars` component — reuse it verbatim. **Reduce Motion:** static bars at mid-height.
+- **Bottom bar playing indicator:** same staggered animation as existing `PlaybackBars` component — reuse it verbatim. The three bars cycle between `(lo, hi)` height pairs `[(6, 14), (14, 6), (10, 16)]` (in points, at the reference 20 pt frame; scaled proportionally for the 10 pt pill variant). Each bar uses `.easeInOut(duration: 0.38 + i * 0.06).repeatForever(autoreverses: true).delay(i * 0.12)`. **Reduce Motion:** static bars at the midpoint of each bar's lo–hi range (`(lo + hi) / 2`).
 - **Feedback pulse:** `BeoAnimation.toast` opacity flash (0→1→0 over 300 ms) on the element that was acted on. **Reduce Motion:** omit pulse; rely on state change only.
 - **State label colour change** (e.g. "Paused" → "Playing"): cross-fade on `BeoAnimation.toast`. **Reduce Motion:** instantaneous.
 
@@ -177,7 +178,7 @@ Speakers that are playing together (in the same `Group`) are shown adjacent in t
        group member connector
 ```
 
-The connector is a 1 pt line in `BeoColor.muted` at 0.3 opacity between adjacent grouped pills. The pills themselves are not otherwise changed.
+The connector is a 1 pt line in `BeoColor.muted` at 0.3 opacity between adjacent grouped pills. The pills themselves are not otherwise changed. The connector is a static element; Reduce Motion has no additional effect on it.
 
 *Open question: see UQ-3 — whether grouping re-sorts pill order.*
 
@@ -197,9 +198,14 @@ border-radius: Radius.pill (100 pt)
 
 ### 2.5 Accessibility
 
-- Each pill: `accessibilityLabel` = `"\(name)\(isPlaying ? ", playing" : "")\(isSelected ? ", selected" : "")"`.
-- `accessibilityHint` = `"Show this speaker"` (when not selected).
+- Each pill: `accessibilityLabel` = `"\(name)\(isPlaying ? ", playing" : "")\(isSelected ? ", selected" : "")"`. The formula resolves to the following four cases, which must be produced exactly:
+  - idle, unselected → `"Stue"`
+  - playing, unselected → `"Stue, playing"`
+  - idle, selected → `"Stue, selected"`
+  - playing, selected → `"Stue, playing, selected"`
+- `accessibilityHint` = `isSelected ? "" : "Show this speaker"`.
 - `PlaybackBars` within pill: `accessibilityHidden(true)`.
+- The pill row auto-scrolls to keep the pill matching `selectedSpeaker` visible whenever the binding changes externally (e.g. swiping the session strip selects a new host). Animation: `BeoAnimation.spring`. Reduce Motion: instantaneous scroll.
 
 ---
 
@@ -276,10 +282,15 @@ The session card extends the existing `SpeakerCard` with one new region at the b
 
 ### 3.5 Swipe behaviour
 
-- The strip uses `ScrollView(.horizontal)` with paging enabled (or `TabView` with `tabViewStyle(.page)` — see UQ-5).
+- The strip uses `ScrollView(.horizontal)` with `.scrollTargetBehavior(.viewAligned)` and `.scrollPosition(id:)`. `TabView(.page)` is rejected because it cannot produce the 8 pt trailing peek (UQ-5 resolved — see §7).
 - Swiping to a session card selects that session's host speaker in the bottom bar. The bottom bar scrolls to show the selected speaker.
 - Conversely, tapping a speaker in the bottom bar scrolls the card strip to that speaker's session. If the speaker is a group member (not host), it scrolls to the group's session card.
-- On initial load: the card strip shows the playing session (or first session if multiple are playing).
+- Tapping an **idle** speaker (a speaker that has no session card because nothing is playing on it) does NOT change the strip's scroll position — the strip stays where it was.
+- **Initial mount:** the strip aligns to the session whose host matches the current `selectedSpeaker`. If `selectedSpeaker` is `nil` or matches no playing host or member, the strip aligns to the first session. **No animation** fires on this initial alignment.
+- **Subsequent transitions** (swipe, pill-tap, programmatic change): animated with `BeoAnimation.spring`. Reduce Motion: snap without spring.
+- **Re-entrancy guard:** the strip and the pill row both react to the shared `selectedSpeaker` binding. Implementations must short-circuit when the incoming value already matches the current scroll position, otherwise the two `onChange` observers loop each other.
+- **Session disappears mid-view:** when the speaker referenced by `selectedSpeaker` is removed from `discovery.groups` while its card is visible, the strip aligns to the first remaining session. `selectedSpeaker` itself is left untouched — the pill row's filter will hide the now-absent pill and the next discovery cycle replaces it. No additional UI change is needed.
+- **`discovery.groups` ordering:** assumed stable across renders within a single discovery cycle (groups are appended in discovery order; only group composition changes cause a re-shape). Implementers must not re-sort the array on every render — doing so will cause spurious page reflows.
 
 ### 3.6 Single-session fallback
 
@@ -453,7 +464,7 @@ All questions resolved. See Resolved Decisions below.
 - State label colour changes are accompanied by text label changes — colour is never the sole indicator.
 - `PlaybackBars` animations suspend on Reduce Motion.
 - All new text elements support Dynamic Type via `BeoType` tokens.
-- VoiceOver order: session card → page dots region (labelled "Session n of m") → voice feedback → bottom bar pills.
+- VoiceOver order: session card → voice feedback → bottom bar pills. The page dots region is `accessibilityHidden(true)` per §3.7 — VoiceOver users navigate session cards via the standard element focus order, which already conveys position.
 
 ---
 

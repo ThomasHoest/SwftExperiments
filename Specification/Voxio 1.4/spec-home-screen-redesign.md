@@ -341,6 +341,16 @@ All new strings are listed in design spec Appendix B. Add to the existing locali
 | Network detection mechanism | `NWPathMonitor` (`Network.framework`) wrapped in a new `NetworkMonitor` `@Observable @MainActor` class. |
 | Offline state retry mechanism | Automatic via `NWPathMonitor` — no manual "Retry" button. |
 | Parallax highlight on session cards | Front-most card only per resolved UQ-7. Offscreen cards are frozen. |
+| Bottom bar pill a11y hint | `isSelected ? "" : "Show this speaker"` per design-spec §2.5. Resolved from E-54 review gap. |
+| Pill a11y label states (combined "playing + selected") | Four explicit states enumerated in design-spec §2.5: idle/playing × selected/unselected. Resolved from E-54 review gap. |
+| Pill row auto-scroll on external `selectedSpeaker` change | Pill row scrolls to keep the selected pill visible (mirror of session strip behaviour). `BeoAnimation.spring`; instant on Reduce Motion. Resolved from E-52 review gap. |
+| `scrollHostId` initial value on first mount | `selectedSpeaker`'s group host if it matches a playing group; otherwise `groups.first?.hostSpeaker.id`. No animation on initial assignment. Resolved from E-52 review gap. |
+| Animation policy: initial vs. subsequent `scrollHostId` change | No animation on the initial `nil → ID` assignment in `onAppear`. Subsequent changes (swipe, pill-tap, programmatic) animate with `BeoAnimation.spring` (Reduce Motion: snap). Resolved from E-52 review gap. |
+| Removed-speaker reset policy when the selected speaker disappears mid-view | Strip aligns to `groups.first?.hostSpeaker.id`; `selectedSpeaker` itself is left untouched (pill row filter hides the absent pill; next discovery cycle replaces). Resolved from E-52 review gap. |
+| `PlaybackBars` canonical `(lo, hi)` height pairs | `[(6, 14), (14, 6), (10, 16)]` at reference 20 pt frame; scaled proportionally for other heights. Documented in design-spec §Motion and ADR-E54 §7. Resolved from E-54 review gap. |
+| Reduce Motion treatment of bottom-bar group connector line | None — connector is a static element regardless of Reduce Motion. Documented in design-spec §2.3. Resolved from E-54 review gap. |
+| VoiceOver order: page dots region | Removed from VoiceOver order; page dots are `accessibilityHidden(true)` per design-spec §3.7. Resolved from E-52 review (contradictory spec text in §Accessibility cleaned up). |
+| `discovery.groups` ordering stability across renders | Stable within a discovery cycle (appended in discovery order, not re-sorted). Implementers must not introduce `.sorted(by:)`. Resolved from E-52 review gap. |
 
 ---
 
@@ -349,3 +359,4 @@ All new strings are listed in design spec Appendix B. Add to the existing locali
 | Date | Source | Change |
 |---|---|---|
 | 2026-05-09 | Initial draft | First version of the home screen redesign functional spec. Five user stories (US-60 through US-66, plus US-66 covering the chip rewrite) covering swipeable sessions, group chip display, bottom bar clarity, discovery feedback, no-speakers-found state, and offline feedback. Derived from `design-spec-home-screen-redesign.md` v1.2 and `VoxioSpecification-1.4.md` v1.4.0. |
+| 2026-05-11 | E-52 / E-54 review fallout | Added 11 resolved-decision rows covering pill a11y hint, four pill a11y label states, pill-row auto-scroll, `scrollHostId` initial value and animation policy, removed-speaker reset, `PlaybackBars` canonical (lo, hi) pairs, connector Reduce Motion treatment, page-dots VoiceOver order, and `discovery.groups` ordering stability. Each was a spec gap surfaced during agent-team reviews of E-52 and E-54. Corresponding clarifications also added to `design-spec-home-screen-redesign.md` §§Motion / 2.3 / 2.5 / 3.5 / §Accessibility, `ADR-E52` §7, and `ADR-E54` §7. |
