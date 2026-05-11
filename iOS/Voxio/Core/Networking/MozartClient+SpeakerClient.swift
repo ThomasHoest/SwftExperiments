@@ -38,7 +38,7 @@ extension MozartClient: SpeakerClient {
         do {
             let ps = try await getMozartPlaybackState()
             switch ps.value {
-            case .playing, .started: return .playing
+            case .playing:           return .playing
             case .paused:            return .paused
             case .stopped, .unknown: return .stopped
             case .buffering:         return .buffering

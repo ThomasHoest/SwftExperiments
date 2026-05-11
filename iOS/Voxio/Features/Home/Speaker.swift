@@ -19,23 +19,23 @@ class Speaker: Identifiable {
     /// Stable cross-session identifier. Uses the hardware JID when resolved; falls back to host IP.
     var stableId: String { identifier.jid ?? identifier.host }
 
-    var isPlaying: Bool { state == .playing || state == .started }
+    var isPlaying: Bool { state == .playing }
 
     var playbackState: SpeakerPlaybackState {
         switch state {
-        case .playing, .started: return .playing
-        case .paused:            return .paused
-        case .buffering:         return .buffering
-        default:                 return .stopped
+        case .playing:   return .playing
+        case .paused:    return .paused
+        case .buffering: return .buffering
+        default:         return .stopped
         }
     }
 
     var stateDisplay: String {
         switch state {
-        case .playing, .started: return "Playing"
-        case .paused:            return "Paused"
-        case .buffering:         return "Buffering"
-        default:                 return "Idle"
+        case .playing:   return "Playing"
+        case .paused:    return "Paused"
+        case .buffering: return "Buffering"
+        default:         return "Idle"
         }
     }
 
