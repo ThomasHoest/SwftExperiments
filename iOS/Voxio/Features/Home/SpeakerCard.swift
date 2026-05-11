@@ -114,6 +114,8 @@ struct SpeakerCard: View {
 
             Spacer()
 
+            // PlaybackBars is defined in Components/PlaybackBars.swift (T-5401/T-5402).
+            // Default height: 20 preserves the original card appearance.
             PlaybackBars()
         }
         .padding(.horizontal, 20)
@@ -162,31 +164,5 @@ struct SpeakerCard: View {
         .offset(x: roll * 28)
         .blendMode(.plusLighter)
         .allowsHitTesting(false)
-    }
-}
-
-// ── Playback indicator ────────────────────────────────────────────────────────
-
-private struct PlaybackBars: View {
-    @State private var animate = false
-
-    private let specs: [(lo: CGFloat, hi: CGFloat)] = [(6, 14), (14, 6), (10, 16)]
-
-    var body: some View {
-        HStack(alignment: .bottom, spacing: 3) {
-            ForEach(0..<3, id: \.self) { i in
-                RoundedRectangle(cornerRadius: 1.5)
-                    .fill(Color(hex: "#C8A97E"))
-                    .frame(width: 3, height: animate ? specs[i].hi : specs[i].lo)
-                    .animation(
-                        .easeInOut(duration: 0.38 + Double(i) * 0.06)
-                        .repeatForever(autoreverses: true)
-                        .delay(Double(i) * 0.12),
-                        value: animate
-                    )
-            }
-        }
-        .frame(height: 20, alignment: .bottom)
-        .onAppear { animate = true }
     }
 }

@@ -158,49 +158,49 @@ This epic extracts the existing private `PlaybackBars` struct from `SpeakerCard.
 
 ### Extract PlaybackBars
 
-- [ ] **T-5401** Create `iOS/Voxio/Features/Home/Components/PlaybackBars.swift`. Move the private `struct PlaybackBars` from `SpeakerCard.swift` into this new file as `internal struct PlaybackBars: View`. Behaviour and animation specs unchanged from the original (specs `[(6, 14), (14, 6), (10, 16)]`, `Color(hex: "#C8A97E")`, staggered easeInOut with `repeatForever(autoreverses: true)`, 20 pt frame height). Add an optional `var height: CGFloat = 20` parameter to support the 10 pt height required for the bottom-bar pill per design spec §2.2 — the bars are drawn proportionally smaller. Add a Reduce Motion variant: when `@Environment(\.accessibilityReduceMotion) reduceMotion` is true, render static bars at the midpoint values per design spec §Motion. Add `.accessibilityHidden(true)`.
+- [x] **T-5401** Create `iOS/Voxio/Features/Home/Components/PlaybackBars.swift`. Move the private `struct PlaybackBars` from `SpeakerCard.swift` into this new file as `internal struct PlaybackBars: View`. Behaviour and animation specs unchanged from the original (specs `[(6, 14), (14, 6), (10, 16)]`, `Color(hex: "#C8A97E")`, staggered easeInOut with `repeatForever(autoreverses: true)`, 20 pt frame height). Add an optional `var height: CGFloat = 20` parameter to support the 10 pt height required for the bottom-bar pill per design spec §2.2 — the bars are drawn proportionally smaller. Add a Reduce Motion variant: when `@Environment(\.accessibilityReduceMotion) reduceMotion` is true, render static bars at the midpoint values per design spec §Motion. Add `.accessibilityHidden(true)`.
   *Depends on: nothing.*
 
-- [ ] **T-5402** Update `iOS/Voxio/Features/Home/SpeakerCard.swift` to import the now-shared `PlaybackBars` (no import statement needed inside the same target — confirm the type resolves). Remove the duplicate private struct. Verify the `nowPlayingPanel` continues to render the bars at the previous 20 pt height (default parameter value). No visual regression.
+- [x] **T-5402** Update `iOS/Voxio/Features/Home/SpeakerCard.swift` to import the now-shared `PlaybackBars` (no import statement needed inside the same target — confirm the type resolves). Remove the duplicate private struct. Verify the `nowPlayingPanel` continues to render the bars at the previous 20 pt height (default parameter value). No visual regression.
   *Depends on: T-5401.*
 
 ### Pill rendering with playback bars
 
-- [ ] **T-5403** In `iOS/Voxio/Features/Home/SpeakerSelectorPill.swift`, modify `pillButton(name:isActive:)` to accept the speaker itself (`pillButton(speaker: Speaker, isActive: Bool, isPlaying: Bool)`). Inside the label, change from `Text(name)` to a `HStack(spacing: Spacing.s8)` of `Text(speaker.name)` and (when `isPlaying`) `PlaybackBars(height: 10)`. Pill colour rules per design spec §2.2:
+- [x] **T-5403** In `iOS/Voxio/Features/Home/SpeakerSelectorPill.swift`, modify `pillButton(name:isActive:)` to accept the speaker itself (`pillButton(speaker: Speaker, isActive: Bool, isPlaying: Bool)`). Inside the label, change from `Text(name)` to a `HStack(spacing: Spacing.s8)` of `Text(speaker.name)` and (when `isPlaying`) `PlaybackBars(height: 10)`. Pill colour rules per design spec §2.2:
   - Playing pill: foreground `BeoColor.accent` (`#C8A97E`), `Capsule()` border 1 pt at `BeoColor.accent` with 0.55 opacity, glass effect background.
   - Selected and not playing: foreground `BeoColor.text` (primary), `Capsule()` border 1 pt at `.white.opacity(0.4)`, glass effect background.
   - Inactive (neither playing nor selected): foreground `.primary`, no border, glass effect background.
   Padding values: per design spec §2.4 — `Spacing.s16` left, `Spacing.s8` between text and bars (only when bars present), `Spacing.s12` right; `Spacing.s12` vertical top and bottom; `min-width: 44 pt`; `border-radius: Radius.pill` (100).
   *Depends on: T-5401.*
 
-- [ ] **T-5404** In `SpeakerSelectorPill`, update the `ForEach(speakers)` body to pass `isPlaying: speaker.isPlaying` to `pillButton`. When the speaker's `isPlaying` flips while the pill is mounted, the bars appear/disappear via SwiftUI's standard view-update cycle. Wrap the bars insertion/removal in `.transition(.opacity.animation(BeoAnimation.toast))` so the change cross-fades rather than popping.
+- [x] **T-5404** In `SpeakerSelectorPill`, update the `ForEach(speakers)` body to pass `isPlaying: speaker.isPlaying` to `pillButton`. When the speaker's `isPlaying` flips while the pill is mounted, the bars appear/disappear via SwiftUI's standard view-update cycle. Wrap the bars insertion/removal in `.transition(.opacity.animation(BeoAnimation.toast))` so the change cross-fades rather than popping.
   *Depends on: T-5403.*
 
-- [ ] **T-5405** Update accessibility per design spec §2.5: `accessibilityLabel = "\(speaker.name)" + (speaker.isPlaying ? ", playing" : "") + (isActive ? ", selected" : "")`. `accessibilityHint = isActive ? "" : "Show this speaker"`. Replace the existing v1.3 `"Select this speaker"` hint with `"Show this speaker"` to reflect the F3 behaviour change (tapping a pill in F3 scrolls the strip rather than just selecting).
+- [x] **T-5405** Update accessibility per design spec §2.5: `accessibilityLabel = "\(speaker.name)" + (speaker.isPlaying ? ", playing" : "") + (isActive ? ", selected" : "")`. `accessibilityHint = isActive ? "" : "Show this speaker"`. Replace the existing v1.3 `"Select this speaker"` hint with `"Show this speaker"` to reflect the F3 behaviour change (tapping a pill in F3 scrolls the strip rather than just selecting).
   *Depends on: T-5403.*
 
 ### Group connector line
 
-- [ ] **T-5406** In `SpeakerSelectorPill`, add a new input `var groups: [SpeakerGroup]` so the pill view knows which speakers share a group. Inside the `HStack(spacing: 10)`, insert a connector segment between adjacent pills when both speakers belong to the same `SpeakerGroup`. Implementation: replace the simple `ForEach` with `ForEach(speakers.indices, id: \.self) { i in ... }` and after each pill (except the last), insert `connectorLine(currentSpeaker: speakers[i], nextSpeaker: speakers[i+1])`. The `connectorLine` view is a `Rectangle().fill(BeoColor.muted.opacity(0.3)).frame(width: 8, height: 1)` when both speakers share a group, otherwise `Rectangle().fill(.clear).frame(width: 8, height: 1)` (transparent placeholder preserves spacing). Helper: `func sameGroup(_ a: Speaker, _ b: Speaker) -> Bool` consults `groups.first { $0.members.contains { $0.id == a.id } }?.members.contains { $0.id == b.id } ?? false`. Per design spec §2.3, when grouped speakers are not adjacent, no connector is drawn — the helper returns `false` for non-adjacent pairs by construction.
+- [x] **T-5406** In `SpeakerSelectorPill`, add a new input `var groups: [SpeakerGroup]` so the pill view knows which speakers share a group. Inside the `HStack(spacing: 10)`, insert a connector segment between adjacent pills when both speakers belong to the same `SpeakerGroup`. Implementation: replace the simple `ForEach` with `ForEach(speakers.indices, id: \.self) { i in ... }` and after each pill (except the last), insert `connectorLine(currentSpeaker: speakers[i], nextSpeaker: speakers[i+1])`. The `connectorLine` view is a `Rectangle().fill(BeoColor.muted.opacity(0.3)).frame(width: 8, height: 1)` when both speakers share a group, otherwise `Rectangle().fill(.clear).frame(width: 8, height: 1)` (transparent placeholder preserves spacing). Helper: `func sameGroup(_ a: Speaker, _ b: Speaker) -> Bool` consults `groups.first { $0.members.contains { $0.id == a.id } }?.members.contains { $0.id == b.id } ?? false`. Per design spec §2.3, when grouped speakers are not adjacent, no connector is drawn — the helper returns `false` for non-adjacent pairs by construction.
   *Depends on: T-5404.*
 
 ### Tap-to-scroll wiring
 
 - [ ] **T-5407** In `HomeView.swift`, the existing `selectedSpeaker` binding flows to both `SessionStripView` (via E-52 T-5202) and `SpeakerSelectorPill`. Confirm that tapping a pill (which sets `selectedSpeaker = speaker`) triggers `SessionStripView.onChange(of: selectedSpeaker?.id)` to scroll the strip — per E-52 T-5202 — to the host of the group containing that speaker. For idle speakers (no playing group), the strip does not scroll (T-5202 acceptance criterion). No new code required here beyond ensuring the bindings are correctly wired.
-  *Depends on: T-5202.*
+  *Depends on: T-5202.* (blocked: E-52 T-5202)
 
 ### Bottom bar always-visible logic
 
-- [ ] **T-5408** In `HomeView.swift`, change the existing condition `if discovery.groups.flatMap(\.members).count > 1` to `if discovery.groups.flatMap(\.members).count >= 1` so the bottom bar appears as soon as one speaker is discovered (per US-62 acceptance criterion: idle speakers are shown in the bar). Pass `groups: discovery.groups` into `SpeakerSelectorPill` per T-5406. The bottom bar continues to be hidden in the Discovering state (no speakers yet) and the Offline state (gated by E-55 T-5505 routing).
+- [x] **T-5408** In `HomeView.swift`, change the existing condition `if discovery.groups.flatMap(\.members).count > 1` to `if discovery.groups.flatMap(\.members).count >= 1` so the bottom bar appears as soon as one speaker is discovered (per US-62 acceptance criterion: idle speakers are shown in the bar). Pass `groups: discovery.groups` into `SpeakerSelectorPill` per T-5406. The bottom bar continues to be hidden in the Discovering state (no speakers yet) and the Offline state (gated by E-55 T-5505 routing).
   *Depends on: T-5406.*
 
 ### Verification
 
 - [ ] **T-5409** Manual verification on a network with three speakers, two in a group and one solo (all playing): confirm (a) all three pills show `PlaybackBars` in gold, (b) the two grouped speakers have a connector line drawn between them in the bar (assuming they appear adjacent in discovery order), (c) the third pill has no connector, (d) tapping the solo pill scrolls the session strip to its card, (e) tapping a grouped pill scrolls the strip to the group's session card. With one of the three speakers paused: confirm its bars disappear with a fade and the pill remains in place. With three speakers none of which is grouped: confirm no connector lines are drawn.
-  *Depends on: T-5407, T-5408.*
+  *Depends on: T-5407, T-5408.* (blocked: E-52 T-5202)
 
 - [ ] **T-5410** VoiceOver verification: confirm a playing pill announces `"<name>, playing"`, the selected pill announces `"<name>, selected"`, and a playing-and-selected pill announces `"<name>, playing, selected"`. Confirm the connector line is not announced (it is a decorative `Rectangle` with no accessibility traits — inherits `.isAccessibilityElement = false` by default, but verify with VoiceOver).
-  *Depends on: T-5405, T-5406.*
+  *Depends on: T-5405, T-5406.* (blocked: E-52 T-5202)
 
 ---
 
@@ -358,3 +358,4 @@ Week 3:   T-5501, T-5502 (NetworkMonitor + HomeView wiring)
 |---|---|---|
 | 2026-05-09 | Initial draft | First version of the home screen redesign epics and tasks (E-52–E-55, T-5201–T-5517). Derived from approved spec `spec-home-screen-redesign.md` v1.0 and design spec `design-spec-home-screen-redesign.md` v1.2. |
 | 2026-05-11 | architect-review-v1.4.md | T-5501: `NetworkMonitor.isOnWifi` and `isAvailable` default to `true` (was `false`) per ADR D2 revision — avoids offline-state flash during the brief window between view mount and the first `pathUpdateHandler` callback. |
+| 2026-05-11 | E-54 implementation | T-5401, T-5402, T-5403, T-5404, T-5405, T-5406, T-5408 marked complete. T-5407, T-5409, T-5410 marked blocked on E-52 T-5202. |

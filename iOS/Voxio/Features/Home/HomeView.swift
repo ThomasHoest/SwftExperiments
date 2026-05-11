@@ -78,10 +78,13 @@ struct HomeView: View {
 
                 Spacer(minLength: 20)
 
-                if discovery.groups.flatMap(\.members).count > 1 {
+                // T-5408: changed from count > 1 to count >= 1 (US-62 acceptance criterion —
+                // idle speakers are shown in the bar; bar appears as soon as one speaker is discovered).
+                if discovery.groups.flatMap(\.members).count >= 1 {
                     SpeakerSelectorPill(
                         speakers: discovery.groups.flatMap(\.members),
-                        selectedSpeaker: $selectedSpeaker
+                        selectedSpeaker: $selectedSpeaker,
+                        groups: discovery.groups
                     )
                     .padding(.bottom, 12)
                 }
