@@ -156,7 +156,7 @@ extension SpeakerIdentifier: Transferable {
 
 ### TR-2 — Bottom-bar pill drag source
 
-The `SpeakerSelectorPill` (or its replacement in F3 / E-53) attaches `.draggable(speaker.identifier) { /* drag-preview view */ }` per pill, gated by an `isDraggable(speaker)` check. `isDraggable` returns `false` when:
+The `SpeakerSelectorPill` (as refactored in F3 / E-54 — T-5403/T-5404) attaches `.draggable(speaker.identifier) { /* drag-preview view */ }` per pill, gated by an `isDraggable(speaker)` check. `isDraggable` returns `false` when:
 - The speaker is the playing host of any group, OR
 - The speaker is a member of any multi-member group, OR
 - The speaker has an in-flight join `Task` originating from this pill.

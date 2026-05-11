@@ -3,7 +3,7 @@
 **Status:** Draft
 **Date:** 2026-05-09
 **References:** `spec-multiroom-grouping.md` v1.0, `design-spec-multiroom-grouping.md` v1.1, `VoxioSpecification-1.4.md` Feature 2, `epics-and-tasks-telemetry-backend.md` (format reference), `epics-and-tasks-home-screen-redesign.md` (E-53 — chip row, cross-feature dependency), CLAUDE.md
-**Stack:** Swift 5.10, SwiftUI (iOS 16+ `.draggable()` / `.dropDestination()` / `Transferable`), `@Observable @MainActor`, `SpeakerClient.join(peer:)` / `.leave()`, `SpeakerDiscoveryService.mergeIntoSpeakerGroup` / `.removeMember`
+**Stack:** Swift 6, SwiftUI (iOS 26 — `.draggable()` / `.dropDestination()` / `Transferable` introduced iOS 16, fully available), `@Observable @MainActor`, `SpeakerClient.join(peer:)` / `.leave()`, `SpeakerDiscoveryService.mergeIntoSpeakerGroup` / `.removeMember`
 
 ---
 
@@ -74,7 +74,9 @@ Build the drag side of the gesture: make `Speaker`/`SpeakerIdentifier` conform t
   Render every pill at `.opacity(isDraggable(speaker) ? 1.0 : 0.5)` per design-spec §1.2 / §4.1 step 6. Do **not** call `.draggable(_:)` on non-draggable pills — omit the modifier entirely so the long-press gesture is cleanly disabled (calling `.draggable(nil)` is incorrect and behaves inconsistently across iOS versions).
   *Depends on: T-5902.*
 
-- [ ] **T-5904** For draggable pills (T-5903), attach `.draggable(speaker.identifier) { dragPreview }` where `dragPreview` is a `DarkGlassButton`-styled capsule rendering the speaker name at 0.85 opacity, 1.06× scale per design-spec §2.1. Use the same `BeoType.caption` font and pill geometry as the source pill so the ghost is a near-perfect copy. Add a `UIImpactFeedbackGenerator(style: .medium)` long-press initiation haptic via `.simultaneousGesture(LongPressGesture(minimumDuration: 0.35).onEnded { … HapticEngine.shared.dragInitiated() })` per design-spec §1.1 — the haptic fires on long-press hold, not on drag start, so it precedes the system drag.
+- [ ] **T-5904** For draggable pills (T-5903), attach `.draggable(speaker.identifier) { dragPreview }` where `dragPreview` is a `DarkGlassButton`-styled capsule rendering the speaker name at 0.85 opacity, 1.06× scale per design-spec §2.1. Use the same `BeoType.caption` font and pill geometry as the source pill so the ghost is a near-perfect copy. Add the long-press initiation haptic via `.simultaneousGesture(LongPressGesture(minimumDuration: 0.35).onEnded { _ in HapticEngine.shared.dragLifted() })` per design-spec §1.1 and §6.2 — the haptic fires on long-press hold, not on drag start, so it precedes the system drag.
+
+  **Prereq:** `HapticEngine.dragLifted()` does not exist today. It must be added to `iOS/Voxio/Core/HapticEngine.swift` (a `UIImpactFeedbackGenerator(style: .medium).impactOccurred()` wrapper) alongside the other new methods listed under T-5901. Land the `HapticEngine` additions as a small standalone change before T-5904.
 
   Note: SwiftUI's `.draggable` already handles ghost rendering; the closure provides only the preview view. The 1.06× scale and 0.85 opacity are applied within the preview view itself.
   *Depends on: T-5903.*
@@ -91,10 +93,12 @@ Build the drag side of the gesture: make `Speaker`/`SpeakerIdentifier` conform t
       return true
   } isTargeted: { isOver in
       withAnimation(BeoAnimation.spring) { sessionVM.dropZoneActive = isOver }
-      if isOver { HapticEngine.shared.dropZoneEntered() } // UIImpactFeedbackGenerator(style: .light)
+      if isOver { HapticEngine.shared.dragEnteredDropZone() } // UIImpactFeedbackGenerator(style: .light) under the hood
   }
   ```
   Self-drop (source == host) is rejected with `return false`. The drop handler delegates to `handleJoinDrop` from E-60 T-6001 — until that lands, define the method as a stub that logs and returns.
+
+  **Prereq:** `HapticEngine.dragEnteredDropZone()` does not exist today and must be added alongside `dragLifted()` and `dragCancelled()` per the T-5904 prereq note.
   *Depends on: T-5902, T-5901.*
 
 - [ ] **T-5906** Add the gold-border + inner-glow visual treatment driven by `sessionVM.dropZoneActive` per design-spec §3:
@@ -160,7 +164,8 @@ Implement the join handler that the E-59 drop destination invokes. After a drop,
 
 ### `handleJoinDrop` implementation
 
-- [ ] **T-6001** Implement `handleJoinDrop(source:target:)` on `SessionViewModel` (T-5902) per spec TR-4:
+- [ ] **T-6001** Implement `handleJoinDrop(source:target:)` on `SessionViewModel` (T-5902) per spec TR-4 and ADR-002 D5. The join body wraps `client.join(peer:)` in a `withThrowingTaskGroup` that enforces a 10-second client-side timeout (per UQ-3 / ADR D5 / design-spec §4.1 step 4):
+
   ```swift
   @MainActor
   func handleJoinDrop(source: Speaker, target: Speaker) {
@@ -168,11 +173,10 @@ Implement the join handler that the E-59 drop destination invokes. After a drop,
       guard !joinsInFlight.contains(key) else { return }
       joinsInFlight.insert(key)
       HapticEngine.shared.commandRecognised() // step 1 of design-spec §4.1
-      // Notify coach mark to dismiss (T-5909)
-      NotificationCenter.default.post(name: .groupingDropCompleted, object: nil)
+      lastDropCompletedAt = Date()           // dismisses coach mark via SessionViewModel observer (T-5909)
       let task = Task { [weak self] in
           do {
-              try await source.client.join(peer: target.identifier)
+              try await Self.joinWithTimeout(source: source, target: target, seconds: 10)
               await MainActor.run {
                   guard let self else { return }
                   self.discovery.mergeIntoSpeakerGroup(source: source, target: target)
@@ -194,9 +198,25 @@ Implement the join handler that the E-59 drop destination invokes. After a drop,
       }
       joinTasks[key] = task
   }
+
+  private static func joinWithTimeout(source: Speaker, target: Speaker, seconds: Int) async throws {
+      try await withThrowingTaskGroup(of: Void.self) { group in
+          group.addTask { try await source.client.join(peer: target.identifier) }
+          group.addTask {
+              try await Task.sleep(for: .seconds(seconds))
+              throw SpeakerError.timeout
+          }
+          // First child to complete (success or thrown) wins; cancel the rest.
+          try await group.next()
+          group.cancelAll()
+      }
+  }
   ```
-  `reasonText(for:)` maps `SpeakerError.timeout → "connection timed out"`, `SpeakerError.unreachable → "speaker unreachable"`, default → empty (no suffix). Per spec TR-4 step 5, the task is **not** cancelled on view teardown — let the API call complete; the merge is a no-op if the host group disappeared (`mergeIntoSpeakerGroup` already handles this).
-  *Depends on: T-5902, T-5905.*
+
+  `reasonText(for:)` maps `SpeakerError.timeout → "connection timed out"`, `SpeakerError.unreachable → "speaker unreachable"`, default → empty (no suffix). Per spec TR-4 step 5 and ADR D5, the outer `Task` is **not** cancelled on view teardown — let the API call complete; the merge is a no-op if the host group disappeared (`mergeIntoSpeakerGroup` already handles this).
+
+  Coach-mark dismiss plumbing: rather than a `NotificationCenter` post, set a `@Published var lastDropCompletedAt: Date? = nil` on `SessionViewModel` (or on the shared `HomeViewModel` if E-59 introduced one). T-5909's coach-mark view observes that property and dismisses on change.
+  *Depends on: T-5902, T-5905. Requires `SpeakerError.timeout` to exist at the abstraction layer — verify before this lands (architect-review OQ-7).*
 
 ### Loading chip in the chip row
 
@@ -422,3 +442,4 @@ E-59 / E-60 / E-61 implementation can begin against stub F3 components (a placeh
 | Date | Source | Change |
 |---|---|---|
 | 2026-05-09 | Initial draft | First version of the F2 epics and tasks (E-59–E-61, T-5901–T-6107). Derived from `spec-multiroom-grouping.md` v1.0 and `design-spec-multiroom-grouping.md` v1.1 (all UQs resolved). |
+| 2026-05-11 | architect-review-v1.4.md | Fixed stack banner (Swift 6 / iOS 26). Renamed haptics in T-5904 (`dragInitiated` → `dragLifted`) and T-5905 (`dropZoneEntered` → `dragEnteredDropZone`) to match design-spec §6.2 and ADR REVISE 1; added prereq notes that those `HapticEngine` methods must be added before T-5904/T-5905. Rewrote T-6001 to include the 10 s `withThrowingTaskGroup` timeout wrapper required by ADR D5 and design-spec §4.1; replaced the `NotificationCenter` coach-mark dismiss with a `@Published lastDropCompletedAt: Date?` observer. |
