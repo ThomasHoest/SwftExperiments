@@ -75,7 +75,9 @@ struct SessionStripView: View {
                             isExpanded: isCommandActive,
                             // T-5208: pass roll/pitch only to the front-most card
                             roll: isFrontmost ? roll : 0,
-                            pitch: isFrontmost ? pitch : 0
+                            pitch: isFrontmost ? pitch : 0,
+                            // E-53 T-5306: non-host group members for the chip row
+                            groupMembers: group.members.filter { $0.id != group.hostSpeaker.id }
                         )
                         .frame(width: cardWidth)
                         .id(group.hostSpeaker.id)

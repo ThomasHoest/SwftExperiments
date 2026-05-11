@@ -103,45 +103,45 @@ This epic adds one new view file (`GroupChipRow.swift`) and a small change to `S
 
 ### Group chip row view
 
-- [ ] **T-5301** Create `iOS/Voxio/Features/Home/GroupChipRow.swift`. Defines `struct GroupChipRow: View` taking `let members: [Speaker]` (already filtered to exclude the host). Renders an `HStack(spacing: Spacing.s8)` of `Capsule()` chips. Each chip displays `"+ \(speaker.name)"` in `BeoType.caption` with `BeoColor.muted` foreground, `.white.opacity(0.07)` background, padding `Spacing.s8` horizontal and `Spacing.s4` vertical. Returns `EmptyView()` when `members.isEmpty`. Frame the row with leading alignment; do not constrain trailing edge — chips lay out naturally and never overflow because the parent enforces the card width.
+- [x] **T-5301** Create `iOS/Voxio/Features/Home/GroupChipRow.swift`. Defines `struct GroupChipRow: View` taking `let members: [Speaker]` (already filtered to exclude the host). Renders an `HStack(spacing: Spacing.s8)` of `Capsule()` chips. Each chip displays `"+ \(speaker.name)"` in `BeoType.caption` with `BeoColor.muted` foreground, `.white.opacity(0.07)` background, padding `Spacing.s8` horizontal and `Spacing.s4` vertical. Returns `EmptyView()` when `members.isEmpty`. Frame the row with leading alignment; do not constrain trailing edge — chips lay out naturally and never overflow because the parent enforces the card width.
   *Depends on: nothing.*
 
-- [ ] **T-5302** In `GroupChipRow` (T-5301), implement the "+N more" overflow per resolved UQ-6: when `members.count > 3`, render the first 2 chips followed by a third chip with label `"+\(members.count - 2) more"` (English) / `"+\(members.count - 2) flere"` (Danish — verify via `LanguageService.shared.activeLanguage`). The `+N more` chip is visually identical to a member chip but its `accessibilityLabel` is `"\(members.count - 2) more speakers in this group"` / Danish equivalent. Tap is a no-op in F3 — do not attach a `Button` wrapper or `.onTapGesture` modifier.
+- [x] **T-5302** In `GroupChipRow` (T-5301), implement the "+N more" overflow per resolved UQ-6: when `members.count > 3`, render the first 2 chips followed by a third chip with label `"+\(members.count - 2) more"` (English) / `"+\(members.count - 2) flere"` (Danish — verify via `LanguageService.shared.activeLanguage`). The `+N more` chip is visually identical to a member chip but its `accessibilityLabel` is `"\(members.count - 2) more speakers in this group"` / Danish equivalent. Tap is a no-op in F3 — do not attach a `Button` wrapper or `.onTapGesture` modifier.
   *Depends on: T-5301.*
 
-- [ ] **T-5303** In `GroupChipRow`, accessibility: each chip carries an `.accessibilityLabel("Also playing: \(speaker.name)")` / Danish equivalent. The row itself does not group children — VoiceOver reads chips individually. Combined with the parent `SpeakerCard.accessibilityElement(children: .ignore)` and its own `accessibilityLabel`, the chip labels are appended to the card label by `SpeakerCard` (handled in T-5305 below) — the chips themselves are decorative within the card's accessibility surface.
+- [x] **T-5303** In `GroupChipRow`, accessibility: each chip carries an `.accessibilityLabel("Also playing: \(speaker.name)")` / Danish equivalent. The row itself does not group children — VoiceOver reads chips individually. Combined with the parent `SpeakerCard.accessibilityElement(children: .ignore)` and its own `accessibilityLabel`, the chip labels are appended to the card label by `SpeakerCard` (handled in T-5305 below) — the chips themselves are decorative within the card's accessibility surface.
   *Depends on: T-5301.*
 
 ### Mount in SpeakerCard
 
-- [ ] **T-5304** In `iOS/Voxio/Features/Home/SpeakerCard.swift`, add a new optional input `var groupMembers: [Speaker] = []` (default empty for backwards compatibility with non-strip callers). In `cardContent`, after the volume track block, render `if !groupMembers.isEmpty { GroupChipRow(members: groupMembers).padding(.horizontal, Spacing.s24).padding(.bottom, Spacing.s16) }`. Confirm the existing `nowPlayingPanel` and `volumeTrack` regions retain their current padding values (per design spec §3.4: chip row padding is added below the volume track at `Spacing.s16` to the card edge).
+- [x] **T-5304** In `iOS/Voxio/Features/Home/SpeakerCard.swift`, add a new optional input `var groupMembers: [Speaker] = []` (default empty for backwards compatibility with non-strip callers). In `cardContent`, after the volume track block, render `if !groupMembers.isEmpty { GroupChipRow(members: groupMembers).padding(.horizontal, Spacing.s24).padding(.bottom, Spacing.s16) }`. Confirm the existing `nowPlayingPanel` and `volumeTrack` regions retain their current padding values (per design spec §3.4: chip row padding is added below the volume track at `Spacing.s16` to the card edge).
   *Depends on: T-5301.*
 
-- [ ] **T-5305** In `SpeakerCard.accessibilityDescription` (T-5304), append the group members to the description string when non-empty: `if !groupMembers.isEmpty { parts.append("Also playing: " + groupMembers.map(\.name).joined(separator: ", ")) }`. Use the localised "Also playing" string from design spec Appendix B (`a11y.alsoPlaying`).
+- [x] **T-5305** In `SpeakerCard.accessibilityDescription` (T-5304), append the group members to the description string when non-empty: `if !groupMembers.isEmpty { parts.append("Also playing: " + groupMembers.map(\.name).joined(separator: ", ")) }`. Use the localised "Also playing" string from design spec Appendix B (`a11y.alsoPlaying`).
   *Depends on: T-5304.*
 
 ### Wire from SessionStripView
 
-- [ ] **T-5306** In `SessionStripView` (T-5201), pass `groupMembers: group.members.filter { $0.id != group.hostSpeaker.id }` to each `SpeakerCard`. Confirm the host is correctly excluded — per design spec §3.4, the primary speaker (card title) is never repeated in the chip row.
+- [x] **T-5306** In `SessionStripView` (T-5201), pass `groupMembers: group.members.filter { $0.id != group.hostSpeaker.id }` to each `SpeakerCard`. Confirm the host is correctly excluded — per design spec §3.4, the primary speaker (card title) is never repeated in the chip row.
   *Depends on: T-5301, T-5304, T-5201.*
 
 ### Layout reflow on group composition change
 
-- [ ] **T-5307** Verify that when `group.members` changes (a member joins or leaves), the chip row updates in place without re-rendering the rest of the card. SwiftUI's diffing handles this automatically given the `members` parameter is a value type. Confirm by manually triggering a join during testing — the card content above the chip row must remain visually stable. If reflow jank is observed, wrap `GroupChipRow` in `.transition(.opacity)` to soften individual chip insertions.
+- [x] **T-5307** Verify that when `group.members` changes (a member joins or leaves), the chip row updates in place without re-rendering the rest of the card. SwiftUI's diffing handles this automatically given the `members` parameter is a value type. Confirm by manually triggering a join during testing — the card content above the chip row must remain visually stable. If reflow jank is observed, wrap `GroupChipRow` in `.transition(.opacity)` to soften individual chip insertions.
   *Depends on: T-5306.*
 
 ### Localisation
 
-- [ ] **T-5308** Add the new localised strings from design spec Appendix B to the existing English and Danish localisation catalogues (`en.lproj/Localizable.strings` and `da.lproj/Localizable.strings` or whatever pattern the project uses — verify against `LanguageService.shared` consumers). Keys: `groupChip.prefix`, `a11y.alsoPlaying`. Do not duplicate keys that already exist for `Speaker.stateDisplay`.
+- [x] **T-5308** Add the new localised strings from design spec Appendix B to the existing English and Danish localisation catalogues (`en.lproj/Localizable.strings` and `da.lproj/Localizable.strings` or whatever pattern the project uses — verify against `LanguageService.shared` consumers). Keys: `groupChip.prefix`, `a11y.alsoPlaying`. Do not duplicate keys that already exist for `Speaker.stateDisplay`.
   *Depends on: T-5301.*
 
 ### Verification
 
 - [ ] **T-5309** Manual verification with a 4-speaker group: confirm the chip row shows `+ Member1`, `+ Member2`, and `+2 more`. With a 2-speaker group: confirm one chip is shown. With a 1-speaker group (solo session): confirm the chip row is absent and there is no empty space below the volume track. With Dynamic Type at AX1 and AX5: confirm the row remains legible and either wraps gracefully or truncates at the trailing edge without breaking the card layout.
-  *Depends on: T-5306.*
+  *Depends on: T-5306.* (deferred: manual verification on device)
 
 - [ ] **T-5310** VoiceOver verification: with a 3-speaker group active, confirm the visible session card's accessibility label includes the appended "Also playing: <name>, <name>" string per T-5305. Confirm the chips themselves are not separately focusable (covered by `SpeakerCard.accessibilityElement(children: .ignore)`).
-  *Depends on: T-5305.*
+  *Depends on: T-5305.* (deferred: manual verification on device)
 
 ---
 

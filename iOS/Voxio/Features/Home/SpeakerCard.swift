@@ -5,6 +5,9 @@ struct SpeakerCard: View {
     var isExpanded: Bool
     var roll: Double
     var pitch: Double
+    /// Non-host members of the speaker's group. Default empty keeps all pre-E-53 call sites valid.
+    /// Populated by SessionStripView (T-5306) with group.members filtered to exclude the host.
+    var groupMembers: [Speaker] = []   // E-53 T-5304
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorSchemeContrast) private var colorContrast
@@ -32,6 +35,24 @@ struct SpeakerCard: View {
         .accessibilityLabel(accessibilityDescription)
     }
 
+    /// Converts groupMembers to [ChipData], applying the overflow rule:
+    /// - members.count > 3 → 2 member chips + 1 overflow chip (count - 2 remaining).
+    /// - members.count <= 3 → one chip per member.
+    /// - members.isEmpty → [].
+    private var chipData: [ChipData] {
+        if groupMembers.isEmpty { return [] }
+        if groupMembers.count > 3 {
+            let memberChips = groupMembers.prefix(2).map {
+                ChipData(speakerName: $0.name, kind: .member)
+            }
+            // Overflow chip carries no name — the visible label is derived from .overflow(N), not speakerName.
+            let overflowChip = ChipData(speakerName: "", kind: .overflow(groupMembers.count - 2))
+            return memberChips + [overflowChip]
+        } else {
+            return groupMembers.map { ChipData(speakerName: $0.name, kind: .member) }
+        }
+    }
+
     private var accessibilityDescription: String {
         let p = speaker.nowPlaying
         var parts = [speaker.name, speaker.stateDisplay]
@@ -41,6 +62,12 @@ struct SpeakerCard: View {
             if let badge = p.sourceBadge, !badge.isEmpty { parts.append(badge) }
         }
         if let vol = speaker.volume { parts.append("Volume \(vol)") }
+        // E-53 T-5305: append group members to accessibility description
+        if !groupMembers.isEmpty {
+            let strings = GroupChipStrings.forLanguage(LanguageService.shared.activeLanguage)
+            let names = groupMembers.map(\.name).joined(separator: ", ")
+            parts.append("\(strings.alsoPlaying): \(names)")
+        }
         return parts.joined(separator: ", ")
     }
 
@@ -54,6 +81,12 @@ struct SpeakerCard: View {
                 nowPlayingPanel
                 if let vol = speaker.volume {
                     volumeTrack(level: vol)
+                }
+                // E-53 T-5304: group chip row — only shown when host has non-host members
+                if !groupMembers.isEmpty {
+                    GroupChipRow(chips: chipData)
+                        .padding(.horizontal, Spacing.s24)
+                        .padding(.bottom, Spacing.s16)
                 }
             }
         }
