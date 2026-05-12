@@ -3,25 +3,36 @@ import SwiftUI
 // MARK: - PlaybackBars
 // Extracted from SpeakerCard.swift (T-5401). Shared between the session card (height: 20)
 // and the bottom-bar pill (height: 10).
+//
+// E-56 T-5604: added `playbackState` parameter.
+// Bars animate only when state is .playing or .buffering; static at lo height for .paused/.stopped.
 
 internal struct PlaybackBars: View {
     /// Full-height (20 pt) by default; pass 10 for the bottom-bar pill variant.
     /// Bar heights scale proportionally — at height: 10 bars are half the size of height: 20.
     var height: CGFloat = 20
 
+    /// E-56 T-5604 — controls animation gate. Default .playing preserves all pre-E-56 call sites.
+    var playbackState: SpeakerPlaybackState = .playing
+
     @State private var animate = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let specs: [(lo: CGFloat, hi: CGFloat)] = [(6, 14), (14, 6), (10, 16)]
 
+    /// Bars animate only when actively playing or buffering.
+    private var shouldAnimate: Bool {
+        playbackState == .playing || playbackState == .buffering
+    }
+
     var body: some View {
         HStack(alignment: .bottom, spacing: 3) {
             ForEach(0..<3, id: \.self) { i in
-                if reduceMotion {
-                    // Static bars at the midpoint of each bar's lo–hi range when Reduce Motion is on.
+                if reduceMotion || !shouldAnimate {
+                    // Static bars at lo height when Reduce Motion is on or playback is paused/stopped.
                     RoundedRectangle(cornerRadius: 1.5)
                         .fill(Color(hex: "#C8A97E"))
-                        .frame(width: 3, height: scaledMid(i))
+                        .frame(width: 3, height: scaledLo(i))
                 } else {
                     RoundedRectangle(cornerRadius: 1.5)
                         .fill(Color(hex: "#C8A97E"))
@@ -38,7 +49,15 @@ internal struct PlaybackBars: View {
         .frame(height: height, alignment: .bottom)
         .accessibilityHidden(true)
         .onAppear {
-            if !reduceMotion { animate = true }
+            if !reduceMotion && shouldAnimate { animate = true }
+        }
+        .onChange(of: playbackState) { _, newState in
+            let nowShouldAnimate = newState == .playing || newState == .buffering
+            if nowShouldAnimate && !animate && !reduceMotion {
+                animate = true
+            } else if !nowShouldAnimate && animate {
+                animate = false
+            }
         }
     }
 

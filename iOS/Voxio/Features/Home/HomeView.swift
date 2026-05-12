@@ -45,6 +45,8 @@ struct HomeView: View {
     @State private var showHelp = false
     @State private var showLanguagePicker = false
     @State private var currentToast:  Toast?
+    // E-56 T-5606 — SpeakerCard transport error surface. onChange converts to Toast and resets to nil.
+    @State private var cardErrorMessage: String?
 
     // Exposed for Settings sheet (E-39 T-3906)
     var onboardingSheetBinding: Binding<Bool> { $showOnboardingSheet }
@@ -197,6 +199,12 @@ struct HomeView: View {
         .onChange(of: langService.activeLanguage) { _, language in
             voiceToText.setLanguage(language)
         }
+        // E-56 T-5606 — convert SpeakerCard transport errors to toast; reset binding afterwards.
+        .onChange(of: cardErrorMessage) { _, message in
+            guard let message else { return }
+            showToast(Toast(kind: .error(message: message, list: [])))
+            cardErrorMessage = nil
+        }
         // T-5513: when Wi-Fi is restored, restart listening if preconditions are met.
         .onChange(of: network.isOnWifi) { _, isOnWifi in
             guard isOnWifi else { return }
@@ -332,7 +340,8 @@ struct HomeView: View {
                         selectedSpeaker: $selectedSpeaker,
                         roll: motionManager.roll,
                         pitch: motionManager.pitch,
-                        isCommandActive: isCommandActive
+                        isCommandActive: isCommandActive,
+                        errorMessage: $cardErrorMessage   // E-56 T-5606
                     )
                 } else if let speaker = displayedSpeaker {
                     // Speakers discovered but none playing (idle state)
@@ -340,7 +349,8 @@ struct HomeView: View {
                         speaker: speaker,
                         isExpanded: isCommandActive,
                         roll: motionManager.roll,
-                        pitch: motionManager.pitch
+                        pitch: motionManager.pitch,
+                        errorMessage: $cardErrorMessage   // E-56 T-5606
                     )
                     .opacity(hasAppeared ? 1 : 0)
                     .scaleEffect(hasAppeared ? 1 : 0.96)

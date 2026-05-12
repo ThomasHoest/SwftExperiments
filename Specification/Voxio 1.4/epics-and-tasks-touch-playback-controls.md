@@ -38,14 +38,14 @@ Add a single play/pause toggle button to `SpeakerCard` below the volume bar in t
 
 ### Card structure refactor
 
-- [ ] **T-5601** Refactor `SpeakerCard.cardContent` in `iOS/Voxio/Features/Home/SpeakerCard.swift` to switch on `speaker.playbackState` (`.playing` / `.paused` / `.buffering` / `.stopped`) rather than the current `speaker.isPlaying` boolean. The current `isPlaying` branch becomes the playing/paused/buffering branch (rendering header + nowPlayingPanel + volumeTrack + transport row + favorites row). The else branch becomes the stopped branch (header + Play pill + favorites row). Verify that the existing `nowPlayingPanel` continues to render in `.paused` state (the design spec §2.1 keeps the panel visible so the track title is readable; bars become static — handled later in T-5604).
+- [x] **T-5601** Refactor `SpeakerCard.cardContent` in `iOS/Voxio/Features/Home/SpeakerCard.swift` to switch on `speaker.playbackState` (`.playing` / `.paused` / `.buffering` / `.stopped`) rather than the current `speaker.isPlaying` boolean. The current `isPlaying` branch becomes the playing/paused/buffering branch (rendering header + nowPlayingPanel + volumeTrack + transport row + favorites row). The else branch becomes the stopped branch (header + Play pill + favorites row). Verify that the existing `nowPlayingPanel` continues to render in `.paused` state (the design spec §2.1 keeps the panel visible so the track title is readable; bars become static — handled later in T-5604).
 
   Do not yet add the slider, transport row, or favorites row in this task — they are added in T-5602 (transport), E-57, and E-58 respectively. This task is a pure scaffolding refactor.
   *No dependencies. Prerequisite for T-5602, T-5605, T-5701, T-5801.*
 
 ### Transport button — playing/paused/buffering states
 
-- [ ] **T-5602** Add a private `transportRow` view to `SpeakerCard` that renders a single centred `DarkGlassIconButton` (52 pt visual / 64 pt hit area) wrapped in an `HStack` with `.frame(maxWidth: .infinity)`. Switch on `speaker.playbackState`:
+- [x] **T-5602** Add a private `transportRow` view to `SpeakerCard` that renders a single centred `DarkGlassIconButton` (52 pt visual / 64 pt hit area) wrapped in an `HStack` with `.frame(maxWidth: .infinity)`. Switch on `speaker.playbackState`:
   - `.playing` or `.buffering` → `DarkGlassIconButton(systemImage: "pause.fill", role: .default, accessibilityLabel: "Pause", action: onPauseTapped)`
   - `.paused` → `DarkGlassIconButton(systemImage: "play.fill", role: .confirm, accessibilityLabel: "Play", action: onPlayTapped)`
 
@@ -54,7 +54,7 @@ Add a single play/pause toggle button to `SpeakerCard` below the volume bar in t
   Apply horizontal padding `Spacing.s24` and vertical padding `Spacing.s16` top, `Spacing.s20` bottom to the `transportRow` per design-spec §1.2. Insert the row into the playing/paused/buffering branch of `cardContent` directly below the volume bar.
   *Depends on: T-5601.*
 
-- [ ] **T-5603** Implement `onPlayTapped()` and `onPauseTapped()` as private methods on `SpeakerCard`. Each method:
+- [x] **T-5603** Implement `onPlayTapped()` and `onPauseTapped()` as private methods on `SpeakerCard`. Each method:
   1. Fires `HapticEngine.shared.commandRecognised()` synchronously.
   2. Dispatches `Task { @MainActor in ... }` calling `speaker.play()` or `speaker.pause()` (on the lead speaker — see T-5605 for the group-aware variant).
   3. Wraps the call in `do/try/catch`. On error, calls a private `showErrorToast(_ message: String)` helper (see T-5606) and fires `HapticEngine.shared.errorOccurred()`.
@@ -62,19 +62,19 @@ Add a single play/pause toggle button to `SpeakerCard` below the volume bar in t
   Do not optimistically update `speaker.state` — the visual button state continues to be driven by the speaker's actual state via the `@Observable` re-render. This means the button may appear unresponsive for up to ~1 second on a slow speaker; that is acceptable per the design philosophy (design-spec §5.3) and matches the existing voice-command behaviour.
   *Depends on: T-5602.*
 
-- [ ] **T-5604** Update `PlaybackBars` in `SpeakerCard.swift` so the bar animation pauses (bars become static at their `lo` height) when `speaker.playbackState == .paused`. Pass the playback state into `PlaybackBars` as a parameter, and gate the `animate` `@State` toggle on `state == .playing || state == .buffering`. Per design-spec §2.1, the panel stays visible in paused state so the track title remains readable, but the bars stop moving.
+- [x] **T-5604** Update `PlaybackBars` in `SpeakerCard.swift` so the bar animation pauses (bars become static at their `lo` height) when `speaker.playbackState == .paused`. Pass the playback state into `PlaybackBars` as a parameter, and gate the `animate` `@State` toggle on `state == .playing || state == .buffering`. Per design-spec §2.1, the panel stays visible in paused state so the track title remains readable, but the bars stop moving.
   *Depends on: T-5601.*
 
 ### Group-aware transport dispatch
 
-- [ ] **T-5605** Modify `SpeakerCard`'s init to accept an optional `SpeakerGroup` (`iOS/Voxio/Core/Models/Group.swift`) in addition to the current `Speaker` parameter. If only a `Speaker` is provided, internally wrap it via `SpeakerGroup.single(speaker)`. Replace direct `speaker.play()` / `speaker.pause()` calls in `onPlayTapped()` / `onPauseTapped()` (T-5603) with `group.hostSpeaker.play()` / `group.hostSpeaker.pause()`. Per design-spec UQ-3 resolved: transport actions target the lead speaker only — followers mirror automatically.
+- [x] **T-5605** Modify `SpeakerCard`'s init to accept an optional `SpeakerGroup` (`iOS/Voxio/Core/Models/Group.swift`) in addition to the current `Speaker` parameter. If only a `Speaker` is provided, internally wrap it via `SpeakerGroup.single(speaker)`. Replace direct `speaker.play()` / `speaker.pause()` calls in `onPlayTapped()` / `onPauseTapped()` (T-5603) with `group.hostSpeaker.play()` / `group.hostSpeaker.pause()`. Per design-spec UQ-3 resolved: transport actions target the lead speaker only — followers mirror automatically.
 
   Update all `SpeakerCard(speaker: ...)` call sites in `iOS/Voxio/Features/Home/ContentView.swift` (and any other files that instantiate `SpeakerCard`). Where a single speaker is passed, the wrapping is automatic; where the call site already has a `SpeakerGroup`, pass it directly.
   *Depends on: T-5603.*
 
 ### Stopped-state card variant
 
-- [ ] **T-5606** Implement the stopped-state branch of `SpeakerCard.cardContent` (added in T-5601). Renders:
+- [x] **T-5606** Implement the stopped-state branch of `SpeakerCard.cardContent` (added in T-5601). Renders:
   - The existing `headerSection` (which already shows "Idle" via `speaker.stateDisplay` for non-playing states; design-spec §3 calls this "Stopped" — leave the existing string unless localisation work is opened separately).
   - A full-width `DarkGlassButton(label: "Play", systemImage: "play.fill", role: .confirm, action: onPlayTapped)` with `Spacing.s24` horizontal padding and `Spacing.s20` top and bottom padding.
   - The favorites row (added in E-58) below the Play pill — wired by T-5803.
@@ -86,7 +86,7 @@ Add a single play/pause toggle button to `SpeakerCard` below the volume bar in t
 
 ### Accessibility
 
-- [ ] **T-5607** Loosen the existing `.accessibilityElement(children: .ignore)` on the outer `SpeakerCard` to `.accessibilityElement(children: .contain)` so the new transport button (and later, the slider and favorites) are reachable individually by VoiceOver. Move the existing card-level summary (`accessibilityDescription` computed property) onto the `headerSection` only — it should describe the speaker name and state, not the controls. Confirm VoiceOver navigation order matches visual top-to-bottom: header → now-playing panel → volume → transport → favorites.
+- [x] **T-5607** Loosen the existing `.accessibilityElement(children: .ignore)` on the outer `SpeakerCard` to `.accessibilityElement(children: .contain)` so the new transport button (and later, the slider and favorites) are reachable individually by VoiceOver. Move the existing card-level summary (`accessibilityDescription` computed property) onto the `headerSection` only — it should describe the speaker name and state, not the controls. Confirm VoiceOver navigation order matches visual top-to-bottom: header → now-playing panel → volume → transport → favorites.
 
   Verify on a physical device with VoiceOver enabled that:
   - The pause button reads "Pause" when playing.
@@ -96,7 +96,7 @@ Add a single play/pause toggle button to `SpeakerCard` below the volume bar in t
 
 ### Verification
 
-- [ ] **T-5608** Manual test pass on a real Mozart speaker. Test matrix:
+- [ ] **T-5608** (deferred: manual verification on device) Manual test pass on a real Mozart speaker. Test matrix:
   1. Speaker playing → tap pause button → speaker pauses within ~1 s; button flips to gold play icon.
   2. Speaker paused → tap play button → speaker resumes; button flips to white pause icon.
   3. Speaker stopped → card collapses to header + full-width Play pill → tap Play → speaker starts last source.
@@ -108,7 +108,7 @@ Add a single play/pause toggle button to `SpeakerCard` below the volume bar in t
   Document timings (touch-up to visible state change) in the PR description.
   *Depends on: T-5603, T-5605, T-5606, T-5607.*
 
-- [ ] **T-5609** SwiftUI preview in `SpeakerCard.swift` covering all four playback states with mocked `Speaker` instances: playing, paused, buffering, stopped. Verify the transport row renders the correct icon and role in each. The previews should compile against `MockSpeaker` or use the existing speaker init with a stub `SpeakerClient` and `SpeakerEventSource`.
+- [x] **T-5609** SwiftUI preview in `SpeakerCard.swift` covering all four playback states with mocked `Speaker` instances: playing, paused, buffering, stopped. Verify the transport row renders the correct icon and role in each. The previews should compile against `MockSpeaker` or use the existing speaker init with a stub `SpeakerClient` and `SpeakerEventSource`.
   *Depends on: T-5602, T-5606.*
 
 ---

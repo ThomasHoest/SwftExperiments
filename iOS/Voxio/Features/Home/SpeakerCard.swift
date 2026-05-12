@@ -1,16 +1,51 @@
 import SwiftUI
 
+// MARK: - SpeakerCard
+//
+// E-56 changes applied in this file:
+//   T-5601 — cardContent now switches on speaker.playbackState (four-case enum).
+//   T-5602 — transportRow computed view; DarkGlassIconButton(size: 52).
+//   T-5603 — onPlayTapped() / onPauseTapped() implementations.
+//   T-5604 — PlaybackBars receives playbackState: speaker.playbackState.
+//   T-5605 — optional SpeakerGroup param; resolvedGroup computed property.
+//   T-5606 — @Binding var errorMessage: String?; showErrorToast helper; stopped-state Play pill.
+//   T-5607 — .accessibilityElement(children: .contain); summary moved to headerSection.
+//   T-5609 — #Preview blocks for all four playback states.
+//
+// CF-1 decision: @Binding var errorMessage: String? (SwiftUI symmetry, as ADR recommends).
+// Every call site must supply errorMessage:. #Preview blocks use .constant(nil).
+
 struct SpeakerCard: View {
     var speaker: Speaker
     var isExpanded: Bool
     var roll: Double
     var pitch: Double
     /// Non-host members of the speaker's group. Default empty keeps all pre-E-53 call sites valid.
-    /// Populated by SessionStripView (T-5306) with group.members filtered to exclude the host.
+    /// Populated by SessionStripView with group.members filtered to exclude the host.
     var groupMembers: [Speaker] = []   // E-53 T-5304
+
+    /// Optional group for transport + volume dispatch (E-56 T-5605).
+    /// When nil, solo card wraps speaker via SpeakerGroup.single(speaker) internally.
+    /// F2 will pass real multi-member groups; all existing call sites pass nil (default).
+    var group: SpeakerGroup? = nil     // E-56 T-5605
+
+    /// Routes transport errors to the HomeView toast surface (E-56 T-5606).
+    @Binding var errorMessage: String?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorSchemeContrast) private var colorContrast
+
+    // MARK: - Group-aware dispatch (T-5605)
+
+    /// Resolves to the supplied group or a single-speaker group wrapping the card's speaker.
+    /// Transport calls always go through resolvedGroup.hostSpeaker.
+    private var resolvedGroup: SpeakerGroup { group ?? SpeakerGroup.single(speaker) }
+
+    // MARK: - UIStrings
+
+    private var ui: UIStrings { UIStrings.forLanguage(LanguageService.shared.activeLanguage) }
+
+    // MARK: - Body
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -31,9 +66,12 @@ struct SpeakerCard: View {
         )
         .scaleEffect(reduceMotion ? 1.0 : (isExpanded ? 1.02 : 1.0))
         .animation(reduceMotion ? .easeInOut(duration: 0.2) : BeoAnimation.cardExpand, value: isExpanded)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityDescription)
+        // T-5607: loosened from .ignore to .contain so transport button is VoiceOver-reachable.
+        // Card-level summary moved to headerSection's accessibilityLabel.
+        .accessibilityElement(children: .contain)
     }
+
+    // MARK: - Chip data (E-53)
 
     /// Converts groupMembers to [ChipData], applying the overflow rule:
     /// - members.count > 3 → 2 member chips + 1 overflow chip (count - 2 remaining).
@@ -53,6 +91,8 @@ struct SpeakerCard: View {
         }
     }
 
+    // MARK: - Accessibility summary (T-5607: moved from card level to header level)
+
     private var accessibilityDescription: String {
         let p = speaker.nowPlaying
         var parts = [speaker.name, speaker.stateDisplay]
@@ -71,17 +111,20 @@ struct SpeakerCard: View {
         return parts.joined(separator: ", ")
     }
 
-    // ── Card content ──────────────────────────────────────────────────────────
+    // MARK: - Card content (T-5601: switched on playbackState)
 
+    @ViewBuilder
     private var cardContent: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            headerSection
-
-            if speaker.isPlaying {
+        switch speaker.playbackState {
+        case .playing, .paused, .buffering:
+            // Playing branch: header + now-playing panel + volume track + transport row + group chips
+            VStack(alignment: .leading, spacing: 0) {
+                headerSection
                 nowPlayingPanel
                 if let vol = speaker.volume {
                     volumeTrack(level: vol)
                 }
+                transportRow
                 // E-53 T-5304: group chip row — only shown when host has non-host members
                 if !groupMembers.isEmpty {
                     GroupChipRow(chips: chipData)
@@ -89,9 +132,20 @@ struct SpeakerCard: View {
                         .padding(.bottom, Spacing.s16)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+        case .stopped:
+            // Stopped branch: header + full-width Play pill (no now-playing panel, volume, or transport row).
+            // E-58 will add a favorites row below the Play pill.
+            VStack(alignment: .leading, spacing: 0) {
+                headerSection
+                stoppedPlayPill
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
+
+    // MARK: - Header section (T-5607: carries card-level summary accessibilityLabel)
 
     private var headerSection: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -125,7 +179,13 @@ struct SpeakerCard: View {
         .padding(.horizontal, 24)
         .padding(.top, 28)
         .padding(.bottom, speaker.isPlaying ? 16 : 28)
+        // T-5607: card-level summary now lives here so VoiceOver reads it first,
+        // then moves on to the individually-reachable transport button.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityDescription)
     }
+
+    // MARK: - Now playing panel
 
     private var nowPlayingPanel: some View {
         let p = speaker.nowPlaying
@@ -147,9 +207,8 @@ struct SpeakerCard: View {
 
             Spacer()
 
-            // PlaybackBars is defined in Components/PlaybackBars.swift (T-5401/T-5402).
-            // Default height: 20 preserves the original card appearance.
-            PlaybackBars()
+            // T-5604: pass current playbackState so bars freeze when paused/stopped.
+            PlaybackBars(playbackState: speaker.playbackState)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
@@ -158,6 +217,8 @@ struct SpeakerCard: View {
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
     }
+
+    // MARK: - Volume track
 
     private func volumeTrack(level: Int) -> some View {
         HStack(spacing: 10) {
@@ -184,7 +245,59 @@ struct SpeakerCard: View {
         .padding(.bottom, 24)
     }
 
-    // ── Specular highlight ────────────────────────────────────────────────────
+    // MARK: - Transport row (T-5602)
+    // Centred single button: pause.fill when playing/buffering, play.fill (gold) when paused.
+    // Layout per design-spec §1.2: h-pad s24, v-pad s16 top, s20 bottom.
+
+    @ViewBuilder
+    private var transportRow: some View {
+        HStack {
+            Spacer()
+            switch speaker.playbackState {
+            case .playing, .buffering:
+                DarkGlassIconButton(
+                    systemImage: "pause.fill",
+                    role: .default,
+                    accessibilityLabel: ui.pause,
+                    size: 52,
+                    action: onPauseTapped
+                )
+            case .paused:
+                DarkGlassIconButton(
+                    systemImage: "play.fill",
+                    role: .confirm,
+                    accessibilityLabel: ui.play,
+                    size: 52,
+                    action: onPlayTapped
+                )
+            case .stopped:
+                EmptyView()
+            }
+            Spacer()
+        }
+        .padding(.horizontal, Spacing.s24)
+        .padding(.top, Spacing.s16)
+        .padding(.bottom, Spacing.s20)
+        .accessibilityElement(children: .contain)
+    }
+
+    // MARK: - Stopped-state Play pill (T-5606)
+    // Full-width DarkGlassButton with play.fill icon and .confirm (gold) role.
+
+    private var stoppedPlayPill: some View {
+        DarkGlassButton(
+            label: ui.play,
+            systemImage: "play.fill",
+            role: .confirm,
+            action: onPlayTapped
+        )
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, Spacing.s24)
+        .padding(.top, Spacing.s20)
+        .padding(.bottom, Spacing.s20)
+    }
+
+    // MARK: - Specular highlight
 
     private var specularHighlight: some View {
         LinearGradient(
@@ -198,4 +311,171 @@ struct SpeakerCard: View {
         .blendMode(.plusLighter)
         .allowsHitTesting(false)
     }
+
+    // MARK: - Transport tap handlers (T-5603 + T-5605)
+
+    private func onPlayTapped() {
+        HapticEngine.shared.commandRecognised()
+        Task { @MainActor in
+            do {
+                try await resolvedGroup.hostSpeaker.play()
+            } catch {
+                showErrorToast(errorText(for: error))
+                HapticEngine.shared.errorOccurred()
+            }
+        }
+    }
+
+    private func onPauseTapped() {
+        HapticEngine.shared.commandRecognised()
+        Task { @MainActor in
+            do {
+                try await resolvedGroup.hostSpeaker.pause()
+            } catch {
+                showErrorToast(errorText(for: error))
+                HapticEngine.shared.errorOccurred()
+            }
+        }
+    }
+
+    // MARK: - Error toast helper (T-5606)
+    // Sets the @Binding errorMessage so HomeView's onChange creates the Toast.
+    // E-57 and E-58 reuse this helper unchanged.
+
+    private func showErrorToast(_ message: String) {
+        errorMessage = message
+    }
+
+    private func errorText(for error: Error) -> String {
+        if let speakerError = error as? SpeakerError {
+            switch speakerError {
+            case .timeout:
+                return "Speaker timed out"
+            case .unreachable:
+                return "Speaker unreachable"
+            default:
+                return "Could not reach \(speaker.name)"
+            }
+        }
+        return "Could not reach \(speaker.name)"
+    }
 }
+
+// MARK: - Previews (T-5609)
+// All four playback states. errorMessage uses .constant(nil) per CF-1 decision (@Binding choice).
+// Preview stubs are lightweight — only the minimum protocol surface is implemented.
+
+#if DEBUG
+
+// MARK: Preview stubs (main-target only, not exported to test target)
+
+private final class PreviewSpeakerClient: SpeakerClient {
+    func play() async throws {}
+    func pause() async throws {}
+    func stop() async throws {}
+    func setVolume(_ level: Int) async throws {}
+    func mute(_ muted: Bool) async throws {}
+    func getVolume() async throws -> Int { 50 }
+    func getPlaybackState() async throws -> SpeakerPlaybackState { .stopped }
+    func getSources() async throws -> [Favorite] { [] }
+    func activateSource(_ id: String) async throws {}
+    func getBattery() async throws -> Battery? { nil }
+    func getName() async throws -> String { "Preview" }
+    func getJid() async throws -> String? { nil }
+    func getPeers() async throws -> [BeolinkPeer] { [] }
+    func join(peer: SpeakerIdentifier) async throws {}
+    func leave() async throws {}
+}
+
+private final class PreviewSpeakerEventSource: SpeakerEventSource {
+    func events() -> AsyncStream<SpeakerEvent> {
+        AsyncStream { $0.finish() }
+    }
+}
+
+@MainActor
+private func makePreviewSpeaker(playbackValue: PlaybackValue, volumeLevel: Int? = 55) -> Speaker {
+    let spk = Speaker(
+        host: "192.168.1.10",
+        client: PreviewSpeakerClient(),
+        eventSource: PreviewSpeakerEventSource(),
+        platform: .mozart
+    )
+    spk.name = "Beosound Balance"
+    spk.state = playbackValue
+    spk.volume = volumeLevel
+    if playbackValue != .unknown && playbackValue != .stopped {
+        // Provide metadata for non-stopped states via JSON decode round-trip (avoids memberwise init)
+        let json = """
+        {"title":"Space Oddity","artist":"David Bowie","album":"Space Oddity"}
+        """.data(using: .utf8)!
+        spk.metadata = try? JSONDecoder().decode(PlaybackMetadata.self, from: json)
+    }
+    return spk
+}
+
+#Preview("SpeakerCard — Playing") {
+    @Previewable @State var errorMessage: String? = nil
+    ZStack {
+        Color(hex: "#0A0E1A").ignoresSafeArea()
+        SpeakerCard(
+            speaker: makePreviewSpeaker(playbackValue: .playing),
+            isExpanded: false,
+            roll: 0,
+            pitch: 0,
+            errorMessage: $errorMessage
+        )
+        .padding(20)
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("SpeakerCard — Paused") {
+    @Previewable @State var errorMessage: String? = nil
+    ZStack {
+        Color(hex: "#0A0E1A").ignoresSafeArea()
+        SpeakerCard(
+            speaker: makePreviewSpeaker(playbackValue: .paused, volumeLevel: 40),
+            isExpanded: false,
+            roll: 0,
+            pitch: 0,
+            errorMessage: $errorMessage
+        )
+        .padding(20)
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("SpeakerCard — Buffering") {
+    @Previewable @State var errorMessage: String? = nil
+    ZStack {
+        Color(hex: "#0A0E1A").ignoresSafeArea()
+        SpeakerCard(
+            speaker: makePreviewSpeaker(playbackValue: .buffering, volumeLevel: 60),
+            isExpanded: false,
+            roll: 0,
+            pitch: 0,
+            errorMessage: $errorMessage
+        )
+        .padding(20)
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("SpeakerCard — Stopped") {
+    @Previewable @State var errorMessage: String? = nil
+    ZStack {
+        Color(hex: "#0A0E1A").ignoresSafeArea()
+        SpeakerCard(
+            speaker: makePreviewSpeaker(playbackValue: .unknown, volumeLevel: nil),
+            isExpanded: false,
+            roll: 0,
+            pitch: 0,
+            errorMessage: $errorMessage
+        )
+        .padding(20)
+    }
+    .preferredColorScheme(.dark)
+}
+
+#endif

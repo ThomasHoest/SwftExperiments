@@ -39,6 +39,10 @@ struct SessionStripView: View {
     /// Passed to each SpeakerCard for the isExpanded card-expand animation.
     let isCommandActive: Bool
 
+    /// E-56 T-5606 — transport error pass-through.
+    /// The same binding is shared across all cards in the strip. Concurrent errors: last write wins.
+    @Binding var errorMessage: String?
+
     /// Bound to .scrollPosition(id:anchor:center) on the inner ScrollView.
     /// Drives the page-dot active index and the selectedSpeaker update.
     @State private var scrollHostId: Speaker.ID?
@@ -77,7 +81,9 @@ struct SessionStripView: View {
                             roll: isFrontmost ? roll : 0,
                             pitch: isFrontmost ? pitch : 0,
                             // E-53 T-5306: non-host group members for the chip row
-                            groupMembers: group.members.filter { $0.id != group.hostSpeaker.id }
+                            groupMembers: group.members.filter { $0.id != group.hostSpeaker.id },
+                            // E-56 T-5606: error binding pass-through to HomeView toast
+                            errorMessage: $errorMessage
                         )
                         .frame(width: cardWidth)
                         .id(group.hostSpeaker.id)
