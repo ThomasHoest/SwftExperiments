@@ -277,6 +277,31 @@ class BNRClient {
     func leave() async throws {
         try await deleteVoid("/BeoZone/Zone/ActiveSources/primaryExperience")
     }
+
+    // MARK: - ADR-003: follower-side leader detection
+
+    /// Returns the JID of the device currently broadcasting this speaker's
+    /// primary experience, or nil if missing / equal to this device's own JID.
+    /// Sourced from `activeSources.primaryJid` in `/BeoZone/Zone/ActiveSources`.
+    /// Used by `SpeakerDiscoveryService.reconstructGroupsAsync()` for follower-side
+    /// group reconstruction (the leader's expand wrote our JID into its
+    /// primaryExperience listeners; we observe the reverse pointer here).
+    ///
+    /// Note: `cachedJid` is populated during speaker init via `getName()` →
+    /// `/BeoDevice` (which captures the `Device-Jid` response header), so the
+    /// `getJid()` call here is a cheap cache hit by the time reconstruct runs.
+    func getLeaderJid() async throws -> String? {
+        let raw = try await send("/BeoZone/Zone/ActiveSources", method: "GET")
+        let response: BNRActiveSourcesResponse
+        do { response = try decoder.decode(BNRActiveSourcesResponse.self, from: raw) }
+        catch {
+            Log.info("[BNR:\(host)] getLeaderJid decode failed: \(error)")
+            return nil
+        }
+        guard let primaryJid = response.activeSources?.primaryJid else { return nil }
+        let ownJid = try? await getJid()
+        return primaryJid == ownJid ? nil : primaryJid
+    }
 }
 
 // MARK: - BNR-specific response types (private to this module)

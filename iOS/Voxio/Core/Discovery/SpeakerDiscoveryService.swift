@@ -159,35 +159,99 @@ class SpeakerDiscoveryService: ObservableObject {
         }
     }
 
+    /// ADR-003: forces a fresh group reconstruction. F2 (drag-to-join,
+    /// tap-to-remove) calls this after every expand/leave write to surface the
+    /// change in UI within ~500 ms. Public surface; safe to call any time.
+    func refreshGroups() async {
+        await reconstructGroupsAsync()
+    }
+
+    /// ADR-003: build SpeakerGroups from live Beolink state rather than the mesh
+    /// discovery list. Two-phase reconstruction:
+    ///
+    ///   1. Leader-side scan (Mozart): each Mozart speaker reports its current
+    ///      followers via GET /beolink/listeners. Non-empty ⇒ leader; group is
+    ///      [self] + resolve(listeners by JID).
+    ///   2. Follower-side scan (ASE + Mozart cross-check): for each speaker not
+    ///      yet placed in a group, query getLeaderJid(). If a known speaker has
+    ///      that JID, fold this speaker into its group (creating a 2-speaker
+    ///      group if the leader's listeners didn't include us — handles the
+    ///      brief race where one side updates ahead of the other).
+    ///   3. Leftover: solo group-of-1.
+    ///
+    /// See ADR-003 §6/§7 for the full contract. Replaces the previous union-find
+    /// over /beolink/peers, which incorrectly merged every Beolink-reachable
+    /// Mozart speaker into a single group regardless of playback state.
     private func reconstructGroupsAsync() async {
         let speakers = allSpeakers
-        var sets = Array(0..<speakers.count)
+        var groupBuilder: [String: [Speaker]] = [:]   // key = leader JID
+        var leaderOrder: [String] = []                // preserves discovery order
+        var assigned: Set<Speaker.ID> = []
 
-        func find(_ x: Int) -> Int {
-            var x = x
-            while sets[x] != x { sets[x] = sets[sets[x]]; x = sets[x] }
-            return x
-        }
-        func union(_ x: Int, _ y: Int) { sets[find(x)] = find(y) }
-
-        for (i, speaker) in speakers.enumerated() {
-            guard speaker.identifier.platform == .mozart else { continue }
-            let peers = (try? await speaker.client.getPeers()) ?? []
-            for peer in peers {
-                if let j = speakers.firstIndex(where: { $0.identifier.jid == peer.jid }) {
-                    union(i, j)
+        // ── Phase 1: leader-side scan (Mozart speakers report their listeners) ──
+        for speaker in speakers where speaker.identifier.platform == .mozart {
+            guard !assigned.contains(speaker.id) else { continue }
+            let listeners = (try? await speaker.client.getListeners()) ?? []
+            guard !listeners.isEmpty, let selfJid = speaker.identifier.jid else { continue }
+            var members: [Speaker] = [speaker]
+            for listener in listeners {
+                if let s = speakers.first(where: { $0.identifier.jid == listener.jid }),
+                   !members.contains(where: { $0.id == s.id }) {
+                    members.append(s)
                 }
             }
+            groupBuilder[selfJid] = members
+            leaderOrder.append(selfJid)
+            for m in members { assigned.insert(m.id) }
         }
 
-        var components: [Int: [Speaker]] = [:]
-        for (i, speaker) in speakers.enumerated() {
-            components[find(i), default: []].append(speaker)
+        // ── Phase 2: follower-side cross-check (ASE always; Mozart fallback) ──
+        for speaker in speakers where !assigned.contains(speaker.id) {
+            guard let leaderJid = try? await speaker.client.getLeaderJid(),
+                  let leader = speakers.first(where: { $0.identifier.jid == leaderJid }) else { continue }
+            if var existing = groupBuilder[leaderJid] {
+                if !existing.contains(where: { $0.id == speaker.id }) { existing.append(speaker) }
+                groupBuilder[leaderJid] = existing
+            } else {
+                groupBuilder[leaderJid] = [leader, speaker]
+                leaderOrder.append(leaderJid)
+                assigned.insert(leader.id)
+            }
+            assigned.insert(speaker.id)
         }
 
-        groups = components.values.map { members in
-            let host = members.first(where: { $0.identifier.platform == .mozart }) ?? members[0]
-            return SpeakerGroup(members: members, hostSpeaker: host)
+        // ── Phase 3: leftover speakers become solo groups in discovery order ──
+        var soloKeys: [String] = []
+        for speaker in speakers where !assigned.contains(speaker.id) {
+            let key = "solo-\(speaker.id.uuidString)"
+            groupBuilder[key] = [speaker]
+            soloKeys.append(key)
+        }
+
+        // Build final groups: leaders first (discovery order), then solos.
+        let orderedKeys = leaderOrder + soloKeys
+        groups = orderedKeys.compactMap { key in
+            guard let members = groupBuilder[key], !members.isEmpty else { return nil }
+            // Leader is the first member for leader-keyed groups (we put `self` or
+            // `leader` first); for solo groups it's the only member.
+            return SpeakerGroup(members: members, hostSpeaker: members[0])
+        }
+
+        // Per-speaker role log so on-device debugging is straightforward.
+        for speaker in speakers {
+            let role: String
+            if let group = groups.first(where: { $0.members.contains(where: { $0.id == speaker.id }) }) {
+                if group.members.count == 1 {
+                    role = "solo"
+                } else if group.hostSpeaker.id == speaker.id {
+                    role = "leader (\(group.members.count - 1) follower(s))"
+                } else {
+                    role = "follower of \(group.hostSpeaker.name)"
+                }
+            } else {
+                role = "UNASSIGNED"
+            }
+            Log.info("[SDS] \(speaker.name): \(role)")
         }
         Log.info("[SDS] \(groups.count) group(s) from \(speakers.count) speaker(s)")
         WidgetStateWriter.writeDiscoveredSpeakers(speakers)

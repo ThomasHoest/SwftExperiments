@@ -94,6 +94,27 @@ extension MozartClient: SpeakerClient {
         catch let e as MozartError { throw SpeakerError.from(e) }
     }
 
+    /// ADR-003: current followers of this speaker, sourced from /beolink/listeners.
+    /// Returns empty when this speaker is solo or itself a follower.
+    func getListeners() async throws -> [BeolinkPeer] {
+        do { return try await getBeolinkListeners() }
+        catch let e as MozartError { throw SpeakerError.from(e) }
+    }
+
+    /// ADR-003: JID of the device this Mozart speaker is currently following,
+    /// or nil if solo / a leader. Pulled from `metadata.remoteLeader.jid` on
+    /// `GET /playback/state` via `getRemoteLeaderJid()` in MozartClient.swift,
+    /// which keeps the response-probe decoder scoped to that method per
+    /// ADR-003 §6 Amendment A.
+    func getLeaderJid() async throws -> String? {
+        do {
+            return try await getRemoteLeaderJid()
+        } catch let e as MozartError {
+            Log.info("[\(host)] getLeaderJid failed: \(e)")
+            return nil
+        }
+    }
+
     func join(peer: SpeakerIdentifier) async throws {
         do {
             if let jid = peer.jid {
@@ -121,3 +142,4 @@ extension MozartClient: SpeakerClient {
         }
     }
 }
+

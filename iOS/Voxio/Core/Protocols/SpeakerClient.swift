@@ -18,6 +18,13 @@ protocol SpeakerClient: AnyObject {
     func getName() async throws -> String
     func getJid() async throws -> String?
     func getPeers() async throws -> [BeolinkPeer]
+    /// ADR-003: devices currently listening to this device's active experience.
+    /// Non-empty ⇒ this device is a leader; the returned JIDs are its followers.
+    /// Empty ⇒ this device is solo or itself a follower (use `getLeaderJid()`).
+    func getListeners() async throws -> [BeolinkPeer]
+    /// ADR-003: the JID of the device this speaker is currently following.
+    /// Returns nil if this device is solo or a leader.
+    func getLeaderJid() async throws -> String?
     func getActiveSource() async throws -> SpeakerSource?
     func join(peer: SpeakerIdentifier) async throws
     func leave() async throws
@@ -26,6 +33,8 @@ protocol SpeakerClient: AnyObject {
 extension SpeakerClient {
     func getJid() async throws -> String? { nil }
     func getPeers() async throws -> [BeolinkPeer] { [] }
+    func getListeners() async throws -> [BeolinkPeer] { [] }
+    func getLeaderJid() async throws -> String? { nil }
     /// Optional: returns the current active source as a unified value type.
     /// Used by `Speaker.initialize()` to populate `speaker.source`/`sourceID`
     /// before any push event arrives. Default returns nil — implementors that

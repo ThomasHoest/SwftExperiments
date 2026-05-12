@@ -287,8 +287,38 @@ class MozartClient {
     // ── Beolink (multi-room) ──────────────────────────────────────────────────
 
     /// Returns all Beolink-capable devices discovered on the same network.
+    /// Used for F2 drag-target discovery — NOT for current group membership.
+    /// See `getBeolinkListeners()` for that.
     func getBeolinkPeers() async throws -> [BeolinkPeer] {
         try await get("/beolink/peers")
+    }
+
+    /// ADR-003: devices currently listening to this device's active experience.
+    /// Non-empty ⇒ this device is a leader; the returned JIDs are its followers.
+    /// Empty ⇒ this device is solo or itself a follower.
+    /// The BeolinkListener spec shape is `{ jid, audioTransport? }` (no friendlyName,
+    /// no ipAddress) — decodes cleanly into BeolinkPeer with friendlyName/ipAddress
+    /// remaining nil.
+    func getBeolinkListeners() async throws -> [BeolinkPeer] {
+        try await get("/beolink/listeners")
+    }
+
+    /// ADR-003: pulls `metadata.remoteLeader.jid` from `GET /playback/state`.
+    /// Returns nil when this device is not currently following anyone.
+    /// Uses a private decoder scoped to this method per ADR §6 Amendment A —
+    /// do NOT extend the shared Source/PlaybackResponse models.
+    func getRemoteLeaderJid() async throws -> String? {
+        struct Probe: Decodable {
+            let metadata: Metadata?
+            struct Metadata: Decodable {
+                let remoteLeader: RemoteLeader?
+            }
+            struct RemoteLeader: Decodable {
+                let jid: String
+            }
+        }
+        let probe: Probe = try await get("/playback/state")
+        return probe.metadata?.remoteLeader?.jid
     }
 
     /// Expands the current audio experience to another Beolink device, making it play in sync.
