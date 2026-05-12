@@ -323,19 +323,47 @@ class MozartClient {
 
     /// Expands the current audio experience to another Beolink device, making it play in sync.
     /// - Parameter jid: The JID of the target device, as returned by ``getBeolinkPeers()``.
+    /// Logs at INFO so wire-level activity is visible without raising the global log level.
     func beolinkExpand(jid: String) async throws {
         let encoded = jid.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? jid
-        try await postVoid("/beolink/expand/\(encoded)")
+        let path = "/beolink/expand/\(encoded)"
+        Log.info("[\(host)] → POST \(baseUrl)\(path)")
+        do {
+            let data = try await send(path, method: "POST", body: nil)
+            let body = String(data: data, encoding: .utf8) ?? ""
+            Log.info("[\(host)] ← 2xx POST \(path) body=\(body.isEmpty ? "<empty>" : body)")
+        } catch let e as MozartError {
+            Log.error("[\(host)] ✗ POST \(path) → \(e)")
+            throw e
+        }
     }
 
     /// Joins another device's active Beolink experience, playing in sync with the host.
     func beolinkJoin() async throws {
-        try await postVoid("/beolink/join")
+        let path = "/beolink/join"
+        Log.info("[\(host)] → POST \(baseUrl)\(path)")
+        do {
+            let data = try await send(path, method: "POST", body: nil)
+            let body = String(data: data, encoding: .utf8) ?? ""
+            Log.info("[\(host)] ← 2xx POST \(path) body=\(body.isEmpty ? "<empty>" : body)")
+        } catch let e as MozartError {
+            Log.error("[\(host)] ✗ POST \(path) → \(e)")
+            throw e
+        }
     }
 
     /// Leaves the current Beolink multi-room session. This device returns to standalone playback.
     func beolinkLeave() async throws {
-        try await postVoid("/beolink/leave")
+        let path = "/beolink/leave"
+        Log.info("[\(host)] → POST \(baseUrl)\(path)")
+        do {
+            let data = try await send(path, method: "POST", body: nil)
+            let body = String(data: data, encoding: .utf8) ?? ""
+            Log.info("[\(host)] ← 2xx POST \(path) body=\(body.isEmpty ? "<empty>" : body)")
+        } catch let e as MozartError {
+            Log.error("[\(host)] ✗ POST \(path) → \(e)")
+            throw e
+        }
     }
 
     /// Sends all Beolink-connected devices to standby simultaneously.

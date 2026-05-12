@@ -106,6 +106,12 @@ struct SpeakerCard: View {
         //   2. Self-drop (source.id == hostSpeaker.id) returns false; no side effects.
         //   3. Unresolvable identifier (resolveSpeaker returns nil) returns false.
         //   4. dropZoneActive transitions to false within one spring cycle after ghost leaves.
+        //
+        // .contentShape declares the ENTIRE rounded rectangle as the hit region. Without
+        // it SwiftUI hit-tests only against rendered subview shapes (metadata pill, favorite
+        // buttons, transport row) — meaning the background area between those subviews was
+        // not catching drops. The shape mirrors the card's visual outline.
+        .contentShape(RoundedRectangle(cornerRadius: Radius.card))
         .dropDestination(for: SpeakerIdentifier.self) { items, location in
             // Every rejection path logs so we can see WHY a drop fizzled on device.
             guard let vm = sessionVM else {

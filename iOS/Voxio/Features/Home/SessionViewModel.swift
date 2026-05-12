@@ -142,7 +142,12 @@ final class SessionViewModel {
         let task = Task { [weak self] in
             let started = Date()
             do {
-                Log.info("[Join] calling source.client.join(peer:) with target.identifier (jid=\(target.identifier.jid ?? "nil") host=\(target.identifier.host))")
+                // The PLAYING device (target) is the broadcasting leader and is the one
+                // that must call /beolink/expand (Mozart) or expandExperience (BNR) with
+                // the new follower's JID. SpeakerClient.join(peer:) means "I'm the leader,
+                // add this peer as my listener." Earlier code had source/target swapped,
+                // which produced a syntactically valid no-op against the wrong device.
+                Log.info("[Join] calling target.client.join(peer:) — target=\(target.name) expands to source=\(source.name) (peer.jid=\(source.identifier.jid ?? "nil") peer.host=\(source.identifier.host))")
                 try await Self.joinWithTimeout(source: source, target: target, seconds: 10)
                 let elapsed = Date().timeIntervalSince(started) * 1000
                 Log.info("[Join] SUCCESS — \(source.name) → \(target.name) in \(Int(elapsed)) ms")
@@ -191,16 +196,21 @@ final class SessionViewModel {
 
     // MARK: - Private helpers (E-60)
 
-    /// Races `source.client.join(peer: target.identifier)` against a `seconds`-long
+    /// Races `target.client.join(peer: source.identifier)` against a `seconds`-long
     /// `Task.sleep` timeout via `withThrowingTaskGroup`. First child to complete wins;
     /// the other is cancelled. Throws `SpeakerError.timeout` if the sleep wins first.
+    ///
+    /// Note the call direction: TARGET (the playing leader) calls `join(peer:)` with
+    /// SOURCE's identifier, because `SpeakerClient.join(peer:)` means "I'm the leader,
+    /// add this peer as my listener" — it invokes `/beolink/expand/{peer.jid}` on the
+    /// caller (Mozart) or `expandExperience(listenerJid:)` on the caller (BNR).
     private static func joinWithTimeout(
         source: Speaker,
         target: Speaker,
         seconds: Int
     ) async throws {
         try await withThrowingTaskGroup(of: Void.self) { group in
-            group.addTask { try await source.client.join(peer: target.identifier) }
+            group.addTask { try await target.client.join(peer: source.identifier) }
             group.addTask {
                 try await Task.sleep(for: .seconds(seconds))
                 throw SpeakerError.timeout

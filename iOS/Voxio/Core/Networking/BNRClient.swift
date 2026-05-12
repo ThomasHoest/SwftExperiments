@@ -260,10 +260,21 @@ class BNRClient {
     /// Master-side multi-room join: adds a listener to this device's primary experience.
     /// This device must be the broadcasting source; the listener is identified by their JID.
     /// Maps to the C# `BuildExpandExperienceRequest(listenerJid)` builder.
+    /// Logs at INFO so wire-level activity is visible without raising the global log level.
     func expandExperience(listenerJid: String) async throws {
         struct Body: Encodable { let jid: String }
-        try await postVoid("/BeoZone/Zone/ActiveSources/primaryExperience",
-                           body: try encode(Body(jid: listenerJid)))
+        let path = "/BeoZone/Zone/ActiveSources/primaryExperience"
+        let bodyData = try encode(Body(jid: listenerJid))
+        let bodyStr = String(data: bodyData, encoding: .utf8) ?? "<binary>"
+        Log.info("[BNR:\(host)] → POST \(path) body=\(bodyStr)")
+        do {
+            let resp = try await send(path, method: "POST", body: bodyData)
+            let respStr = String(data: resp, encoding: .utf8) ?? ""
+            Log.info("[BNR:\(host)] ← 2xx POST \(path) body=\(respStr.isEmpty ? "<empty>" : respStr)")
+        } catch {
+            Log.error("[BNR:\(host)] ✗ POST \(path) → \(error)")
+            throw error
+        }
     }
 
     /// Listener-side legacy "Join" button: this device joins whatever the network advertises
@@ -275,7 +286,15 @@ class BNRClient {
     }
 
     func leave() async throws {
-        try await deleteVoid("/BeoZone/Zone/ActiveSources/primaryExperience")
+        let path = "/BeoZone/Zone/ActiveSources/primaryExperience"
+        Log.info("[BNR:\(host)] → DELETE \(path)")
+        do {
+            try await deleteVoid(path)
+            Log.info("[BNR:\(host)] ← 2xx DELETE \(path)")
+        } catch {
+            Log.error("[BNR:\(host)] ✗ DELETE \(path) → \(error)")
+            throw error
+        }
     }
 
     // MARK: - ADR-003: follower-side leader detection

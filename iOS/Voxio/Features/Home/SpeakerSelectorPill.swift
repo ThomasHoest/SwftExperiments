@@ -49,9 +49,10 @@ struct SpeakerSelectorPill: View {
                                 .accessibilityHint(isActive ? "" : "Show this speaker")
                                 .id(speaker.id)
                                 // E-59 T-5904: drag source.
+                                // NOTE: SwiftUI evaluates the preview closure on every render
+                                // of every draggable pill (eager build), so do NOT log here.
                                 .draggable(speaker.identifier) {
-                                    Log.info("[Drag] preview built for \(speaker.name) jid=\(speaker.identifier.jid ?? "nil")")
-                                    return dragPreviewCapsule(speaker)
+                                    dragPreviewCapsule(speaker)
                                 }
                                 // Long-press fires lift haptic before the system drag begins.
                                 .simultaneousGesture(
