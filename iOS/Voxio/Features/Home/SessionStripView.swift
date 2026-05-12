@@ -155,6 +155,16 @@ struct SessionStripView: View {
                 // E-59 — Update joinsInFlightUnion binding so HomeView stays in sync.
                 joinsInFlightUnionBinding = joinsInFlightUnion
             }
+            // E-60 T-6004 — Reactive write of joinsInFlightUnionBinding on joinsInFlight changes.
+            // Fires on every joinsInFlight mutation: insert on drop, remove on success/failure.
+            // This is the second write path; groups.map(\.id) above handles the group-change path.
+            // Behavioural contracts:
+            //   1. sessionVMs.values.map { $0.joinsInFlight } changes whenever any VM mutates.
+            //   2. joinsInFlightUnion recomputed as the union of all VMs' joinsInFlight sets.
+            //   3. Write propagates to HomeView's @State within the same render cycle.
+            .onChange(of: sessionVMs.values.map { $0.joinsInFlight }) { _, _ in
+                joinsInFlightUnionBinding = joinsInFlightUnion
+            }
 
             // T-5205: page dots below the ScrollView, separated by Spacing.s8
             if groups.count > 1 {
@@ -195,9 +205,21 @@ struct SessionStripView: View {
     /// Get-or-create `SessionViewModel` for `group`. CF-3: the `@State` dictionary
     /// stabilises the instance across re-renders; deferred mutation avoids mutating
     /// `@State` during body evaluation.
+    ///
+    /// E-60 CF-6: `onError` closure injected into the new `SessionViewModel.init` parameter.
+    /// The closure writes the incoming message to `$errorMessage.wrappedValue` so that
+    /// HomeView's `.onChange(of: errorMessage)` creates the Toast. This is the same
+    /// pipeline E-56 uses for transport errors.
     private func resolvedSessionVM(for group: SpeakerGroup) -> SessionViewModel {
         if let existing = sessionVMs[group.id] { return existing }
-        let new = SessionViewModel(group: group, discovery: discovery)
+        let errorMessageBinding = $errorMessage
+        let new = SessionViewModel(
+            group: group,
+            discovery: discovery,
+            onError: { msg in
+                errorMessageBinding.wrappedValue = msg
+            }
+        )
         DispatchQueue.main.async { sessionVMs[group.id] = new }
         return new
     }

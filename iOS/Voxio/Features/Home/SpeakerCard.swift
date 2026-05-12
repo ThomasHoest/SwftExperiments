@@ -106,15 +106,32 @@ struct SpeakerCard: View {
         //   2. Self-drop (source.id == hostSpeaker.id) returns false; no side effects.
         //   3. Unresolvable identifier (resolveSpeaker returns nil) returns false.
         //   4. dropZoneActive transitions to false within one spring cycle after ghost leaves.
-        .dropDestination(for: SpeakerIdentifier.self) { items, _ in
-            guard let vm = sessionVM,
-                  let droppedId = items.first,
-                  let source = vm.resolveSpeaker(droppedId),
-                  source.id != vm.group.hostSpeaker.id else { return false }
+        .dropDestination(for: SpeakerIdentifier.self) { items, location in
+            // Every rejection path logs so we can see WHY a drop fizzled on device.
+            guard let vm = sessionVM else {
+                Log.info("[Drop] rejected: sessionVM is nil (card not in session strip context)")
+                return false
+            }
+            Log.info("[Drop] received \(items.count) item(s) at \(location.debugDescription) on card hosted by \(vm.group.hostSpeaker.name)")
+            guard let droppedId = items.first else {
+                Log.info("[Drop] rejected: items.first is nil")
+                return false
+            }
+            Log.info("[Drop] dropped identifier: jid=\(droppedId.jid ?? "nil") host=\(droppedId.host) id=\(droppedId.id)")
+            guard let source = vm.resolveSpeaker(droppedId) else {
+                Log.info("[Drop] rejected: resolveSpeaker returned nil for id=\(droppedId.id)")
+                return false
+            }
+            guard source.id != vm.group.hostSpeaker.id else {
+                Log.info("[Drop] rejected: self-drop — source.id (\(source.name)) == target.id (\(vm.group.hostSpeaker.name))")
+                return false
+            }
+            Log.info("[Drop] ACCEPTED: \(source.name) → \(vm.group.hostSpeaker.name) — dispatching handleJoinDrop")
             vm.handleJoinDrop(source: source, target: vm.group.hostSpeaker)
             return true
         } isTargeted: { isOver in
             guard let vm = sessionVM else { return }
+            Log.info("[Drop] isTargeted=\(isOver) for card hosted by \(vm.group.hostSpeaker.name)")
             withAnimation(BeoAnimation.spring) { vm.dropZoneActive = isOver }
             if isOver { HapticEngine.shared.dragEnteredDropZone() }
         }
@@ -125,12 +142,20 @@ struct SpeakerCard: View {
         // the voice feedback area below the card at first boot.
         .scaleEffect(reduceMotion ? 1.0 : (isExpanded ? 1.02 : 1.0))
         .animation(reduceMotion ? .easeInOut(duration: 0.2) : .easeOut(duration: 0.2), value: isExpanded)
-        // E-59 T-5906 — Gold-border overlay applied LAST (CF-2: above hairline borders + scale).
-        // lineWidth 0 when not targeted so the border fades in/out with the spring animation.
+        // E-59 T-5906 — Drop-zone visual cue applied LAST (CF-2: above hairline borders + scale).
+        // Tinted fill + 3 pt stroke for clear visibility when a drag ghost is over the card.
+        // Animation: the withAnimation(BeoAnimation.spring) inside isTargeted drives the fade.
         .overlay(
             RoundedRectangle(cornerRadius: Radius.card)
-                .stroke(BeoColor.accent,
-                        lineWidth: (sessionVM?.dropZoneActive == true) ? 1.5 : 0)
+                .fill(BeoColor.accent.opacity(
+                    (sessionVM?.dropZoneActive == true) ? 0.10 : 0
+                ))
+                .allowsHitTesting(false)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Radius.card)
+                .strokeBorder(BeoColor.accent,
+                              lineWidth: (sessionVM?.dropZoneActive == true) ? 3 : 0)
         )
         // T-5607: loosened from .ignore to .contain so transport button is VoiceOver-reachable.
         // Card-level summary moved to headerSection's accessibilityLabel.
@@ -146,24 +171,53 @@ struct SpeakerCard: View {
         }
     }
 
-    // MARK: - Chip data (E-53)
+    // MARK: - Chip data (E-53 / E-60 T-6002)
 
-    /// Converts groupMembers to [ChipData], applying the overflow rule:
+    /// Converts groupMembers to [ChipData], applying the overflow rule, then appends
+    /// loading chips for any in-flight joins not already resolved to settled members.
+    ///
+    /// Overflow rule:
     /// - members.count > 3 → 2 member chips + 1 overflow chip (count - 2 remaining).
     /// - members.count <= 3 → one chip per member.
-    /// - members.isEmpty → [].
+    /// - members.isEmpty → only loading chips (if any in-flight).
+    ///
+    /// Loading chips (E-60 T-6002):
+    /// - Appended AFTER the overflow chip — never count toward overflow threshold.
+    /// - Omitted if the speaker is already in groupMembers (settled member wins; avoids
+    ///   duplicate when model and task state briefly overlap).
+    /// - CF-3: resolveSpeaker uses a synthetic SpeakerIdentifier(host: inFlightId, jid: nil).
+    ///   Mozart speakers whose joinsInFlight key is a JID may miss the JID-first lookup
+    ///   and fall back to displaying the raw JID string. Cosmetic degradation; verify T-6005.
     private var chipData: [ChipData] {
-        if groupMembers.isEmpty { return [] }
-        if groupMembers.count > 3 {
+        // Phase 1 — settled member chips with overflow rule.
+        var chips: [ChipData]
+        if groupMembers.isEmpty {
+            chips = []
+        } else if groupMembers.count > 3 {
             let memberChips = groupMembers.prefix(2).map {
                 ChipData(speakerName: $0.name, kind: .member)
             }
-            // Overflow chip carries no name — the visible label is derived from .overflow(N), not speakerName.
+            // Overflow chip carries no name — label derived from .overflow(N), not speakerName.
             let overflowChip = ChipData(speakerName: "", kind: .overflow(groupMembers.count - 2))
-            return memberChips + [overflowChip]
+            chips = memberChips + [overflowChip]
         } else {
-            return groupMembers.map { ChipData(speakerName: $0.name, kind: .member) }
+            chips = groupMembers.map { ChipData(speakerName: $0.name, kind: .member) }
         }
+
+        // Phase 2 — loading chips for in-flight joins not yet settled (E-60 T-6002).
+        if let vm = sessionVM {
+            let settledIds = Set(groupMembers.map { $0.identifier.id })
+            for inFlightId in vm.joinsInFlight where !settledIds.contains(inFlightId) {
+                // Synthetic identifier — host fallback path (CF-3 cosmetic limitation).
+                let resolved = vm.resolveSpeaker(
+                    SpeakerIdentifier(host: inFlightId, jid: nil, platform: .mozart)
+                )
+                let displayName = resolved?.name ?? inFlightId
+                chips.append(ChipData(speakerName: displayName, kind: .loading(name: displayName)))
+            }
+        }
+
+        return chips
     }
 
     // MARK: - Accessibility summary (T-5607: moved from card level to header level)
@@ -220,8 +274,11 @@ struct SpeakerCard: View {
                 transportRow
                 // E-58 T-5802: favorites row — absent when favorites is empty
                 favoritesRow
-                // E-53 T-5304: group chip row — only shown when host has non-host members
-                if !groupMembers.isEmpty {
+                // E-53 T-5304: group chip row — shown when host has non-host members or in-flight joins.
+                // E-60 T-6002: chipData now includes loading chips from sessionVM.joinsInFlight;
+                // guard changed from !groupMembers.isEmpty to !chipData.isEmpty so the row
+                // appears immediately on drop even before any settled member exists.
+                if !chipData.isEmpty {
                     GroupChipRow(chips: chipData)
                         .padding(.horizontal, Spacing.s24)
                         .padding(.bottom, Spacing.s16)

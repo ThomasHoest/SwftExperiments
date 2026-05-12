@@ -164,7 +164,7 @@ Implement the join handler that the E-59 drop destination invokes. After a drop,
 
 ### `handleJoinDrop` implementation
 
-- [ ] **T-6001** Implement `handleJoinDrop(source:target:)` on `SessionViewModel` (T-5902) per spec TR-4 and ADR-002 D5. The join body wraps `client.join(peer:)` in a `withThrowingTaskGroup` that enforces a 10-second client-side timeout (per UQ-3 / ADR D5 / design-spec §4.1 step 4):
+- [x] **T-6001** Implement `handleJoinDrop(source:target:)` on `SessionViewModel` (T-5902) per spec TR-4 and ADR-002 D5. The join body wraps `client.join(peer:)` in a `withThrowingTaskGroup` that enforces a 10-second client-side timeout (per UQ-3 / ADR D5 / design-spec §4.1 step 4):
 
   ```swift
   @MainActor
@@ -220,7 +220,7 @@ Implement the join handler that the E-59 drop destination invokes. After a drop,
 
 ### Loading chip in the chip row
 
-- [ ] **T-6002** Extend the F3 chip-row view (`iOS/Voxio/Features/Home/GroupChipRow.swift` or the E-53 equivalent) to render two chip variants per spec US-81:
+- [x] **T-6002** Extend the F3 chip-row view (`iOS/Voxio/Features/Home/GroupChipRow.swift` or the E-53 equivalent) to render two chip variants per spec US-81:
   - **Settled** (existing F3 behaviour): full opacity, label only, optionally a `+` prefix per F3 design.
   - **Loading**: dimmed label (0.6 opacity), inline 10 pt `ProgressView()` replacing the `+` prefix per design-spec §4.1 step 3 / §4.2.
 
@@ -231,21 +231,21 @@ Implement the join handler that the E-59 drop destination invokes. After a drop,
 
 ### Chip pulse on success
 
-- [ ] **T-6003** Add `pulseChip(for: Speaker)` on `SessionViewModel`. Implementation: maintain a `pulsingChips: Set<String>` `@State` that the chip view observes. On success, insert the speaker's identifier id into the set, schedule a `Task` to remove it after 0.4 s. The chip view applies `.scaleEffect(pulsingChips.contains(id) ? 1.0 : 1.0)` with a manual opacity keyframe `1.0 → 0.7 → 1.0` over 0.4 s per design-spec §4.1 step 7. Use `withAnimation(.easeInOut(duration: 0.2))` twice (in then out) or a single keyframe animator.
+- [x] **T-6003** Add `pulseChip(for: Speaker)` on `SessionViewModel`. Implementation: maintain a `pulsingChips: Set<String>` `@State` that the chip view observes. On success, insert the speaker's identifier id into the set, schedule a `Task` to remove it after 0.4 s. The chip view applies `.scaleEffect(pulsingChips.contains(id) ? 1.0 : 1.0)` with a manual opacity keyframe `1.0 → 0.7 → 1.0` over 0.4 s per design-spec §4.1 step 7. Use `withAnimation(.easeInOut(duration: 0.2))` twice (in then out) or a single keyframe animator.
 
   Respect `@Environment(\.accessibilityReduceMotion)` per spec NFR — if reduced, replace the pulse with a single 0.2-second opacity flash.
   *Depends on: T-6002.*
 
 ### Source-pill lockout
 
-- [ ] **T-6004** Aggregate `joinsInFlight` across all session view models at the home view level so the bottom bar can render correct opacity per spec TR-5. Add an `@State` `joinsInFlightUnion: Set<String>` on `HomeView` (or on a shared `@Observable HomeViewModel`), recomputed via `.onChange(of: sessionVMs.flatMap(\.joinsInFlight))`. The bottom-bar pill renderer (T-5903) consumes this set: a pill whose identifier is in `joinsInFlightUnion` renders at 0.5 opacity and is non-draggable (the `isDraggable` helper from T-5903 already checks `joinsInFlight`; this task just plumbs the set through).
+- [x] **T-6004** Aggregate `joinsInFlight` across all session view models at the home view level so the bottom bar can render correct opacity per spec TR-5. Add an `@State` `joinsInFlightUnion: Set<String>` on `HomeView` (or on a shared `@Observable HomeViewModel`), recomputed via `.onChange(of: sessionVMs.flatMap(\.joinsInFlight))`. The bottom-bar pill renderer (T-5903) consumes this set: a pill whose identifier is in `joinsInFlightUnion` renders at 0.5 opacity and is non-draggable (the `isDraggable` helper from T-5903 already checks `joinsInFlight`; this task just plumbs the set through).
 
   When the API call resolves (success or failure) and `joinsInFlight` clears the entry, the source pill regains full opacity within one animation frame.
   *Depends on: T-6001, T-5903.*
 
 ### Verification
 
-- [ ] **T-6005** Manual integration test on device with two speakers (Mozart): one playing host, one idle source.
+- [ ] **T-6005** (deferred: manual verification on device) Manual integration test on device with two speakers (Mozart): one playing host, one idle source.
   1. Drag the idle pill onto the playing card. Confirm the loading chip appears within one frame, the source pill dims to 0.5 immediately, and the spinner spins for the full `beolinkExpand` duration (typically 1–3 s on LAN, up to 10 s in degraded conditions).
   2. On success: chip transitions to full opacity, brief pulse plays, source pill regains full opacity, chip remains in the row, bottom-bar pill connector to the host shows up (per F3 §2.3).
   3. Force a failure: airplane-mode the host speaker mid-call (or use a stub client that throws `.timeout`). Confirm the loading chip fades out, source pill regains full opacity, error toast appears with reason text, error haptic fires.
