@@ -121,6 +121,13 @@ class AVService {
     /// request is recycled.
     private func installTap() {
         let inputNode = engine.inputNode
+        // Defensive: removeTap is a no-op when no tap is installed, but
+        // protects against the "nullptr == Tap()" AVFoundation crash that
+        // occurs if installTap runs while another tap is still attached —
+        // e.g. when a duplicate startRecording() races a stopRecording()'s
+        // async tap removal, or when foreground/background observers fire
+        // unexpectedly.
+        inputNode.removeTap(onBus: 0)
         let format    = inputNode.outputFormat(forBus: 0)
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             guard let self, !self.stopped else { return }
