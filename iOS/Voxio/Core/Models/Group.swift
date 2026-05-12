@@ -1,5 +1,10 @@
 import Foundation
 
+// MARK: - SpeakerGroup
+//
+// E-57 changes applied in this file:
+//   T-5704 — setVolumeOnAllMembers(_:) concurrent fan-out via withTaskGroup.
+
 @Observable @MainActor
 final class SpeakerGroup: Identifiable {
     var id: String
@@ -28,5 +33,33 @@ final class SpeakerGroup: Identifiable {
             .map { $0.identifier.jid ?? $0.identifier.host }
             .sorted()
             .joined(separator: ",")
+    }
+}
+
+// MARK: - Volume broadcast (E-57 T-5704)
+
+extension SpeakerGroup {
+    /// Broadcasts a volume level to all group members concurrently.
+    /// Returns per-member results so the caller can surface partial failures.
+    /// - Parameter level: Volume level 0–100.
+    /// - Returns: An array of (speaker, Result) pairs — one per member, in arrival order.
+    func setVolumeOnAllMembers(_ level: Int) async -> [(speaker: Speaker, result: Result<Void, Error>)] {
+        await withTaskGroup(of: (Speaker, Result<Void, Error>).self) { taskGroup in
+            for member in members {
+                taskGroup.addTask {
+                    do {
+                        try await member.setVolume(level)
+                        return (member, .success(()))
+                    } catch {
+                        return (member, .failure(error))
+                    }
+                }
+            }
+            var results: [(speaker: Speaker, result: Result<Void, Error>)] = []
+            for await (spk, res) in taskGroup {
+                results.append((speaker: spk, result: res))
+            }
+            return results
+        }
     }
 }

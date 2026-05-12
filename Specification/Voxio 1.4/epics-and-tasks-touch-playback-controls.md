@@ -124,7 +124,7 @@ Replace the existing static gold `volumeTrack` view in `SpeakerCard` with an int
 
 ### Slider component
 
-- [ ] **T-5701** Create a new file `iOS/Voxio/DesignSystem/InteractiveVolumeBar.swift` defining a private SwiftUI view `InteractiveVolumeBar`:
+- [x] **T-5701** Create a new file `iOS/Voxio/DesignSystem/InteractiveVolumeBar.swift` defining a private SwiftUI view `InteractiveVolumeBar`:
   ```swift
   struct InteractiveVolumeBar: View {
       @Binding var value: Int
@@ -140,7 +140,7 @@ Replace the existing static gold `volumeTrack` view in `SpeakerCard` with an int
   Trailing volume number (12 pt medium, `.secondary`, 28 pt fixed width) is rendered to the right of the bar inside the same `HStack`, identical to the current `volumeTrack` layout.
   *Depends on: T-5601.*
 
-- [ ] **T-5702** Replace `SpeakerCard.volumeTrack(level:)` (current static implementation, lines ~127–150 of `SpeakerCard.swift`) with `InteractiveVolumeBar` from T-5701. Wire the binding:
+- [x] **T-5702** Replace `SpeakerCard.volumeTrack(level:)` (current static implementation, lines ~127–150 of `SpeakerCard.swift`) with `InteractiveVolumeBar` from T-5701. Wire the binding:
   ```swift
   InteractiveVolumeBar(
       value: Binding<Int>(
@@ -167,7 +167,7 @@ Replace the existing static gold `volumeTrack` view in `SpeakerCard` with an int
 
 ### Limit haptic
 
-- [ ] **T-5703** Implement the private `handleLimitHaptic(_ value: Int)` method on `SpeakerCard`:
+- [x] **T-5703** Implement the private `handleLimitHaptic(_ value: Int)` method on `SpeakerCard`:
   - If `value == 0` and `lastLimitHaptic != 0`: fire `HapticEngine.shared.limitReached()`, post `AccessibilityNotification.Announcement("Volume at minimum").post()`, set `lastLimitHaptic = 0`.
   - If `value == 100` and `lastLimitHaptic != 100`: fire `HapticEngine.shared.limitReached()`, post `AccessibilityNotification.Announcement("Volume at maximum").post()`, set `lastLimitHaptic = 100`.
   - If `value > 0 && value < 100`: set `lastLimitHaptic = nil` (re-arms the haptic so a return to the limit fires again).
@@ -177,7 +177,7 @@ Replace the existing static gold `volumeTrack` view in `SpeakerCard` with an int
 
 ### Group volume broadcast
 
-- [ ] **T-5704** Add `func setVolumeOnAllMembers(_ level: Int) async -> [(speaker: Speaker, result: Result<Void, Error>)]` to `SpeakerGroup` (`iOS/Voxio/Core/Models/Group.swift`). Implementation uses `withTaskGroup`:
+- [x] **T-5704** Add `func setVolumeOnAllMembers(_ level: Int) async -> [(speaker: Speaker, result: Result<Void, Error>)]` to `SpeakerGroup` (`iOS/Voxio/Core/Models/Group.swift`). Implementation uses `withTaskGroup`:
   ```swift
   await withTaskGroup(of: (Speaker, Result<Void, Error>).self) { taskGroup in
       for member in members {
@@ -199,7 +199,7 @@ Replace the existing static gold `volumeTrack` view in `SpeakerCard` with an int
   Per spec UQ-3 resolved: volume is broadcast to all members concurrently. Failures on individual members do not block other members.
   *Depends on: T-5701 (file infrastructure not strictly required, but tasks are sequenced for review clarity).*
 
-- [ ] **T-5705** Implement the `broadcastVolume(_ level: Int) async` private method on `SpeakerCard`:
+- [x] **T-5705** Implement the `broadcastVolume(_ level: Int) async` private method on `SpeakerCard`:
   ```swift
   private func broadcastVolume(_ level: Int) async {
       let results = await group.setVolumeOnAllMembers(level)
@@ -221,12 +221,12 @@ Replace the existing static gold `volumeTrack` view in `SpeakerCard` with an int
 
 ### Accessibility
 
-- [ ] **T-5706** Add a `.accessibilityValue("\(value) percent")` and `.accessibilityLabel("Volume")` to the `InteractiveVolumeBar`. VoiceOver users adjust via the rotor's "Adjust value" gesture — implement `.accessibilityAdjustableAction { direction in ... }` so VoiceOver up/down adjusts in steps of 5 and dispatches the same `setVolume` call as the visual drag. Limit announcements from T-5703 fire identically for VoiceOver-driven adjustments.
+- [x] **T-5706** Add a `.accessibilityValue("\(value) percent")` and `.accessibilityLabel("Volume")` to the `InteractiveVolumeBar`. VoiceOver users adjust via the rotor's "Adjust value" gesture — implement `.accessibilityAdjustableAction { direction in ... }` so VoiceOver up/down adjusts in steps of 5 and dispatches the same `setVolume` call as the visual drag. Limit announcements from T-5703 fire identically for VoiceOver-driven adjustments.
   *Depends on: T-5702, T-5703.*
 
 ### Verification
 
-- [ ] **T-5707** Manual test pass on a real Mozart speaker (single speaker, no group). Test matrix:
+- [ ] **T-5707** (deferred: manual verification on device) Manual test pass on a real Mozart speaker (single speaker, no group). Test matrix:
   1. Drag slider from 20 to 60 → volume number updates live; `setVolume(60)` fires once on release; speaker volume changes to 60.
   2. Drag slider to 0 → `limitReached` haptic fires; VoiceOver announces "Volume at minimum"; `setVolume(0)` fires on release.
   3. Drag slider to 100 → `limitReached` haptic fires; "Volume at maximum" announced; `setVolume(100)` fires on release.
@@ -236,14 +236,14 @@ Replace the existing static gold `volumeTrack` view in `SpeakerCard` with an int
   7. WS event arrives mid-drag (e.g. another app on the network changes volume) → slider position remains at the dragged value during drag (`dragVolume` overrides `speaker.volume`); on release, `dragVolume` clears and slider snaps to the WS-updated value if no further `setVolume` is in flight.
   *Depends on: T-5702, T-5703, T-5705.*
 
-- [ ] **T-5708** Manual test pass on a multi-speaker group. Two Mozart speakers joined into a group:
+- [ ] **T-5708** (deferred: manual verification on device) Manual test pass on a multi-speaker group. Two Mozart speakers joined into a group:
   1. Drag the lead speaker's card slider to 50 → both speakers' volumes change to 50 within ~1 s.
   2. Disconnect one follower mid-drag → release at 30 → error toast "Volume failed on 1 speaker"; the still-connected speaker reaches 30; the disconnected speaker remains at its prior level.
   3. Disconnect both speakers → drag and release → error toast "Volume failed on 2 speakers".
   4. Verify with the speakers' physical knobs / B&O app that all members reached the broadcast value.
   *Depends on: T-5705.*
 
-- [ ] **T-5709** Unit test in `iOS/VoxioTests/SpeakerGroupTests.swift` (create file if absent) covering `setVolumeOnAllMembers(_:)`. Use mock `Speaker` instances (or test doubles) with stub `SpeakerClient` implementations that record calls. Assert:
+- [ ] **T-5709** (deferred: no XCTest target in this repo; covered in test plan) Unit test in `iOS/VoxioTests/SpeakerGroupTests.swift` (create file if absent) covering `setVolumeOnAllMembers(_:)`. Use mock `Speaker` instances (or test doubles) with stub `SpeakerClient` implementations that record calls. Assert:
   - All members' `setVolume` are called with the same level.
   - All calls are dispatched concurrently (assert via timestamps inside the mocks — first-call-time differs by < 50 ms).
   - One member throwing returns a `.failure` for that member and `.success` for others.

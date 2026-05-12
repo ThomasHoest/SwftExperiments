@@ -12,6 +12,11 @@ import SwiftUI
 //   T-5607 — .accessibilityElement(children: .contain); summary moved to headerSection.
 //   T-5609 — #Preview blocks for all four playback states.
 //
+// E-57 changes applied in this file:
+//   T-5702 — @State dragVolume/lastLimitHaptic; InteractiveVolumeBar replaces volumeTrack call.
+//   T-5703 — handleLimitHaptic(_:) — limit haptic + AccessibilityNotification, gated by lastLimitHaptic.
+//   T-5705 — broadcastVolume(_:) async — fan-out via resolvedGroup.setVolumeOnAllMembers; partial-failure toast.
+//
 // CF-1 decision: @Binding var errorMessage: String? (SwiftUI symmetry, as ADR recommends).
 // Every call site must supply errorMessage:. #Preview blocks use .constant(nil).
 
@@ -34,6 +39,16 @@ struct SpeakerCard: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorSchemeContrast) private var colorContrast
+
+    // MARK: - Volume drag state (E-57 T-5702)
+
+    /// Non-nil while the user is dragging the volume bar; overrides speaker.volume for display.
+    /// Reset to nil on drag end after broadcastVolume fires.
+    @State private var dragVolume: Int? = nil
+
+    /// Tracks which limit (0 or 100) last fired a limitReached haptic within this drag,
+    /// preventing repeated firing while held at a boundary.
+    @State private var lastLimitHaptic: Int? = nil
 
     // MARK: - Group-aware dispatch (T-5605)
 
@@ -117,13 +132,31 @@ struct SpeakerCard: View {
     private var cardContent: some View {
         switch speaker.playbackState {
         case .playing, .paused, .buffering:
-            // Playing branch: header + now-playing panel + volume track + transport row + group chips
+            // Playing branch: header + now-playing panel + volume bar + transport row + group chips
             VStack(alignment: .leading, spacing: 0) {
                 headerSection
                 nowPlayingPanel
-                if let vol = speaker.volume {
-                    volumeTrack(level: vol)
-                }
+                // T-5702: InteractiveVolumeBar replaces the static volumeTrack.
+                // dragVolume overrides speaker.volume while the user drags (WS events don't jump the bar).
+                InteractiveVolumeBar(
+                    value: Binding<Int>(
+                        get: { dragVolume ?? speaker.volume ?? 0 },
+                        set: { newValue in
+                            dragVolume = newValue
+                            handleLimitHaptic(newValue)
+                        }
+                    ),
+                    onEditingChanged: { editing in
+                        if !editing {
+                            let final = dragVolume ?? speaker.volume ?? 0
+                            Task { await broadcastVolume(final) }
+                            dragVolume = nil
+                            lastLimitHaptic = nil
+                        }
+                    }
+                )
+                .padding(.horizontal, Spacing.s24)
+                .padding(.vertical, Spacing.s12)
                 transportRow
                 // E-53 T-5304: group chip row — only shown when host has non-host members
                 if !groupMembers.isEmpty {
@@ -218,31 +251,40 @@ struct SpeakerCard: View {
         .padding(.bottom, 12)
     }
 
-    // MARK: - Volume track
+    // MARK: - Limit haptic (E-57 T-5703)
+    // Fires once per boundary crossing within a drag; resets when value returns to mid-range.
 
-    private func volumeTrack(level: Int) -> some View {
-        HStack(spacing: 10) {
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(.white.opacity(0.12))
-                        .frame(height: 4)
-                    Capsule()
-                        .fill(Color(hex: "#C8A97E"))
-                        .frame(width: geo.size.width * CGFloat(level) / 100, height: 4)
-                        .animation(.easeOut(duration: 0.3), value: level)
-                }
-                .frame(maxHeight: .infinity, alignment: .center)
-            }
-            .frame(height: 4)
-
-            Text("\(level)")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.secondary)
-                .frame(width: 28, alignment: .trailing)
+    private func handleLimitHaptic(_ value: Int) {
+        if value == 0 && lastLimitHaptic != 0 {
+            HapticEngine.shared.limitReached()
+            AccessibilityNotification.Announcement("Volume at minimum").post()
+            lastLimitHaptic = 0
+        } else if value == 100 && lastLimitHaptic != 100 {
+            HapticEngine.shared.limitReached()
+            AccessibilityNotification.Announcement("Volume at maximum").post()
+            lastLimitHaptic = 100
+        } else if value > 0 && value < 100 {
+            lastLimitHaptic = nil
         }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 24)
+    }
+
+    // MARK: - Group volume broadcast (E-57 T-5705)
+    // Dispatched on drag end; partial failures surface via showErrorToast.
+
+    private func broadcastVolume(_ level: Int) async {
+        let results = await resolvedGroup.setVolumeOnAllMembers(level)
+        let failed = results.filter {
+            if case .failure = $0.result { return true } else { return false }
+        }
+        guard !failed.isEmpty else { return }
+        for item in failed {
+            if case .failure(let error) = item.result {
+                Log.error("[\(item.speaker.name)] setVolume(\(level)) failed: \(error)")
+            }
+        }
+        let suffix = failed.count == 1 ? "speaker" : "speakers"
+        showErrorToast("Volume failed on \(failed.count) \(suffix)")
+        HapticEngine.shared.errorOccurred()
     }
 
     // MARK: - Transport row (T-5602)
