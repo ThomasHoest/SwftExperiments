@@ -76,8 +76,12 @@ struct SessionStripView: View {
             .first?.screen.bounds.width ?? 0
     }
 
+    // Outer container in HomeView constrains its VStack to `screenWidth - 40`
+    // (20 pt screen margin on each side). The card must fit *inside* that
+    // container — making it wider clips the rounded border at both edges.
+    // Match the container exactly so the border is fully visible.
     private var cardWidth: CGFloat {
-        screenWidth - (Spacing.s16 * 2)
+        screenWidth - 40
     }
 
     // MARK: - Active index for page dots (T-5205)
@@ -112,6 +116,12 @@ struct SessionStripView: View {
                 if let matchedGroup = groups.first(where: { $0.hostSpeaker.id == newHostId }) {
                     selectedSpeaker = matchedGroup.hostSpeaker
                 }
+                // Re-query the listener list each time a card comes into focus
+                // so the chip row stays in sync with externally-driven grouping
+                // changes (B&O app, physical buttons, other devices) without
+                // waiting for a WS event or a fresh boot.
+                let svc = discovery
+                Task { await svc.refreshGroups() }
             }
             // T-5202: selectedSpeaker → strip (with re-entrancy guard and idle-speaker handling)
             .onChange(of: selectedSpeaker?.id) { _, _ in

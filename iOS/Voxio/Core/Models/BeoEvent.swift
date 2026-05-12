@@ -28,5 +28,10 @@ enum BeoEvent {
     case playbackSource(Source)
     case power(PowerState)
     case progress(PlaybackProgressEvent)
+    /// Beolink (multiroom) topology change hint. Mozart fires
+    /// WebSocketEventBeolinkExperiencesResult / WebSocketEventBeolinkPeersResult
+    /// when listeners or peer relationships change. Payload not parsed — receivers
+    /// re-query GET /beolink/listeners to learn the new state.
+    case beolinkChanged
     case unknown(String)
 }

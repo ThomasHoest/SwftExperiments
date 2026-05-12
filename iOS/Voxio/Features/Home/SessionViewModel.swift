@@ -166,10 +166,22 @@ final class SessionViewModel {
                         argument: "\(source.name) joined \(target.name)"
                     )
                 }
-                // ≥ 300 ms debounce per ADR-003 §5 contract 6 (350 ms chosen).
-                try? await Task.sleep(for: .milliseconds(350))
-                Log.info("[Join] post-debounce — calling discovery.refreshGroups()")
-                await self?.discovery.refreshGroups()
+                // Reconciliation is handled by:
+                //   1. The optimistic merge above (immediate UI update).
+                //   2. WS topology events (Mozart fires WebSocketEventNotification
+                //      on the leader's socket after the expand; the discovery
+                //      service has a 500 ms debounce that funnels these into a
+                //      refreshGroups call, which itself respects the merge
+                //      cooldown so the optimistic state survives the propagation
+                //      window).
+                //   3. Card focus changes (refreshGroups gated by cooldown).
+                //
+                // An explicit refresh here was previously wiping the merge
+                // because /beolink/listeners can lag the /beolink/expand
+                // success by several seconds — even returning a successful
+                // empty list — and reconstruction has no way to distinguish
+                // "speaker has no followers" from "speaker hasn't propagated
+                // the new follower yet." See SpeakerDiscoveryService.refreshGroups.
             } catch {
                 let elapsed = Date().timeIntervalSince(started) * 1000
                 Log.error("[Join] FAILED \(source.name) → \(target.name) in \(Int(elapsed)) ms: \(error)")

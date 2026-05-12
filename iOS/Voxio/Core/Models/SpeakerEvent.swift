@@ -6,4 +6,7 @@ enum SpeakerEvent {
     case volume(level: Int, muted: Bool)
     case battery(Battery)
     case source(name: String?, id: String?)
+    /// Beolink (multiroom) topology hint. Receivers should re-query
+    /// /beolink/listeners to learn the new state. No payload.
+    case groupHint
 }

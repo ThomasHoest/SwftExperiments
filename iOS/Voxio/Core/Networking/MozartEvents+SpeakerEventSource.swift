@@ -37,6 +37,8 @@ extension MozartEvents: SpeakerEventSource {
             return .battery(b)
         case .playbackSource(let s):
             return .source(name: s.displayName, id: s.id)
+        case .beolinkChanged:
+            return .groupHint
         case .power, .progress, .unknown:
             return nil
         }

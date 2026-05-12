@@ -64,6 +64,12 @@ class Speaker: Identifiable {
     private let eventSource: any SpeakerEventSource
     private var eventTask: Task<Void, Never>?
 
+    /// Invoked when a beolink (multiroom) topology event arrives over the WS.
+    /// `SpeakerDiscoveryService` wires this to a debounced `refreshGroups()` so
+    /// listener-list changes triggered by other apps (B&O app, physical buttons,
+    /// drag/drop on another device) are reflected without a polling round-trip.
+    var onGroupHint: (() -> Void)?
+
     init(host: String, client: any SpeakerClient, eventSource: any SpeakerEventSource, platform: SpeakerPlatform) {
         self.host        = host
         self.name        = host
@@ -185,6 +191,10 @@ class Speaker: Identifiable {
             if id != sourceID { metadata = nil }
             if let n = sourceName { source = n }
             sourceID = id
+        case .groupHint:
+            Log.info("[\(name)] beolink topology event → notifying discovery")
+            onGroupHint?()
+            return  // No state change on the speaker; skip the widget write.
         }
         WidgetStateWriter.write(speaker: self)
     }

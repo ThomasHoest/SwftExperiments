@@ -17,6 +17,8 @@ class SpeakerDiscoveryService: ObservableObject {
     private let matcher = SpeakerNameMatcher()
     private(set) var activeSpeaker: Speaker?
     private var autoRetryTask: Task<Void, Never>?
+    /// Coalesces multiple WS group-hint events into a single refreshGroups call.
+    private var groupHintRefreshTask: Task<Void, Never>?
 
     init() {
         discovery.onSpeakerDiscovered = { [weak self] ip, platform in
@@ -82,6 +84,8 @@ class SpeakerDiscoveryService: ObservableObject {
         Log.info("[SDS] initializing \(platform.rawValue) speaker at \(ip)")
         let (client, eventSource) = makeSpeakerClientPair(host: ip, platform: platform)
         let speaker = Speaker(host: ip, client: client, eventSource: eventSource, platform: platform)
+        // Beolink topology hint from WS — coalesced into one refresh per 500 ms.
+        speaker.onGroupHint = { [weak self] in self?.scheduleGroupHintRefresh() }
         do {
             try await speaker.initialize()
             // Cancel any pending auto-retry now that we have at least one speaker.
@@ -96,6 +100,35 @@ class SpeakerDiscoveryService: ObservableObject {
             Log.error("[SDS] rejected \(ip) (\(platform.rawValue)): \(error)")
         }
     }
+
+    /// Coalesces multiple WS group-hint events (which can fire in bursts during a
+    /// multiroom transition) into a single refreshGroups call. 500 ms is short
+    /// enough to feel responsive but long enough to absorb a burst of related
+    /// events firing across multiple speakers as a session forms or dissolves.
+    private func scheduleGroupHintRefresh() {
+        groupHintRefreshTask?.cancel()
+        groupHintRefreshTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled, let self else { return }
+            Log.info("[SDS] WS group-hint debounce elapsed — refreshGroups()")
+            await self.refreshGroups()
+        }
+    }
+
+    // MARK: - Merge cooldown
+    //
+    // Mozart's `/beolink/listeners` lags 1–5 s behind a successful
+    // `/beolink/expand` — the speaker returns 2xx for the expand but the
+    // listeners endpoint reports the new follower only after internal state
+    // settles. Within that window, reconstructGroupsAsync sees an empty (or
+    // partial) listeners list and rebuilds the speaker's group from scratch,
+    // wiping the optimistic merge that just made the dropped pill appear on
+    // the card. The cooldown gates refreshGroups() so the local optimistic
+    // state is the source of truth for a short period after a merge, then
+    // refreshes resume normally to reconcile with whatever the server reports.
+    private var mergeCooldownUntil: Date = .distantPast
+
+    private static let mergeCooldownSeconds: TimeInterval = 5
 
     private func removeSpeaker(ip: String) {
         guard let idx = allSpeakers.firstIndex(where: { $0.host == ip }) else { return }
@@ -137,6 +170,17 @@ class SpeakerDiscoveryService: ObservableObject {
                     self.scheduleAutoRetry()
                 }
             }
+            // Boot-time follow-up refresh: by the time we reach this point each
+            // speaker has been through scheduleReconstruction() once (500 ms
+            // after add). Mozart's /beolink/listeners endpoint can lag a couple
+            // of seconds after a speaker comes online, so the first sweep may
+            // return empty even when the speakers are actually grouped. Run one
+            // more refresh ~3 s later so that the listener state has time to
+            // settle on each device.
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            guard !Task.isCancelled else { return }
+            Log.info("[SDS] post-settle follow-up — refreshGroups()")
+            await self.refreshGroups()
         }
     }
 
@@ -162,7 +206,17 @@ class SpeakerDiscoveryService: ObservableObject {
     /// ADR-003: forces a fresh group reconstruction. F2 (drag-to-join,
     /// tap-to-remove) calls this after every expand/leave write to surface the
     /// change in UI within ~500 ms. Public surface; safe to call any time.
+    ///
+    /// Skips if a merge happened in the last `mergeCooldownSeconds` — the
+    /// optimistic local state is authoritative until Mozart's listeners
+    /// endpoint catches up.
     func refreshGroups() async {
+        let now = Date()
+        if now < mergeCooldownUntil {
+            let remaining = mergeCooldownUntil.timeIntervalSince(now)
+            Log.info("[SDS] refreshGroups skipped — merge cooldown (\(String(format: "%.1f", remaining))s remaining)")
+            return
+        }
         await reconstructGroupsAsync()
     }
 
@@ -189,20 +243,53 @@ class SpeakerDiscoveryService: ObservableObject {
         var assigned: Set<Speaker.ID> = []
 
         // ── Phase 1: leader-side scan (Mozart speakers report their listeners) ──
+        //
+        // Failure mode: getListeners() can time out (5 s) on a slow/asleep
+        // Mozart speaker, OR return empty while the speaker hasn't yet
+        // propagated a just-completed /beolink/expand. With the naïve
+        // `try? await ... ?? []` pattern both outcomes collapse to "speaker is
+        // not a leader" — which then strips a real leader of its followers and
+        // wipes any optimistic merge that drag-to-join just performed. We
+        // distinguish the two: API failure (catch) preserves the speaker's
+        // current group from `groups` if it has one with > 1 member; empty
+        // result (success) still falls through to Phase 2/3 since the speaker
+        // genuinely has no followers.
         for speaker in speakers where speaker.identifier.platform == .mozart {
             guard !assigned.contains(speaker.id) else { continue }
-            let listeners = (try? await speaker.client.getListeners()) ?? []
-            guard !listeners.isEmpty, let selfJid = speaker.identifier.jid else { continue }
-            var members: [Speaker] = [speaker]
-            for listener in listeners {
-                if let s = speakers.first(where: { $0.identifier.jid == listener.jid }),
-                   !members.contains(where: { $0.id == s.id }) {
-                    members.append(s)
-                }
+            guard let selfJid = speaker.identifier.jid else { continue }
+
+            let listenersOrNil: [BeolinkPeer]?
+            do {
+                listenersOrNil = try await speaker.client.getListeners()
+            } catch {
+                Log.info("[SDS] getListeners failed for \(speaker.name): \(error). Preserving existing group if any.")
+                listenersOrNil = nil
             }
-            groupBuilder[selfJid] = members
-            leaderOrder.append(selfJid)
-            for m in members { assigned.insert(m.id) }
+
+            if let listeners = listenersOrNil, !listeners.isEmpty {
+                var members: [Speaker] = [speaker]
+                for listener in listeners {
+                    if let s = speakers.first(where: { $0.identifier.jid == listener.jid }),
+                       !members.contains(where: { $0.id == s.id }) {
+                        members.append(s)
+                    }
+                }
+                groupBuilder[selfJid] = members
+                leaderOrder.append(selfJid)
+                for m in members { assigned.insert(m.id) }
+            } else if listenersOrNil == nil,
+                      let existing = groups.first(where: {
+                          $0.hostSpeaker.id == speaker.id && $0.members.count > 1
+                      }) {
+                // API failed AND the local model still considers this speaker a
+                // leader → trust local state until the next refresh confirms.
+                Log.info("[SDS] preserving \(speaker.name)'s existing group of \(existing.members.count) member(s) (API unavailable)")
+                groupBuilder[selfJid] = existing.members
+                leaderOrder.append(selfJid)
+                for m in existing.members { assigned.insert(m.id) }
+            }
+            // else: success + empty listeners → genuinely solo or follower;
+            //       fall through to Phase 2 / Phase 3.
         }
 
         // ── Phase 2: follower-side cross-check (ASE always; Mozart fallback) ──
@@ -257,15 +344,33 @@ class SpeakerDiscoveryService: ObservableObject {
         WidgetStateWriter.writeDiscoveredSpeakers(speakers)
     }
 
-    // Group state mutations (called from E-32 join/leave dispatch)
+    // Group state mutations (called from E-32 join/leave dispatch).
+    //
+    // SwiftUI propagation note: `groups` is `@Published` on an ObservableObject.
+    // `@Published` fires `objectWillChange` on array mutations (replace, append,
+    // remove) but NOT on inner mutations of the class instances the array holds
+    // — `tg.members.append(...)` alone is invisible to views observing through
+    // `discovery.objectWillChange`. The merge branch therefore replaces the
+    // SpeakerGroup at its index with a freshly-constructed instance carrying
+    // the updated member list, guaranteeing both array-level and instance-level
+    // diffing fire.
     func mergeIntoSpeakerGroup(source: Speaker, target: Speaker) {
+        Log.info("[SDS] mergeIntoSpeakerGroup ENTER source=\(source.name) target=\(target.name)")
         removeMember(source)
-        if let tg = groups.first(where: { $0.members.contains { $0.id == target.id } }) {
-            tg.members.append(source)
-            tg.id = SpeakerGroup.makeId(for: tg.members)
+        if let idx = groups.firstIndex(where: { $0.members.contains { $0.id == target.id } }) {
+            let old = groups[idx]
+            let new = SpeakerGroup(members: old.members + [source], hostSpeaker: old.hostSpeaker)
+            groups[idx] = new
+            let names = new.members.map(\.name).joined(separator: ", ")
+            Log.info("[SDS] mergeIntoSpeakerGroup → \(new.hostSpeaker.name) now has \(new.members.count) member(s): [\(names)]")
         } else {
-            groups.append(SpeakerGroup(members: [target, source], hostSpeaker: target))
+            let new = SpeakerGroup(members: [target, source], hostSpeaker: target)
+            groups.append(new)
+            Log.info("[SDS] mergeIntoSpeakerGroup → created new group \(new.hostSpeaker.name) with \(new.members.count) member(s)")
         }
+        // Guard the optimistic merge from being clobbered by a refresh that
+        // reads listeners before Mozart has internally propagated the expand.
+        mergeCooldownUntil = Date().addingTimeInterval(Self.mergeCooldownSeconds)
     }
 
     func removeMember(_ speaker: Speaker) {
@@ -275,8 +380,10 @@ class SpeakerDiscoveryService: ObservableObject {
             if group.members.isEmpty {
                 groups.remove(at: gi)
             } else if group.hostSpeaker.id == speaker.id {
+                // Host left → promote first remaining member. The group ID
+                // anchors to the host's stable identifier, so rebuild it.
                 group.hostSpeaker = group.members[0]
-                group.id = SpeakerGroup.makeId(for: group.members)
+                group.id = SpeakerGroup.makeId(forHost: group.hostSpeaker)
             }
             return
         }
