@@ -12,9 +12,14 @@ struct WaveformView: View {
     private static let maxHeight:  CGFloat     = 44
 
     var body: some View {
-        HStack(alignment: .center, spacing: 6) {
+        HStack(alignment: .bottom, spacing: 6) {
             ForEach(0..<5, id: \.self) { i in bar(at: i) }
         }
+        // Pin to a fixed slot anchored to the bottom. HStack uses .bottom alignment so bars
+        // rise from a common baseline rather than growing centred (which would expand the
+        // HStack's intrinsic height as bars grow and shift the status row below). The outer
+        // .frame at the call site is 44 pt; we anchor inside that frame to .bottom too.
+        .frame(height: Self.maxHeight, alignment: .bottom)
         .onAppear {
             breathTask = Task { @MainActor in
                 while !Task.isCancelled {

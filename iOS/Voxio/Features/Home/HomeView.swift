@@ -72,7 +72,10 @@ struct HomeView: View {
             VStack(spacing: 0) {
                 statusBar
 
-                Spacer(minLength: 24)
+                // Fixed-height gap below statusBar — keeping this rigid means the single
+                // flex Spacer between cardArea and voiceFeedback absorbs 100% of any
+                // cardArea height change, so voiceFeedback stays put.
+                Color.clear.frame(height: 24)
 
                 cardArea
 
@@ -85,7 +88,13 @@ struct HomeView: View {
                 if network.isOnWifi {
                     voiceFeedback
 
-                    Spacer(minLength: 20)
+                    // Fixed-height gap below voiceFeedback. With this fixed (instead of a
+                    // flex Spacer), only the two Spacers ABOVE voiceFeedback are flexible.
+                    // If cardArea height fluctuates during boot (REST data arriving, favorites
+                    // loading, metadata settling), the two flex Spacers absorb the change
+                    // proportionally and voiceFeedback's y-position stays constant — so the
+                    // "Lytter…" status text doesn't drift up and down with each redraw.
+                    Color.clear.frame(height: 20)
 
                     // T-5408: changed from count > 1 to count >= 1 (US-62 acceptance criterion —
                     // idle speakers are shown in the bar; bar appears as soon as one speaker is discovered).
@@ -384,22 +393,29 @@ struct HomeView: View {
             WaveformView(audioLevel: audioLevel, isListening: isListening)
                 .frame(height: 44)
 
-            if !transcriptController.text.isEmpty {
-                Text(transcriptController.text)
-                    .font(BeoType.confirmation)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
-                    .transition(.opacity)
-                    .animation(.easeIn(duration: 0.15), value: transcriptController.text)
-                    .onTapGesture { transcriptController.clearNow() }
-            }
+            // Fixed-height transcript slot (60 pt = ~2 lines of BeoType.confirmation @ 17pt + 16pt
+            // top padding). Use a Color.clear placeholder with the Text as an overlay so the
+            // slot's frame is locked regardless of transcript content, length, or presence —
+            // this prevents the status row below ("Lytter…") from bouncing when the speech
+            // recognizer fires partial transcripts (which happens continuously when a speaker
+            // is playing music in the room).
+            Color.clear
+                .frame(height: 60)
+                .overlay(alignment: .top) {
+                    Text(transcriptController.text)
+                        .font(BeoType.confirmation)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+                        .animation(.easeIn(duration: 0.15), value: transcriptController.text)
+                        .onTapGesture { transcriptController.clearNow() }
+                }
 
             Text(micStatus)
                 .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.white.opacity(0.75))
                 .padding(.top, 12)
             // HintCardView removed per E-38; replaced by OnboardingView fullScreenCover
         }

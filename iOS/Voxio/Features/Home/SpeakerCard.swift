@@ -92,8 +92,13 @@ struct SpeakerCard: View {
                 ? RoundedRectangle(cornerRadius: Radius.card).stroke(BeoColor.muted, lineWidth: 1)
                 : nil
         )
+        // Scope the cardExpand spring to the scaleEffect transform only — wrapping it in a
+        // .transaction would still animate sibling state changes (favorites loading, metadata
+        // arriving) in the same render. Using .animation(value:) without a spring (which rings)
+        // keeps the expand subtle and prevents layout-shift bouncing that propagated through to
+        // the voice feedback area below the card at first boot.
         .scaleEffect(reduceMotion ? 1.0 : (isExpanded ? 1.02 : 1.0))
-        .animation(reduceMotion ? .easeInOut(duration: 0.2) : BeoAnimation.cardExpand, value: isExpanded)
+        .animation(reduceMotion ? .easeInOut(duration: 0.2) : .easeOut(duration: 0.2), value: isExpanded)
         // T-5607: loosened from .ignore to .contain so transport button is VoiceOver-reachable.
         // Card-level summary moved to headerSection's accessibilityLabel.
         .accessibilityElement(children: .contain)
@@ -237,7 +242,13 @@ struct SpeakerCard: View {
         }
         .padding(.horizontal, 24)
         .padding(.top, 28)
-        .padding(.bottom, speaker.isPlaying ? 16 : 28)
+        // Use the cardContent branch as the discriminator, not speaker.isPlaying:
+        // .buffering toggles isPlaying off briefly during normal streaming, which would
+        // bounce the header padding (and everything below it) by 12 pt on each buffer event.
+        // The nowPlayingPanel renders in all of .playing/.paused/.buffering, so the same
+        // 16 pt bottom padding applies to all three; only the .stopped branch (which shows
+        // a Play pill instead of nowPlayingPanel) needs the looser 28 pt for visual balance.
+        .padding(.bottom, speaker.playbackState == .stopped ? 28 : 16)
         // T-5607: card-level summary now lives here so VoiceOver reads it first,
         // then moves on to the individually-reachable transport button.
         .accessibilityElement(children: .ignore)
@@ -344,8 +355,8 @@ struct SpeakerCard: View {
             Spacer()
         }
         .padding(.horizontal, Spacing.s24)
-        .padding(.top, Spacing.s16)
-        .padding(.bottom, Spacing.s20)
+        .padding(.top, Spacing.s8)
+        .padding(.bottom, Spacing.s8)
         .accessibilityElement(children: .contain)
     }
 
