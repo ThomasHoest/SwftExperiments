@@ -48,6 +48,12 @@ struct HomeView: View {
     // E-56 T-5606 — SpeakerCard transport error surface. onChange converts to Toast and resets to nil.
     @State private var cardErrorMessage: String?
 
+    // E-59 T-5905 — joinsInFlight aggregation for SpeakerSelectorPill opacity gating.
+    // Written by SessionStripView via Binding; read here to forward to SpeakerSelectorPill.
+    // Option B from the ADR: SessionStripView writes, HomeView owns @State, forwards to SelectorPill.
+    // Stays empty in E-59 scope (handleJoinDrop stub). E-60 T-6004 fills it in.
+    @State private var joinsInFlightUnion: Set<String> = []
+
     // Exposed for Settings sheet (E-39 T-3906)
     var onboardingSheetBinding: Binding<Bool> { $showOnboardingSheet }
 
@@ -102,8 +108,15 @@ struct HomeView: View {
                         SpeakerSelectorPill(
                             speakers: discovery.groups.flatMap(\.members),
                             selectedSpeaker: $selectedSpeaker,
-                            groups: discovery.groups
+                            groups: discovery.groups,
+                            joinsInFlightUnion: joinsInFlightUnion   // E-59 T-5903
                         )
+                        // E-59 T-5909 — Coach mark applied to the bottom bar region.
+                        // hasEligiblePill: true when any speaker in any group is draggable.
+                        .modifier(GroupingCoachMark(
+                            hasEligiblePill: hasEligiblePillForCoachMark,
+                            onDismiss: {}
+                        ))
                         .padding(.bottom, 12)
                     }
                 }
@@ -323,6 +336,23 @@ struct HomeView: View {
         discovery.groups.filter { $0.hostSpeaker.isPlaying }
     }
 
+    // E-59 T-5909: True when at least one speaker is eligible to be dragged.
+    // Computes the same eligibility as SpeakerSelectorPill.isDraggable:
+    //   — not a playing host, not already in a multi-speaker group, not in joinsInFlight.
+    private var hasEligiblePillForCoachMark: Bool {
+        let allSpeakers = discovery.groups.flatMap(\.members)
+        return allSpeakers.contains { speaker in
+            let isPlayingHost = discovery.groups.contains {
+                $0.hostSpeaker.id == speaker.id && $0.playbackState == .playing
+            }
+            let isInMulti = discovery.groups.contains {
+                $0.members.count > 1 && $0.members.contains { $0.id == speaker.id }
+            }
+            let inFlight = joinsInFlightUnion.contains(speaker.identifier.id)
+            return !isPlayingHost && !isInMulti && !inFlight
+        }
+    }
+
     @ViewBuilder
     private var cardArea: some View {
         // T-5505: Four-state routing wrapping the E-52 T-5206 body.
@@ -350,7 +380,9 @@ struct HomeView: View {
                         roll: motionManager.roll,
                         pitch: motionManager.pitch,
                         isCommandActive: isCommandActive,
-                        errorMessage: $cardErrorMessage   // E-56 T-5606
+                        errorMessage: $cardErrorMessage,   // E-56 T-5606
+                        discovery: discovery,              // E-59 T-5905 — for SessionViewModel creation
+                        joinsInFlightUnionBinding: $joinsInFlightUnion  // E-59 Option B
                     )
                 } else if let speaker = displayedSpeaker {
                     // Speakers discovered but none playing (idle state)

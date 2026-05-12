@@ -42,12 +42,12 @@ Build the drag side of the gesture: make `Speaker`/`SpeakerIdentifier` conform t
 
 ### Transferable conformance
 
-- [ ] **T-5901** Add `iOS/Voxio/Core/Models/SpeakerIdentifier+Transferable.swift`. Make `SpeakerIdentifier` conform to `Transferable` via `CodableRepresentation(contentType: .data)` per spec TR-1. `SpeakerIdentifier` is the existing `Codable` value type used by `SpeakerClient.join(peer:)` — choosing it (rather than `Speaker`) is correct because `Speaker` is `@MainActor @Observable` and cannot cross the drag boundary. Add a unit test `iOS/VoxioTests/SpeakerIdentifierTransferableTests.swift` that round-trips a `SpeakerIdentifier` through `JSONEncoder` / `JSONDecoder` and confirms `jid` and `host` survive.
+- [x] **T-5901** Add `iOS/Voxio/Core/Models/SpeakerIdentifier+Transferable.swift`. Make `SpeakerIdentifier` conform to `Transferable` via `CodableRepresentation(contentType: .data)` per spec TR-1. `SpeakerIdentifier` is the existing `Codable` value type used by `SpeakerClient.join(peer:)` — choosing it (rather than `Speaker`) is correct because `Speaker` is `@MainActor @Observable` and cannot cross the drag boundary. Add a unit test `iOS/VoxioTests/SpeakerIdentifierTransferableTests.swift` that round-trips a `SpeakerIdentifier` through `JSONEncoder` / `JSONDecoder` and confirms `jid` and `host` survive.
   *Depends on: none (pure model layer).*
 
 ### Drop helper on the session view model
 
-- [ ] **T-5902** Add `iOS/Voxio/Features/Home/SessionViewModel.swift` (or extend the F3 equivalent if it already exists with a different name). Introduce a `@MainActor` `@Observable` view model owning per-card state:
+- [x] **T-5902** Add `iOS/Voxio/Features/Home/SessionViewModel.swift` (or extend the F3 equivalent if it already exists with a different name). Introduce a `@MainActor` `@Observable` view model owning per-card state:
   ```swift
   @Observable @MainActor
   final class SessionViewModel {
@@ -65,7 +65,7 @@ Build the drag side of the gesture: make `Speaker`/`SpeakerIdentifier` conform t
 
 ### Bottom-bar pill drag source
 
-- [ ] **T-5903** In `iOS/Voxio/Features/Home/SpeakerSelectorPill.swift` (or the F3 replacement bottom-bar component if E-52 has renamed/replaced it), add an `isDraggable(_ speaker: Speaker)` helper computed against the home view's discovery snapshot per spec TR-2:
+- [x] **T-5903** In `iOS/Voxio/Features/Home/SpeakerSelectorPill.swift` (or the F3 replacement bottom-bar component if E-52 has renamed/replaced it), add an `isDraggable(_ speaker: Speaker)` helper computed against the home view's discovery snapshot per spec TR-2:
   - Returns `false` if `speaker` is the `hostSpeaker` of any group in `discovery.groups` whose `playbackState == .playing`.
   - Returns `false` if `speaker` is a member of any group in `discovery.groups` with `members.count > 1`.
   - Returns `false` if `speaker.identifier.id` is in any session view model's `joinsInFlight` set (consumed via the home view's aggregated `Set<String>` from T-6004).
@@ -74,7 +74,7 @@ Build the drag side of the gesture: make `Speaker`/`SpeakerIdentifier` conform t
   Render every pill at `.opacity(isDraggable(speaker) ? 1.0 : 0.5)` per design-spec §1.2 / §4.1 step 6. Do **not** call `.draggable(_:)` on non-draggable pills — omit the modifier entirely so the long-press gesture is cleanly disabled (calling `.draggable(nil)` is incorrect and behaves inconsistently across iOS versions).
   *Depends on: T-5902.*
 
-- [ ] **T-5904** For draggable pills (T-5903), attach `.draggable(speaker.identifier) { dragPreview }` where `dragPreview` is a `DarkGlassButton`-styled capsule rendering the speaker name at 0.85 opacity, 1.06× scale per design-spec §2.1. Use the same `BeoType.caption` font and pill geometry as the source pill so the ghost is a near-perfect copy. Add the long-press initiation haptic via `.simultaneousGesture(LongPressGesture(minimumDuration: 0.35).onEnded { _ in HapticEngine.shared.dragLifted() })` per design-spec §1.1 and §6.2 — the haptic fires on long-press hold, not on drag start, so it precedes the system drag.
+- [x] **T-5904** For draggable pills (T-5903), attach `.draggable(speaker.identifier) { dragPreview }` where `dragPreview` is a `DarkGlassButton`-styled capsule rendering the speaker name at 0.85 opacity, 1.06× scale per design-spec §2.1. Use the same `BeoType.caption` font and pill geometry as the source pill so the ghost is a near-perfect copy. Add the long-press initiation haptic via `.simultaneousGesture(LongPressGesture(minimumDuration: 0.35).onEnded { _ in HapticEngine.shared.dragLifted() })` per design-spec §1.1 and §6.2 — the haptic fires on long-press hold, not on drag start, so it precedes the system drag.
 
   **Prereq:** `HapticEngine.dragLifted()` does not exist today. It must be added to `iOS/Voxio/Core/HapticEngine.swift` (a `UIImpactFeedbackGenerator(style: .medium).impactOccurred()` wrapper) alongside the other new methods listed under T-5901. Land the `HapticEngine` additions as a small standalone change before T-5904.
 
@@ -83,7 +83,7 @@ Build the drag side of the gesture: make `Speaker`/`SpeakerIdentifier` conform t
 
 ### Session card drop destination
 
-- [ ] **T-5905** In the F3 session card root view (file `iOS/Voxio/Features/Home/SessionCardView.swift` or the E-52 equivalent), attach `.dropDestination(for: SpeakerIdentifier.self)` per spec TR-3:
+- [x] **T-5905** In the F3 session card root view (file `iOS/Voxio/Features/Home/SessionCardView.swift` or the E-52 equivalent), attach `.dropDestination(for: SpeakerIdentifier.self)` per spec TR-3:
   ```swift
   .dropDestination(for: SpeakerIdentifier.self) { items, _ in
       guard let droppedId = items.first,
@@ -101,7 +101,7 @@ Build the drag side of the gesture: make `Speaker`/`SpeakerIdentifier` conform t
   **Prereq:** `HapticEngine.dragEnteredDropZone()` does not exist today and must be added alongside `dragLifted()` and `dragCancelled()` per the T-5904 prereq note.
   *Depends on: T-5902, T-5901.*
 
-- [ ] **T-5906** Add the gold-border + inner-glow visual treatment driven by `sessionVM.dropZoneActive` per design-spec §3:
+- [x] **T-5906** Add the gold-border + inner-glow visual treatment driven by `sessionVM.dropZoneActive` per design-spec §3:
   ```swift
   .overlay(
       RoundedRectangle(cornerRadius: Radius.card)
@@ -115,19 +115,19 @@ Build the drag side of the gesture: make `Speaker`/`SpeakerIdentifier` conform t
   Animation is implicit because `dropZoneActive` is updated inside `withAnimation(BeoAnimation.spring)` in T-5905. Verify visually on device — the border should fade in within one spring cycle as the ghost crosses the card bounds.
   *Depends on: T-5905.*
 
-- [ ] **T-5907** Multiple-card support per spec TR-8. The F3 session strip (E-54) renders multiple cards in a horizontal `ScrollView`. Each card hosts its own `SessionViewModel` with its own `dropZoneActive` flag, so isTargeted callbacks fire independently. No additional wiring needed beyond confirming each card's drop destination is attached at the card level (not the strip level). Document the pattern inline at the strip's container view: "Drop destination is per-card — do not lift to the strip." Do **not** implement drag-scroll (out of scope per design-spec §9).
+- [x] **T-5907** Multiple-card support per spec TR-8. The F3 session strip (E-54) renders multiple cards in a horizontal `ScrollView`. Each card hosts its own `SessionViewModel` with its own `dropZoneActive` flag, so isTargeted callbacks fire independently. No additional wiring needed beyond confirming each card's drop destination is attached at the card level (not the strip level). Document the pattern inline at the strip's container view: "Drop destination is per-card — do not lift to the strip." Do **not** implement drag-scroll (out of scope per design-spec §9).
   *Depends on: T-5905, F3 / E-54.*
 
 ### Ghost cancel and invalid-drop handling
 
-- [ ] **T-5908** Verify SwiftUI's default cancel behaviour matches design-spec §2.1: releasing the ghost outside any drop destination animates it back to the source pill automatically. If the default animation does not feel right (no spring return), add an `.onDrop(of:)` observer at the parent view that detects "drag ended without drop" and triggers an explicit return animation. For invalid-drop haptic: add `HapticEngine.shared.dragCancelled()` via `UINotificationFeedbackGenerator().notificationOccurred(.warning)` per design-spec §6.2. Hook this haptic into the drag-cancel detection (use `.onDrag` end notification or a custom drag controller if SwiftUI's `.draggable` doesn't surface this directly).
+- [x] **T-5908** Verify SwiftUI's default cancel behaviour matches design-spec §2.1: releasing the ghost outside any drop destination animates it back to the source pill automatically. If the default animation does not feel right (no spring return), add an `.onDrop(of:)` observer at the parent view that detects "drag ended without drop" and triggers an explicit return animation. For invalid-drop haptic: add `HapticEngine.shared.dragCancelled()` via `UINotificationFeedbackGenerator().notificationOccurred(.warning)` per design-spec §6.2. Hook this haptic into the drag-cancel detection (use `.onDrag` end notification or a custom drag controller if SwiftUI's `.draggable` doesn't surface this directly).
 
   Note: SwiftUI's `.draggable` does not expose a drag-cancelled callback in iOS 16/17. If iOS 26 still lacks one, accept the limitation and document it as a non-blocking visual nicety; the warning haptic can fire from the bottom-bar `onDrop(of:)` if the drop falls back to the bar's space.
   *Depends on: T-5904.*
 
 ### Coach mark
 
-- [ ] **T-5909** Add `iOS/Voxio/Features/Home/GroupingCoachMark.swift` per spec TR-7 / design-spec §1.3:
+- [x] **T-5909** Add `iOS/Voxio/Features/Home/GroupingCoachMark.swift` per spec TR-7 / design-spec §1.3:
   - A small overlay view rendering `"Drag to join this session"` (DA: `"Træk for at tilslutte"`) in `BeoType.caption`, `BeoColor.muted`, positioned above the first eligible draggable pill in the bottom bar.
   - Storage: `@AppStorage("hasSeenGroupingCoachMark") private var hasSeenGroupingCoachMark: Bool = false`.
   - Trigger: `.onChange(of: hasEligibleDraggablePill)` where `hasEligibleDraggablePill` is computed against `discovery.groups` and the eligibility helper from T-5903. When it transitions to `true` and `hasSeenGroupingCoachMark == false`, set `coachMarkVisible = true` and start a 3-second auto-dismiss `Task`.
@@ -139,7 +139,7 @@ Build the drag side of the gesture: make `Speaker`/`SpeakerIdentifier` conform t
 
 ### Verification
 
-- [ ] **T-5910** Manual interaction test on device (iPhone 15 / iOS 26): with one playing speaker (host) and at least one idle speaker, confirm:
+- [ ] **T-5910** (deferred: manual verification on device) Manual interaction test on device (iPhone 15 / iOS 26): with one playing speaker (host) and at least one idle speaker, confirm:
   1. The idle pill long-presses and lifts with the ghost following the finger.
   2. The playing-host pill renders at 0.5 opacity and does not respond to long-press.
   3. A speaker that has been joined to the host (post E-60) renders at 0.5 opacity and is non-draggable (UQ-2).

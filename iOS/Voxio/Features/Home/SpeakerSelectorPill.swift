@@ -7,6 +7,10 @@ struct SpeakerSelectorPill: View {
     /// Used by the connector helper to determine which adjacent pills share a group. (T-5406)
     var groups: [SpeakerGroup]
 
+    /// E-59 T-5903: union of joinsInFlight across all SessionViewModels. Supplied by HomeView.
+    /// Default keeps pre-E-59 call sites valid (no breaking change).
+    var joinsInFlightUnion: Set<String> = []
+
     @State private var scrollPosition: Speaker.ID?
 
     // SwiftUI's layout proposes an inflated width (~408pt on iPhone 14 Pro instead of 393pt)
@@ -27,16 +31,48 @@ struct SpeakerSelectorPill: View {
                     let isPlaying = speaker.isPlaying
 
                     // T-2110 exception (a): speaker selector pills retain existing pill style (T-1004)
-                    Button {
-                        withAnimation(BeoAnimation.spring) { selectedSpeaker = speaker }
-                    } label: {
-                        pillButton(speaker: speaker, isActive: isActive, isPlaying: isPlaying)
-                            .frame(minWidth: 44, minHeight: 44)
+                    // E-59 T-5903/T-5904: draggable pills use .draggable + long-press haptic;
+                    // non-draggable pills omit .draggable entirely (not nil — absent).
+                    let draggable = isDraggable(speaker)
+                    Group {
+                        if draggable {
+                            Button {
+                                withAnimation(BeoAnimation.spring) { selectedSpeaker = speaker }
+                            } label: {
+                                pillButton(speaker: speaker, isActive: isActive, isPlaying: isPlaying)
+                                    .frame(minWidth: 44, minHeight: 44)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(accessibilityLabel(for: speaker, isActive: isActive, isPlaying: isPlaying))
+                            .accessibilityHint(isActive ? "" : "Show this speaker")
+                            .id(speaker.id)
+                            // E-59 T-5904: attach drag source to eligible pills only.
+                            .draggable(speaker.identifier) {
+                                dragPreviewCapsule(speaker)
+                            }
+                            // Long-press fires lift haptic before the system drag begins.
+                            .simultaneousGesture(
+                                LongPressGesture(minimumDuration: 0.35).onEnded { _ in
+                                    HapticEngine.shared.dragLifted()
+                                }
+                            )
+                        } else {
+                            Button {
+                                withAnimation(BeoAnimation.spring) { selectedSpeaker = speaker }
+                            } label: {
+                                pillButton(speaker: speaker, isActive: isActive, isPlaying: isPlaying)
+                                    .frame(minWidth: 44, minHeight: 44)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(accessibilityLabel(for: speaker, isActive: isActive, isPlaying: isPlaying))
+                            .accessibilityHint(isActive ? "" : "Show this speaker")
+                            .id(speaker.id)
+                            // Non-draggable: .draggable modifier OMITTED (not nil — absent).
+                            // .draggable(nil) behaves inconsistently across iOS versions.
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(accessibilityLabel(for: speaker, isActive: isActive, isPlaying: isPlaying))
-                    .accessibilityHint(isActive ? "" : "Show this speaker")
-                    .id(speaker.id)
+                    // E-59 T-5903: dim non-draggable pills (spec TR-2 / design-spec §1.2 / §4.1 step 6).
+                    .opacity(draggable ? 1.0 : 0.5)
 
                     // Connector segment between adjacent pills (T-5406)
                     if i < speakers.count - 1 {
@@ -112,5 +148,63 @@ struct SpeakerSelectorPill: View {
                   ? BeoColor.muted.opacity(0.3)
                   : Color.clear)
             .frame(width: 8, height: 1)
+    }
+
+    // MARK: - Drag eligibility (E-59 T-5903)
+    //
+    // Returns true when the pill may be dragged (spec TR-2):
+    //   a) Returns false if speaker is the hostSpeaker of any group in `groups`
+    //      with playbackState == .playing. Playing hosts anchor a session and
+    //      cannot themselves join another session via drag.
+    //   b) Returns false if speaker is a member of any group in `groups` with
+    //      members.count > 1. The speaker is already in a multi-speaker group.
+    //   c) Returns false if speaker.identifier.id is in joinsInFlightUnion.
+    //      A join is already in flight for this speaker.
+    //   Returns true otherwise (idle solo speaker is draggable).
+    //
+    // Note: joinsInFlightUnion is populated by HomeView from SessionViewModel.joinsInFlight
+    // aggregation (T-6004). In E-59 scope, joinsInFlight stays empty (stub handleJoinDrop).
+    private func isDraggable(_ speaker: Speaker) -> Bool {
+        // (a) Playing host — cannot drag the host of a playing session
+        let isPlayingHost = groups.contains { group in
+            group.hostSpeaker.id == speaker.id && group.playbackState == .playing
+        }
+        if isPlayingHost { return false }
+
+        // (b) Already in a multi-speaker group
+        let isInMultiSpeakerGroup = groups.contains { group in
+            group.members.count > 1 &&
+            group.members.contains { $0.id == speaker.id }
+        }
+        if isInMultiSpeakerGroup { return false }
+
+        // (c) Join in flight for this speaker
+        if joinsInFlightUnion.contains(speaker.identifier.id) { return false }
+
+        return true
+    }
+
+    // MARK: - Drag preview capsule (E-59 T-5904)
+    //
+    // A near-perfect copy of the source pill rendered at 0.85 opacity, 1.06× scale.
+    // The scale and opacity are applied within the preview view itself per spec design-spec §2.1.
+    // SwiftUI's .draggable handles the ghost rendering; this closure provides only the preview.
+    @ViewBuilder
+    private func dragPreviewCapsule(_ speaker: Speaker) -> some View {
+        HStack(spacing: Spacing.s8) {
+            Text(speaker.name)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(speaker.isPlaying ? BeoColor.accent : Color.primary)
+        }
+        .padding(.leading, Spacing.s16)
+        .padding(.trailing, Spacing.s12)
+        .padding(.vertical, Spacing.s12)
+        .glassEffect(in: Capsule())
+        .overlay(
+            Capsule()
+                .stroke(Color.white.opacity(0.4), lineWidth: 1)
+        )
+        .opacity(0.85)
+        .scaleEffect(1.06)
     }
 }

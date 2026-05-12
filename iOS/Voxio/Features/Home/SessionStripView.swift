@@ -47,6 +47,26 @@ struct SessionStripView: View {
     /// Drives the page-dot active index and the selectedSpeaker update.
     @State private var scrollHostId: Speaker.ID?
 
+    // E-59 T-5905 — Per-card SessionViewModel dictionary (CF-3).
+    // @State ensures a stable, long-lived instance for each group ID across re-renders.
+    // Mirrors the existing @State scrollHostId stabilisation pattern.
+    // Cleaned up via .onChange(of: groups.map(\.id)) when groups are removed.
+    @State private var sessionVMs: [SpeakerGroup.ID: SessionViewModel] = [:]
+
+    // E-59 — joinsInFlight aggregation for HomeView / SpeakerSelectorPill consumption.
+    // Computed from all live session view models. Stays empty in E-59 (handleJoinDrop is stub).
+    // E-60 T-6004 wires HomeView to read this and pass it to SpeakerSelectorPill.
+    var joinsInFlightUnion: Set<String> {
+        sessionVMs.values.reduce(into: Set<String>()) { $0.formUnion($1.joinsInFlight) }
+    }
+
+    /// The discovery service — injected from HomeView. Required to create SessionViewModels (CF-4).
+    let discovery: SpeakerDiscoveryService
+
+    /// E-59: binding written from .onChange observers in SessionStripView;
+    /// read by HomeView and forwarded to SpeakerSelectorPill.
+    @Binding var joinsInFlightUnionBinding: Set<String>
+
     // MARK: - Screen width workaround (matching SpeakerSelectorPill)
     // SwiftUI's layout proposes an inflated width (~408pt on iPhone 14 Pro instead of 393pt)
     // due to an iOS 26 ZStack geometry issue. Read the true screen width from UIKit directly.
@@ -73,20 +93,11 @@ struct SessionStripView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: Spacing.s8) {
                     ForEach(groups) { group in
-                        let isFrontmost = group.hostSpeaker.id == scrollHostId
-                        SpeakerCard(
-                            speaker: group.hostSpeaker,
-                            isExpanded: isCommandActive,
-                            // T-5208: pass roll/pitch only to the front-most card
-                            roll: isFrontmost ? roll : 0,
-                            pitch: isFrontmost ? pitch : 0,
-                            // E-53 T-5306: non-host group members for the chip row
-                            groupMembers: group.members.filter { $0.id != group.hostSpeaker.id },
-                            // E-56 T-5606: error binding pass-through to HomeView toast
-                            errorMessage: $errorMessage
-                        )
-                        .frame(width: cardWidth)
-                        .id(group.hostSpeaker.id)
+                        cardForGroup(group)
+                            .frame(width: cardWidth)
+                            .id(group.hostSpeaker.id)
+                        // E-59 T-5905 — T-5907: Drop destination is per-card.
+                        // Do NOT lift .dropDestination to the strip level (T-5907 comment).
                     }
                 }
                 .scrollTargetLayout()
@@ -105,11 +116,15 @@ struct SessionStripView: View {
             // T-5202: selectedSpeaker → strip (with re-entrancy guard and idle-speaker handling)
             .onChange(of: selectedSpeaker?.id) { _, _ in
                 guard let selected = selectedSpeaker else { return }
-                // Find the group where the selected speaker is host OR member
-                guard let matchedGroup = groups.first(where: {
-                    $0.hostSpeaker.id == selected.id ||
-                    $0.members.contains(where: { $0.id == selected.id })
-                }) else {
+                // Find the group where the selected speaker is host OR member.
+                // The closure is hoisted into a local variable so the type-checker
+                // doesn't have to infer the nested ||/contains-where chain in line.
+                let selectedID = selected.id
+                let predicate: (SpeakerGroup) -> Bool = { group in
+                    if group.hostSpeaker.id == selectedID { return true }
+                    return group.members.contains(where: { $0.id == selectedID })
+                }
+                guard let matchedGroup = groups.first(where: predicate) else {
                     // Idle speaker (not a member of any playing group) — do NOT change scrollHostId (US-62)
                     return
                 }
@@ -134,6 +149,11 @@ struct SessionStripView: View {
                 if !currentHostStillPresent {
                     scrollHostId = groups.first?.hostSpeaker.id
                 }
+                // E-59 T-5905 — Clean up sessionVMs for groups that no longer exist.
+                let validIds = Set(newGroupIds)
+                sessionVMs = sessionVMs.filter { validIds.contains($0.key) }
+                // E-59 — Update joinsInFlightUnion binding so HomeView stays in sync.
+                joinsInFlightUnionBinding = joinsInFlightUnion
             }
 
             // T-5205: page dots below the ScrollView, separated by Spacing.s8
@@ -148,5 +168,37 @@ struct SessionStripView: View {
                 scrollHostId = groups.first?.hostSpeaker.id
             }
         }
+    }
+
+    // MARK: - Per-card construction (extracted for type-checker performance)
+
+    /// Builds a `SpeakerCard` for the given group with its stable `SessionViewModel`.
+    /// Extracted from the `ForEach` body because the combination of an inline IIFE
+    /// for `sessionVM` resolution plus the 8-arg `SpeakerCard` initialiser was
+    /// exceeding the Swift type-checker's expression-complexity budget.
+    @ViewBuilder
+    private func cardForGroup(_ group: SpeakerGroup) -> some View {
+        let isFrontmost = group.hostSpeaker.id == scrollHostId
+        let sessionVM = resolvedSessionVM(for: group)
+        SpeakerCard(
+            speaker: group.hostSpeaker,
+            isExpanded: isCommandActive,
+            roll: isFrontmost ? roll : 0,
+            pitch: isFrontmost ? pitch : 0,
+            groupMembers: group.members.filter { $0.id != group.hostSpeaker.id },
+            group: group,
+            sessionVM: sessionVM,
+            errorMessage: $errorMessage
+        )
+    }
+
+    /// Get-or-create `SessionViewModel` for `group`. CF-3: the `@State` dictionary
+    /// stabilises the instance across re-renders; deferred mutation avoids mutating
+    /// `@State` during body evaluation.
+    private func resolvedSessionVM(for group: SpeakerGroup) -> SessionViewModel {
+        if let existing = sessionVMs[group.id] { return existing }
+        let new = SessionViewModel(group: group, discovery: discovery)
+        DispatchQueue.main.async { sessionVMs[group.id] = new }
+        return new
     }
 }

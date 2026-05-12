@@ -41,6 +41,11 @@ struct SpeakerCard: View {
     /// F2 will pass real multi-member groups; all existing call sites pass nil (default).
     var group: SpeakerGroup? = nil     // E-56 T-5605
 
+    /// E-59 T-5905: session view model supplying drop state.
+    /// Nil on pre-E-59 call sites (HomeView idle card, previews) — no drop destination attached.
+    /// CF-7: must be the same SpeakerGroup instance as `group` when both are non-nil.
+    var sessionVM: SessionViewModel? = nil   // E-59 T-5905
+
     /// Routes transport errors to the HomeView toast surface (E-56 T-5606).
     @Binding var errorMessage: String?
 
@@ -92,6 +97,27 @@ struct SpeakerCard: View {
                 ? RoundedRectangle(cornerRadius: Radius.card).stroke(BeoColor.muted, lineWidth: 1)
                 : nil
         )
+        // E-59 T-5905 — Drop destination (CF-2: applied BEFORE .scaleEffect so hit area
+        // matches visible geometry after the scale transform).
+        // sessionVM == nil → no .dropDestination, no gold-border (pre-E-59 call sites).
+        //
+        // Behavioural contracts:
+        //   1. sessionVM == nil → no .dropDestination, no gold-border overlay.
+        //   2. Self-drop (source.id == hostSpeaker.id) returns false; no side effects.
+        //   3. Unresolvable identifier (resolveSpeaker returns nil) returns false.
+        //   4. dropZoneActive transitions to false within one spring cycle after ghost leaves.
+        .dropDestination(for: SpeakerIdentifier.self) { items, _ in
+            guard let vm = sessionVM,
+                  let droppedId = items.first,
+                  let source = vm.resolveSpeaker(droppedId),
+                  source.id != vm.group.hostSpeaker.id else { return false }
+            vm.handleJoinDrop(source: source, target: vm.group.hostSpeaker)
+            return true
+        } isTargeted: { isOver in
+            guard let vm = sessionVM else { return }
+            withAnimation(BeoAnimation.spring) { vm.dropZoneActive = isOver }
+            if isOver { HapticEngine.shared.dragEnteredDropZone() }
+        }
         // Scope the cardExpand spring to the scaleEffect transform only — wrapping it in a
         // .transaction would still animate sibling state changes (favorites loading, metadata
         // arriving) in the same render. Using .animation(value:) without a spring (which rings)
@@ -99,6 +125,13 @@ struct SpeakerCard: View {
         // the voice feedback area below the card at first boot.
         .scaleEffect(reduceMotion ? 1.0 : (isExpanded ? 1.02 : 1.0))
         .animation(reduceMotion ? .easeInOut(duration: 0.2) : .easeOut(duration: 0.2), value: isExpanded)
+        // E-59 T-5906 — Gold-border overlay applied LAST (CF-2: above hairline borders + scale).
+        // lineWidth 0 when not targeted so the border fades in/out with the spring animation.
+        .overlay(
+            RoundedRectangle(cornerRadius: Radius.card)
+                .stroke(BeoColor.accent,
+                        lineWidth: (sessionVM?.dropZoneActive == true) ? 1.5 : 0)
+        )
         // T-5607: loosened from .ignore to .contain so transport button is VoiceOver-reachable.
         // Card-level summary moved to headerSection's accessibilityLabel.
         .accessibilityElement(children: .contain)
