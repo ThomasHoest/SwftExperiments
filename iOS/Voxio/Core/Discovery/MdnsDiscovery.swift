@@ -45,6 +45,18 @@ class MdnsDiscovery: NSObject {
         bnrBrowser.stop()
     }
 
+    /// Clears all cached host/service tracking state so that `start()` rediscovers
+    /// known speakers from scratch. Must be called by `SpeakerDiscoveryService.restart()`
+    /// before the next `start()` — without this, duplicate-host guards silently prevent
+    /// re-discovery of speakers that were already found (CF-2).
+    func reset() {
+        foundHosts.removeAll()
+        serviceNameToHost.removeAll()
+        serviceNameToType.removeAll()
+        pendingServices.removeAll()
+        Log.info("[mDNS] reset: cleared all host/service cache")
+    }
+
     private func cancelAllRetries() {
         for (_, task) in retryTasks { task.cancel() }
         retryTasks.removeAll()

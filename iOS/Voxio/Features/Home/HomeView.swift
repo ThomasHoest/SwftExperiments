@@ -8,6 +8,8 @@ struct HomeView: View {
     @StateObject private var coordinator   = ConfirmationCoordinator()
     @StateObject private var motionManager = MotionManager()
     @ObservedObject private var langService = LanguageService.shared
+    // T-5502: NetworkMonitor — @Observable @MainActor; owned for HomeView lifetime.
+    @State private var network        = NetworkMonitor()
     @State private var voiceToText    = VoiceToText()
     @State private var personalisationStore: PersonalisationStore
     @State private var commandRouter: CommandParserRouter
@@ -74,19 +76,25 @@ struct HomeView: View {
 
                 Spacer(minLength: 28)
 
-                voiceFeedback
+                // T-5512: voice feedback and bottom bar hidden when offline (US-65).
+                // CF-4: voiceFeedback is NOT hidden in .discovering or .noSpeakersFound.
+                // CF-5: explicit isOnWifi gate covers the edge case where groups is non-empty
+                //       when Wi-Fi drops (the >= 1 guard alone would not hide the bar).
+                if network.isOnWifi {
+                    voiceFeedback
 
-                Spacer(minLength: 20)
+                    Spacer(minLength: 20)
 
-                // T-5408: changed from count > 1 to count >= 1 (US-62 acceptance criterion —
-                // idle speakers are shown in the bar; bar appears as soon as one speaker is discovered).
-                if discovery.groups.flatMap(\.members).count >= 1 {
-                    SpeakerSelectorPill(
-                        speakers: discovery.groups.flatMap(\.members),
-                        selectedSpeaker: $selectedSpeaker,
-                        groups: discovery.groups
-                    )
-                    .padding(.bottom, 12)
+                    // T-5408: changed from count > 1 to count >= 1 (US-62 acceptance criterion —
+                    // idle speakers are shown in the bar; bar appears as soon as one speaker is discovered).
+                    if discoveredSpeakerCount >= 1 {
+                        SpeakerSelectorPill(
+                            speakers: discovery.groups.flatMap(\.members),
+                            selectedSpeaker: $selectedSpeaker,
+                            groups: discovery.groups
+                        )
+                        .padding(.bottom, 12)
+                    }
                 }
             }
             .frame(width: (UIApplication.shared.connectedScenes
@@ -150,8 +158,16 @@ struct HomeView: View {
             }
         }
         .onAppear(perform: onAppear)
-        .onAppear { BreadcrumbTracker.shared.push("Home") }
-        .onDisappear { BreadcrumbTracker.shared.pop() }
+        .onAppear {
+            // T-5502: start NetworkMonitor for HomeView lifetime.
+            network.start()
+            BreadcrumbTracker.shared.push("Home")
+        }
+        .onDisappear {
+            // T-5502: stop NetworkMonitor when view leaves the hierarchy.
+            network.stop()
+            BreadcrumbTracker.shared.pop()
+        }
         // ADR §Consequences point 2 — re-fire startListening when hasCompletedOnboarding flips
         .onChange(of: hasCompletedOnboarding) { _, completed in
             if completed { startListeningIfReady() }
@@ -180,6 +196,12 @@ struct HomeView: View {
         }
         .onChange(of: langService.activeLanguage) { _, language in
             voiceToText.setLanguage(language)
+        }
+        // T-5513: when Wi-Fi is restored, restart listening if preconditions are met.
+        .onChange(of: network.isOnWifi) { _, isOnWifi in
+            guard isOnWifi else { return }
+            guard hasCompletedOnboarding, langService.hasExplicitlyChosen else { return }
+            startListening()
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
@@ -246,7 +268,12 @@ struct HomeView: View {
             }
 
             Spacer()
-            ConnectionStatusChip(speakerCount: discovery.groups.flatMap(\.members).count)
+            // T-5504: updated to new three-input signature (isOnWifi/didSettle/speakerCount).
+            ConnectionStatusChip(
+                isOnWifi:     network.isOnWifi,
+                didSettle:    discovery.didSettle,
+                speakerCount: discoveredSpeakerCount
+            )
 
             DarkGlassIconButton(
                 systemImage: "gearshape",
@@ -260,6 +287,20 @@ struct HomeView: View {
 
     // ── Card area ─────────────────────────────────────────────────────────────
 
+    // T-5505: Flat count of all discovered speakers (across all groups).
+    private var discoveredSpeakerCount: Int {
+        discovery.groups.flatMap(\.members).count
+    }
+
+    // T-5505: Four-state machine computed from (network.isOnWifi, didSettle, speakerCount).
+    // Priority: !isOnWifi wins first; speakerCount > 0 wins over settle state.
+    private var homeState: HomeState {
+        guard network.isOnWifi else { return .offline }
+        if discoveredSpeakerCount > 0 { return .hasContent }
+        if discovery.didSettle { return .noSpeakersFound }
+        return .discovering
+    }
+
     // T-5206: Pre-filtered list of playing groups — SpeakerGroups whose host is currently playing.
     private var playingGroups: [SpeakerGroup] {
         discovery.groups.filter { $0.hostSpeaker.isPlaying }
@@ -267,29 +308,48 @@ struct HomeView: View {
 
     @ViewBuilder
     private var cardArea: some View {
-        // T-5206: Three-branch routing per ADR-E52 §7
-        if !playingGroups.isEmpty {
-            // One or more sessions playing — show swipeable strip
-            SessionStripView(
-                groups: playingGroups,
-                selectedSpeaker: $selectedSpeaker,
-                roll: motionManager.roll,
-                pitch: motionManager.pitch,
-                isCommandActive: isCommandActive
-            )
-        } else if let speaker = displayedSpeaker {
-            // Speakers discovered but none playing (idle state)
-            SpeakerCard(
-                speaker: speaker,
-                isExpanded: isCommandActive,
-                roll: motionManager.roll,
-                pitch: motionManager.pitch
-            )
-            .opacity(hasAppeared ? 1 : 0)
-            .scaleEffect(hasAppeared ? 1 : 0.96)
-        } else {
-            emptyState
+        // T-5505: Four-state routing wrapping the E-52 T-5206 body.
+        // T-5509: .animation drives cross-fades between layout branches.
+        Group {
+            switch homeState {
+            case .offline:
+                DiscoveryStateView(state: .offline, onSearchAgain: {})
+
+            case .discovering:
+                DiscoveryStateView(state: .discovering, onSearchAgain: {})
+
+            case .noSpeakersFound:
+                DiscoveryStateView(state: .noSpeakersFound, onSearchAgain: {
+                    discovery.restart()
+                })
+
+            case .hasContent:
+                // E-52 T-5206 three-branch body preserved verbatim (ADR-E52 CF-2).
+                if !playingGroups.isEmpty {
+                    // One or more sessions playing — show swipeable strip
+                    SessionStripView(
+                        groups: playingGroups,
+                        selectedSpeaker: $selectedSpeaker,
+                        roll: motionManager.roll,
+                        pitch: motionManager.pitch,
+                        isCommandActive: isCommandActive
+                    )
+                } else if let speaker = displayedSpeaker {
+                    // Speakers discovered but none playing (idle state)
+                    SpeakerCard(
+                        speaker: speaker,
+                        isExpanded: isCommandActive,
+                        roll: motionManager.roll,
+                        pitch: motionManager.pitch
+                    )
+                    .opacity(hasAppeared ? 1 : 0)
+                    .scaleEffect(hasAppeared ? 1 : 0.96)
+                } else {
+                    emptyState
+                }
+            }
         }
+        .animation(BeoAnimation.toast, value: homeState.layoutKey)
     }
 
     private var emptyState: some View {
@@ -381,6 +441,13 @@ struct HomeView: View {
     }
 
     private func startListening() {
+        // T-5513: gate the voice/discovery pipeline on Wi-Fi availability.
+        // NetworkMonitor defaults to isOnWifi=true (ADR D2), so this guard does not block
+        // startup — it only prevents re-entry when the app wakes while still offline.
+        guard network.isOnWifi else {
+            Log.info("[HomeView] startListening skipped — no Wi-Fi")
+            return
+        }
         voiceToText.setLanguage(langService.activeLanguage)
         discovery.start()
         motionManager.start()

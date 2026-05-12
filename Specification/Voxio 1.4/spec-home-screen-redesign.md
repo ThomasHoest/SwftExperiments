@@ -162,7 +162,7 @@ All visual decisions — colours, spacing, typography, motion, copy strings — 
 **Acceptance criteria:**
 - When `isOnWifi == true && discovery.didSettle == true && sessionCount == 0 && discoveredSpeakerCount == 0`, the card area shows the post-settle empty state per design spec §4.3.
 - The state shows: a dim orb (0.4 opacity, no pulse), the heading "No speakers found" / "Ingen højttalere fundet", a body paragraph per design spec Appendix B, and a "Search again" / "Søg igen" button.
-- Tapping "Search again" triggers `discovery.start()` and immediately transitions back to the pre-settle discovery UI (US-63). A small spinner appears inside the button briefly during the transition.
+- Tapping "Search again" triggers `discovery.restart()` and immediately transitions back to the pre-settle discovery UI (US-63). A small spinner appears inside the button briefly during the transition.
 - The bottom bar is not shown in this state.
 - The `ConnectionStatusChip` continues to show "Searching…" / "Søger…" copy during the manual retry's pre-settle window, then reverts to "No Wi-Fi" or speaker-count copy as appropriate.
 - VoiceOver button label: "Search again for speakers" / "Søg igen efter højttalere".

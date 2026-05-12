@@ -16,6 +16,7 @@ class SpeakerDiscoveryService: ObservableObject {
     private var initialSettleTask: Task<Void, Never>?
     private let matcher = SpeakerNameMatcher()
     private(set) var activeSpeaker: Speaker?
+    private var autoRetryTask: Task<Void, Never>?
 
     init() {
         discovery.onSpeakerDiscovered = { [weak self] ip, platform in
@@ -28,6 +29,40 @@ class SpeakerDiscoveryService: ObservableObject {
 
     func start() { discovery.start() }
     func stop()  { discovery.stop() }
+
+    /// Re-starts the discovery pipeline from scratch.
+    ///
+    /// Cancels any pending auto-retry task, stops the current browse, clears all cached
+    /// speaker and discovery state, then calls `start()`. `MdnsDiscovery.reset()` is called
+    /// to clear `foundHosts` and related caches — without this, duplicate-host guards prevent
+    /// re-discovery of previously known speakers (CF-2).
+    ///
+    /// This method is idempotent: calling it multiple times is safe.
+    func restart() {
+        autoRetryTask?.cancel()
+        autoRetryTask = nil
+        initialSettleTask?.cancel()
+        stop()
+        discovery.reset()
+        allSpeakers = []
+        groups = []
+        didSettle = false
+        Log.info("[SDS] restarted — all state cleared")
+        start()
+    }
+
+    /// Schedules a silent 30-second auto-retry when discovery settled with zero speakers (T-5511).
+    /// Cancelled when a speaker is added or when `restart()` is called manually.
+    private func scheduleAutoRetry() {
+        autoRetryTask?.cancel()
+        autoRetryTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(30))
+            guard !Task.isCancelled, let self else { return }
+            guard await self.didSettle && self.allSpeakers.isEmpty else { return }
+            Log.info("[SDS] auto-retry: 30 s elapsed with no speakers, restarting")
+            await self.restart()
+        }
+    }
 
     // Three-tier speaker resolution (same logic as old SpeakerRegistry)
     func resolve(words: [String]) -> (Speaker, remainingWords: [String])? {
@@ -49,6 +84,9 @@ class SpeakerDiscoveryService: ObservableObject {
         let speaker = Speaker(host: ip, client: client, eventSource: eventSource, platform: platform)
         do {
             try await speaker.initialize()
+            // Cancel any pending auto-retry now that we have at least one speaker.
+            autoRetryTask?.cancel()
+            autoRetryTask = nil
             allSpeakers.append(speaker)
             SpeakerStore.shared.allSpeakers = allSpeakers
             Log.info("[SDS] added \(speaker.name) (\(ip)) platform=\(platform.rawValue)")
@@ -83,6 +121,7 @@ class SpeakerDiscoveryService: ObservableObject {
     /// without another addition, marks discovery as settled — subscribers can
     /// then run "all speakers discovered" startup logic (e.g. selecting the
     /// playing speaker). Fires at most once.
+    /// After settling with zero speakers, schedules a 30-second auto-retry (T-5511).
     private func scheduleInitialSettle() {
         guard !didSettle else { return }
         initialSettleTask?.cancel()
@@ -93,6 +132,10 @@ class SpeakerDiscoveryService: ObservableObject {
                 guard !self.didSettle else { return }
                 self.didSettle = true
                 Log.info("[SDS] initial discovery settled (\(self.allSpeakers.count) speakers)")
+                // If no speakers were found, schedule the 30 s silent auto-retry.
+                if self.allSpeakers.isEmpty {
+                    self.scheduleAutoRetry()
+                }
             }
         }
     }
