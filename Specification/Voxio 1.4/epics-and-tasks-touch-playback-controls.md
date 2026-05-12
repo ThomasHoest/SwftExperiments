@@ -264,7 +264,7 @@ Add a horizontally-scrolling row of `DarkGlassButton` pills below the transport 
 
 ### Favorites loading
 
-- [ ] **T-5801** Add `@State private var favorites: [Favorite] = []` to `SpeakerCard`. Add a `.task` modifier on the outer card view (or on the favorites row container) that calls:
+- [x] **T-5801** Add `@State private var favorites: [Favorite] = []` to `SpeakerCard`. Add a `.task` modifier on the outer card view (or on the favorites row container) that calls:
   ```swift
   .task {
       do {
@@ -283,7 +283,7 @@ Add a horizontally-scrolling row of `DarkGlassButton` pills below the transport 
 
 ### Favorites row view
 
-- [ ] **T-5802** Add a private `favoritesRow` view to `SpeakerCard`. Implementation:
+- [x] **T-5802** Add a private `favoritesRow` view to `SpeakerCard`. Implementation:
   ```swift
   @ViewBuilder
   private var favoritesRow: some View {
@@ -317,7 +317,7 @@ Add a horizontally-scrolling row of `DarkGlassButton` pills below the transport 
 
 ### Tap handler
 
-- [ ] **T-5803** Implement the private `onFavoriteTapped(index: Int)` method on `SpeakerCard`:
+- [x] **T-5803** Implement the private `onFavoriteTapped(index: Int)` method on `SpeakerCard`:
   ```swift
   private func onFavoriteTapped(index: Int) {
       HapticEngine.shared.commandRecognised()
@@ -340,7 +340,7 @@ Add a horizontally-scrolling row of `DarkGlassButton` pills below the transport 
 
 ### Accessibility
 
-- [ ] **T-5804** Confirm each `DarkGlassButton` in the favorites row exposes the favorite's display name as its `accessibilityLabel` — `DarkGlassButton` already passes `label` to `.accessibilityLabel(label)` so this should be automatic. Per UQ-1 resolved, do NOT append "currently playing" or any active-state suffix to the label.
+- [x] **T-5804** Confirm each `DarkGlassButton` in the favorites row exposes the favorite's display name as its `accessibilityLabel` — `DarkGlassButton` already passes `label` to `.accessibilityLabel(label)` so this should be automatic. Per UQ-1 resolved, do NOT append "currently playing" or any active-state suffix to the label.
 
   Wrap the `ScrollView` in `.accessibilityElement(children: .contain)` so VoiceOver navigates each pill individually rather than treating the scroll view as a single element.
 
@@ -351,7 +351,7 @@ Add a horizontally-scrolling row of `DarkGlassButton` pills below the transport 
 
 ### Verification
 
-- [ ] **T-5805** Manual test pass on a real Mozart speaker that has at least 3 configured presets. Test matrix:
+- [ ] **T-5805** (deferred: manual verification on device) Manual test pass on a real Mozart speaker that has at least 3 configured presets. Test matrix:
   1. Card appears → favorites row populates within ~500 ms with 3+ pills.
   2. Tap a favorite → `commandRecognised` haptic fires; speaker switches source; card re-renders to show the new now-playing track within ~2 s.
   3. Tap another favorite → switches without issue.
@@ -362,7 +362,7 @@ Add a horizontally-scrolling row of `DarkGlassButton` pills below the transport 
   8. VoiceOver: navigate the row; each pill reads its favorite name.
   *Depends on: T-5803, T-5804.*
 
-- [ ] **T-5806** SwiftUI preview in `SpeakerCard.swift` (or a new `SpeakerCard+Previews.swift`) covering the favorites row in three configurations:
+- [x] **T-5806** SwiftUI preview in `SpeakerCard.swift` (or a new `SpeakerCard+Previews.swift`) covering the favorites row in three configurations:
   - Playing state with 5 favorites.
   - Stopped state with 3 favorites.
   - Playing state with 0 favorites (row absent).

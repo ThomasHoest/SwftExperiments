@@ -31,6 +31,9 @@ struct UIStrings {
     var play:  String   // accessibility label for the play button
     var pause: String   // accessibility label for the pause button
 
+    // ── Favorites row (E-58 T-5803) ──────────────────────────────────────────
+    var couldNotStartFavorite: String   // error toast when playFavorite throws
+
     static let english = UIStrings(
         confirmationAboutTo:   "About to:",
         confirmationVoiceHint: "or say Yes / No",
@@ -45,7 +48,8 @@ struct UIStrings {
         backgroundPaused:      "Paused",
         lookingForSpeakers:    "Looking for speakers…",
         play:                  "Play",
-        pause:                 "Pause"
+        pause:                 "Pause",
+        couldNotStartFavorite: "Could not start favorite"
     )
 
     static let danish = UIStrings(
@@ -62,7 +66,8 @@ struct UIStrings {
         backgroundPaused:      "Sat på pause",
         lookingForSpeakers:    "Leder efter højttalere…",
         play:                  "Afspil",
-        pause:                 "Pause"
+        pause:                 "Pause",
+        couldNotStartFavorite: "Kunne ikke starte favorit"
     )
 
     static func forLanguage(_ language: Language) -> UIStrings {

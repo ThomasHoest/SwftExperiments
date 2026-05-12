@@ -17,6 +17,13 @@ import SwiftUI
 //   T-5703 — handleLimitHaptic(_:) — limit haptic + AccessibilityNotification, gated by lastLimitHaptic.
 //   T-5705 — broadcastVolume(_:) async — fan-out via resolvedGroup.setVolumeOnAllMembers; partial-failure toast.
 //
+// E-58 changes applied in this file:
+//   T-5801 — @State favorites: [Favorite]; .task async load via speaker.getFavorites().
+//   T-5802 — favoritesRow @ViewBuilder; trailingFadeGradient; mounted in both cardContent branches.
+//   T-5803 — onFavoriteTapped(fav:); UIStrings.couldNotStartFavorite error toast.
+//   T-5804 — .accessibilityElement(children: .contain) on ScrollView; per-pill labels from DarkGlassButton.
+//   T-5806 — #Preview blocks for favorites row (5 favorites playing, 0 favorites playing, 3 favorites stopped).
+//
 // CF-1 decision: @Binding var errorMessage: String? (SwiftUI symmetry, as ADR recommends).
 // Every call site must supply errorMessage:. #Preview blocks use .constant(nil).
 
@@ -49,6 +56,12 @@ struct SpeakerCard: View {
     /// Tracks which limit (0 or 100) last fired a limitReached haptic within this drag,
     /// preventing repeated firing while held at a boundary.
     @State private var lastLimitHaptic: Int? = nil
+
+    // MARK: - Favorites state (E-58 T-5801)
+
+    /// Favorites loaded from speaker.getFavorites() on card appear.
+    /// Empty array while loading, after failure, or when the speaker has no presets.
+    @State private var favorites: [Favorite] = []
 
     // MARK: - Group-aware dispatch (T-5605)
 
@@ -84,6 +97,15 @@ struct SpeakerCard: View {
         // T-5607: loosened from .ignore to .contain so transport button is VoiceOver-reachable.
         // Card-level summary moved to headerSection's accessibilityLabel.
         .accessibilityElement(children: .contain)
+        // E-58 T-5801: load favorites once on appear; silent failure (logged at info, no toast).
+        .task {
+            do {
+                favorites = try await speaker.getFavorites()
+            } catch {
+                Log.info("[\(speaker.name)] getFavorites failed: \(error)")
+                favorites = []
+            }
+        }
     }
 
     // MARK: - Chip data (E-53)
@@ -158,6 +180,8 @@ struct SpeakerCard: View {
                 .padding(.horizontal, Spacing.s24)
                 .padding(.vertical, Spacing.s12)
                 transportRow
+                // E-58 T-5802: favorites row — absent when favorites is empty
+                favoritesRow
                 // E-53 T-5304: group chip row — only shown when host has non-host members
                 if !groupMembers.isEmpty {
                     GroupChipRow(chips: chipData)
@@ -168,11 +192,13 @@ struct SpeakerCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
         case .stopped:
-            // Stopped branch: header + full-width Play pill (no now-playing panel, volume, or transport row).
-            // E-58 will add a favorites row below the Play pill.
+            // Stopped branch: header + full-width Play pill + favorites row.
+            // E-58 T-5802: favoritesRow is mounted below stoppedPlayPill.
             VStack(alignment: .leading, spacing: 0) {
                 headerSection
                 stoppedPlayPill
+                // E-58 T-5802: favorites row — absent when favorites is empty
+                favoritesRow
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -339,6 +365,62 @@ struct SpeakerCard: View {
         .padding(.bottom, Spacing.s20)
     }
 
+    // MARK: - Favorites row (E-58 T-5802, T-5803, T-5804)
+    // Horizontally-scrolling pill row. Absent (zero height) when favorites is empty.
+    // CF-1: All pills use .default role — NEVER .confirm. No active-favorite highlight (UQ-1).
+    // CF-2: Uses fav.presetIndex — NOT ForEach enumeration offset.
+
+    @ViewBuilder
+    private var favoritesRow: some View {
+        if favorites.isEmpty == false {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Spacing.s8) {
+                    ForEach(favorites) { fav in
+                        DarkGlassButton(label: fav.displayName, role: .default) {
+                            onFavoriteTapped(fav: fav)
+                        }
+                        .fixedSize()
+                    }
+                }
+                .padding(.horizontal, Spacing.s24)
+            }
+            .mask(trailingFadeGradient)
+            .padding(.top, Spacing.s8)
+            .padding(.bottom, Spacing.s20)
+            // T-5804: contain so VoiceOver navigates each pill individually.
+            .accessibilityElement(children: .contain)
+        }
+        // Empty → EmptyView() — zero height, no placeholder (spec US-72).
+    }
+
+    /// Trailing fade gradient that signals scrollability (design-spec §4.2).
+    private var trailingFadeGradient: some View {
+        LinearGradient(
+            stops: [
+                .init(color: .white, location: 0),
+                .init(color: .white, location: 0.85),
+                .init(color: .clear,  location: 1.0)
+            ],
+            startPoint: .leading,
+            endPoint:   .trailing
+        )
+    }
+
+    /// Tap handler for a favorites pill.
+    /// CF-2: uses fav.presetIndex (stored on the Favorite model), NOT ForEach enumeration offset.
+    private func onFavoriteTapped(fav: Favorite) {
+        HapticEngine.shared.commandRecognised()
+        Task {
+            do {
+                try await speaker.playFavorite(presetIndex: fav.presetIndex)
+            } catch {
+                Log.error("[\(speaker.name)] playFavorite(\(fav.presetIndex)) failed: \(error)")
+                showErrorToast(ui.couldNotStartFavorite)
+                HapticEngine.shared.errorOccurred()
+            }
+        }
+    }
+
     // MARK: - Specular highlight
 
     private var specularHighlight: some View {
@@ -412,6 +494,9 @@ struct SpeakerCard: View {
 // MARK: Preview stubs (main-target only, not exported to test target)
 
 private final class PreviewSpeakerClient: SpeakerClient {
+    /// Favorites returned by getSources() — configurable per-preview (T-5806).
+    var stubFavorites: [Favorite] = []
+
     func play() async throws {}
     func pause() async throws {}
     func stop() async throws {}
@@ -419,7 +504,7 @@ private final class PreviewSpeakerClient: SpeakerClient {
     func mute(_ muted: Bool) async throws {}
     func getVolume() async throws -> Int { 50 }
     func getPlaybackState() async throws -> SpeakerPlaybackState { .stopped }
-    func getSources() async throws -> [Favorite] { [] }
+    func getSources() async throws -> [Favorite] { stubFavorites }
     func activateSource(_ id: String) async throws {}
     func getBattery() async throws -> Battery? { nil }
     func getName() async throws -> String { "Preview" }
@@ -436,10 +521,16 @@ private final class PreviewSpeakerEventSource: SpeakerEventSource {
 }
 
 @MainActor
-private func makePreviewSpeaker(playbackValue: PlaybackValue, volumeLevel: Int? = 55) -> Speaker {
+private func makePreviewSpeaker(
+    playbackValue: PlaybackValue,
+    volumeLevel: Int? = 55,
+    favorites: [Favorite] = []
+) -> Speaker {
+    let client = PreviewSpeakerClient()
+    client.stubFavorites = favorites
     let spk = Speaker(
         host: "192.168.1.10",
-        client: PreviewSpeakerClient(),
+        client: client,
         eventSource: PreviewSpeakerEventSource(),
         platform: .mozart
     )
@@ -455,6 +546,22 @@ private func makePreviewSpeaker(playbackValue: PlaybackValue, volumeLevel: Int? 
     }
     return spk
 }
+
+/// Five sample favorites used in E-58 preview blocks (T-5806).
+private let previewFavorites5: [Favorite] = [
+    Favorite(id: "fav-1", displayName: "Radio 24syv",   presetIndex: 1),
+    Favorite(id: "fav-2", displayName: "Jazz FM",        presetIndex: 2),
+    Favorite(id: "fav-3", displayName: "Morning Playlist", presetIndex: 3),
+    Favorite(id: "fav-4", displayName: "Chill Vibes",   presetIndex: 4),
+    Favorite(id: "fav-5", displayName: "Evening News",  presetIndex: 5),
+]
+
+/// Three sample favorites used in E-58 stopped-state preview (T-5806).
+private let previewFavorites3: [Favorite] = [
+    Favorite(id: "fav-1", displayName: "Radio 24syv",   presetIndex: 1),
+    Favorite(id: "fav-2", displayName: "Jazz FM",        presetIndex: 2),
+    Favorite(id: "fav-3", displayName: "Morning Playlist", presetIndex: 3),
+]
 
 #Preview("SpeakerCard — Playing") {
     @Previewable @State var errorMessage: String? = nil
@@ -510,6 +617,56 @@ private func makePreviewSpeaker(playbackValue: PlaybackValue, volumeLevel: Int? 
         Color(hex: "#0A0E1A").ignoresSafeArea()
         SpeakerCard(
             speaker: makePreviewSpeaker(playbackValue: .unknown, volumeLevel: nil),
+            isExpanded: false,
+            roll: 0,
+            pitch: 0,
+            errorMessage: $errorMessage
+        )
+        .padding(20)
+    }
+    .preferredColorScheme(.dark)
+}
+
+// MARK: - E-58 Favorites row previews (T-5806)
+
+#Preview("SpeakerCard — Playing + 5 Favorites") {
+    @Previewable @State var errorMessage: String? = nil
+    ZStack {
+        Color(hex: "#0A0E1A").ignoresSafeArea()
+        SpeakerCard(
+            speaker: makePreviewSpeaker(playbackValue: .playing, favorites: previewFavorites5),
+            isExpanded: false,
+            roll: 0,
+            pitch: 0,
+            errorMessage: $errorMessage
+        )
+        .padding(20)
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("SpeakerCard — Stopped + 3 Favorites") {
+    @Previewable @State var errorMessage: String? = nil
+    ZStack {
+        Color(hex: "#0A0E1A").ignoresSafeArea()
+        SpeakerCard(
+            speaker: makePreviewSpeaker(playbackValue: .unknown, volumeLevel: nil, favorites: previewFavorites3),
+            isExpanded: false,
+            roll: 0,
+            pitch: 0,
+            errorMessage: $errorMessage
+        )
+        .padding(20)
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("SpeakerCard — Playing + 0 Favorites") {
+    @Previewable @State var errorMessage: String? = nil
+    ZStack {
+        Color(hex: "#0A0E1A").ignoresSafeArea()
+        SpeakerCard(
+            speaker: makePreviewSpeaker(playbackValue: .playing, favorites: []),
             isExpanded: false,
             roll: 0,
             pitch: 0,
