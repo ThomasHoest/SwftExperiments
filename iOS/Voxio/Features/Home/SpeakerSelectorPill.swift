@@ -36,26 +36,35 @@ struct SpeakerSelectorPill: View {
                     let draggable = isDraggable(speaker)
                     Group {
                         if draggable {
-                            Button {
-                                withAnimation(BeoAnimation.spring) { selectedSpeaker = speaker }
-                            } label: {
-                                pillButton(speaker: speaker, isActive: isActive, isPlaying: isPlaying)
-                                    .frame(minWidth: 44, minHeight: 44)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(accessibilityLabel(for: speaker, isActive: isActive, isPlaying: isPlaying))
-                            .accessibilityHint(isActive ? "" : "Show this speaker")
-                            .id(speaker.id)
-                            // E-59 T-5904: attach drag source to eligible pills only.
-                            .draggable(speaker.identifier) {
-                                dragPreviewCapsule(speaker)
-                            }
-                            // Long-press fires lift haptic before the system drag begins.
-                            .simultaneousGesture(
-                                LongPressGesture(minimumDuration: 0.35).onEnded { _ in
-                                    HapticEngine.shared.dragLifted()
+                            // Replaced Button with a styled view + .onTapGesture so the Button's
+                            // built-in gesture recogniser doesn't compete with .draggable for
+                            // long-press priority. .contentShape(Capsule()) makes the entire
+                            // visible capsule grabbable (not just the text + bars subviews).
+                            pillButton(speaker: speaker, isActive: isActive, isPlaying: isPlaying)
+                                .frame(minWidth: 44, minHeight: 44)
+                                .contentShape(Capsule())
+                                .accessibilityElement(children: .combine)
+                                .accessibilityAddTraits(.isButton)
+                                .accessibilityLabel(accessibilityLabel(for: speaker, isActive: isActive, isPlaying: isPlaying))
+                                .accessibilityHint(isActive ? "" : "Show this speaker")
+                                .id(speaker.id)
+                                // E-59 T-5904: drag source.
+                                .draggable(speaker.identifier) {
+                                    Log.info("[Drag] preview built for \(speaker.name) jid=\(speaker.identifier.jid ?? "nil")")
+                                    return dragPreviewCapsule(speaker)
                                 }
-                            )
+                                // Long-press fires lift haptic before the system drag begins.
+                                .simultaneousGesture(
+                                    LongPressGesture(minimumDuration: 0.35).onEnded { _ in
+                                        Log.info("[Drag] lift haptic — \(speaker.name) eligible to drag")
+                                        HapticEngine.shared.dragLifted()
+                                    }
+                                )
+                                // Tap-to-select fires AFTER any drag has finished — TapGesture loses
+                                // gesture competition to DragGesture, so tap only fires on a real tap.
+                                .onTapGesture {
+                                    withAnimation(BeoAnimation.spring) { selectedSpeaker = speaker }
+                                }
                         } else {
                             Button {
                                 withAnimation(BeoAnimation.spring) { selectedSpeaker = speaker }
