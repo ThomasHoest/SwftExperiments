@@ -61,7 +61,11 @@ final class TelemetryUploader {
         self.deviceId = KeychainDeviceID.readOrCreate()
 
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 30
+        // 60 s tolerates Azure Static Web Apps cold-start latency (which can spike
+        // to ~30-60 s after a long idle). Telemetry is non-interactive, so waiting
+        // is preferable to dropping the batch — events stay in the buffer on timeout
+        // anyway, but a successful retry on cold-start saves a round-trip cycle.
+        config.timeoutIntervalForRequest = 60
         self.session = URLSession(configuration: config)
 
         pathMonitor.pathUpdateHandler = { [weak self] path in
