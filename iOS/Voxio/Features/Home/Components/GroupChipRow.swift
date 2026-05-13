@@ -5,11 +5,14 @@ import SwiftUI
 //
 // Pure-data model for a single chip in the group chip row (E-53).
 // E-60 adds:  case loading(name: String)   — spinner + dimmed label, non-interactive.
-// F2 / E-61 will add:  var onTap: (@MainActor () -> Void)? = nil  (new ChipData property).
+// E-61 adds:  var onTap: (@MainActor () -> Void)? = nil  — tap handler for .member chips.
 //
-// E-61 NOTE: Adding `onTap: (@MainActor () -> Void)?` to ChipData breaks its implicit
-// Sendable conformance. E-61 implementer must add @unchecked Sendable or @MainActor
-// isolation at that time.
+// E-61 NOTE: Adding `onTap: (@MainActor () -> Void)?` breaks ChipData's implicit
+// Sendable conformance because closures that capture @MainActor-isolated state are not
+// unconditionally Sendable. @unchecked Sendable is correct here: ChipData is constructed
+// and consumed exclusively on @MainActor (SpeakerCard.chipData and GroupChipRow.body
+// both run on the main actor). The closure calls SessionViewModel methods which are
+// @MainActor-isolated. See extension below.
 
 internal struct ChipData: Identifiable {
     /// Stable identity for ForEach diffing — generated automatically per instance.
@@ -20,6 +23,11 @@ internal struct ChipData: Identifiable {
     let speakerName: String
     /// Determines chip rendering variant.
     let kind: ChipKind
+    /// E-61 T-6102: optional tap handler for .member chips.
+    /// Nil default means all E-53/E-60 construction sites compile unchanged.
+    /// When non-nil, the chip body is wrapped in a Button and gains tap affordance.
+    /// Loading chips always have onTap == nil (non-interactive per US-81).
+    var onTap: (@MainActor () -> Void)? = nil
 
     internal enum ChipKind: Equatable {
         /// Renders "+ <speakerName>"
@@ -35,6 +43,12 @@ internal struct ChipData: Identifiable {
         case loading(name: String)
     }
 }
+
+// E-61 T-6102: @unchecked Sendable because ChipData.onTap is a @MainActor-bound closure
+// and ChipData is constructed and consumed exclusively on @MainActor. The compiler cannot
+// prove Sendable without this annotation because (() -> Void) is not unconditionally
+// Sendable, but the usage is safe — see struct-level comment above.
+extension ChipData: @unchecked Sendable {}
 
 // MARK: - GroupChipRow
 
@@ -65,7 +79,24 @@ internal struct GroupChipRow: View {
                     chipView(chip)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            // iOS 26 workaround: chip-level tap recognizers (`.onTapGesture`,
+            // `Button`, `.highPriorityGesture`, `.simultaneousGesture`) all
+            // refused to fire when the chip row is nested under the session
+            // card's `.dropDestination`. On-device diagnostics confirmed taps
+            // reach the HStack but never the individual chips. Claim taps at
+            // the HStack and route to the correct chip by x-coordinate. The
+            // 88 pt stride matches each chip's `.frame(minWidth: 80)` plus
+            // the 8 pt HStack spacing. Best-effort — for the typical case of
+            // 2-3 chips with short Danish room names, location-based routing
+            // is reliable. Loading chips (`.onTap == nil`) gracefully no-op.
+            .onTapGesture(coordinateSpace: .local) { location in
+                let stride: CGFloat = 88
+                let idx = max(0, min(chips.count - 1, Int(location.x / stride)))
+                let chip = chips[idx]
+                Log.info("[Remove] chip tap → routed to [\(idx)] = \(chip.speakerName)")
+                chip.onTap?()
+            }
         }
     }
 
@@ -77,15 +108,12 @@ internal struct GroupChipRow: View {
 
         switch chip.kind {
         case .member:
-            Text("+ \(chip.speakerName)")
-                .font(BeoType.caption)
-                .foregroundStyle(BeoColor.muted)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .padding(.horizontal, Spacing.s8)
-                .padding(.vertical, Spacing.s4)
-                .background(.white.opacity(0.07), in: Capsule())
-                .accessibilityLabel("\(strings.alsoPlaying): \(chip.speakerName)")
+            // E-61 T-6102: when onTap is set, wrap the chip in a Button so the full
+            // capsule area is tappable. The Button's action calls the @MainActor closure
+            // directly. When onTap is nil (E-53 display-only context), the chip renders
+            // as a plain label — all E-53/E-60 construction sites compile unchanged.
+            let groupingStrings = GroupingStrings.forLanguage(LanguageService.shared.activeLanguage)
+            memberChipView(chip: chip, strings: strings, groupingStrings: groupingStrings)
 
         case .overflow(let count):
             let label = String(format: strings.overflowFormat, count)
@@ -126,6 +154,55 @@ internal struct GroupChipRow: View {
             .background(.white.opacity(0.07), in: Capsule())
             .accessibilityLabel(String(format: groupingStrings.connectingFormat, name))
             // No .onTapGesture — loading chips are non-interactive (US-81)
+        }
+    }
+
+    // MARK: - Member chip (E-61 T-6102)
+    //
+    // Extracted into a separate @ViewBuilder so we can apply typed accessibility
+    // modifiers to each concrete branch without a `let chipLabel: some View` binding
+    // (which would lose the View type information needed for .accessibilityRole).
+
+    @ViewBuilder
+    private func memberChipView(
+        chip: ChipData,
+        strings: GroupChipStrings,
+        groupingStrings: GroupingStrings
+    ) -> some View {
+        if let onTap = chip.onTap {
+            // Visible chip — no tap gesture here; taps are handled by the
+            // parent HStack and routed by location (see body comment).
+            // The `.frame(minWidth: 80, minHeight: 44)` keeps the visible
+            // bounding box predictable so the parent's stride-based routing
+            // works, and meets Apple HIG's minimum touch-target size.
+            // `.accessibilityAction` exposes the remove to VoiceOver (which
+            // uses its own gesture path and is not affected by the iOS 26
+            // drop-destination conflict).
+            Text("+ \(chip.speakerName)")
+                .font(BeoType.caption)
+                .foregroundStyle(BeoColor.muted)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .padding(.horizontal, Spacing.s12)
+                .padding(.vertical, Spacing.s8)
+                .background(.white.opacity(0.07), in: Capsule())
+                .frame(minWidth: 80, minHeight: 44)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel(String(format: groupingStrings.chipMemberLabel, chip.speakerName))
+                .accessibilityHint(groupingStrings.chipMemberHint)
+                .accessibilityAction { onTap() }
+        } else {
+            // Display-only variant (E-53 context — onTap is nil).
+            // Retains the status-only accessibilityLabel from E-60; no role change.
+            Text("+ \(chip.speakerName)")
+                .font(BeoType.caption)
+                .foregroundStyle(BeoColor.muted)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .padding(.horizontal, Spacing.s8)
+                .padding(.vertical, Spacing.s4)
+                .background(.white.opacity(0.07), in: Capsule())
+                .accessibilityLabel("\(strings.alsoPlaying): \(chip.speakerName)")
         }
     }
 }

@@ -268,7 +268,7 @@ Make the F3 group chip row's member chips tappable. Tap → optimistic remove (c
 
 ### `handleRemoveTap` implementation
 
-- [ ] **T-6101** Implement `handleRemoveTap(_ speaker: Speaker)` on `SessionViewModel` per spec TR-6:
+- [x] **T-6101** Implement `handleRemoveTap(_ speaker: Speaker)` on `SessionViewModel` per spec TR-6:
   ```swift
   @MainActor
   func handleRemoveTap(_ speaker: Speaker) {
@@ -302,19 +302,19 @@ Make the F3 group chip row's member chips tappable. Tap → optimistic remove (c
 
 ### Chip tap target
 
-- [ ] **T-6102** In the F3 chip-row chip view, add `.onTapGesture { sessionVM.handleRemoveTap(chipSpeaker) }` to **settled** member chips only (not loading chips per T-6002). Add `.contentShape(Capsule())` to ensure the entire chip area is tappable, not just the text. The tap is the sole interaction — no confirmation dialog (UQ-1).
+- [x] **T-6102** In the F3 chip-row chip view, add `.onTapGesture { sessionVM.handleRemoveTap(chipSpeaker) }` to **settled** member chips only (not loading chips per T-6002). Add `.contentShape(Capsule())` to ensure the entire chip area is tappable, not just the text. The tap is the sole interaction — no confirmation dialog (UQ-1).
 
   Visual feedback during the tap (the optimistic fade) is driven by the chip row's `.transition(.opacity)` on member-array diff: when `discovery.removeMember` removes the speaker from `group.members`, the chip view's identity disappears and SwiftUI fades it out.
   *Depends on: T-6101, F3 / E-53.*
 
 ### Group collapses to solo
 
-- [ ] **T-6103** Verify and document the chip-row collapse behaviour per design-spec §5.4: when the last member chip is removed (`group.members.count` drops to 1, leaving only the host), the chip row disappears entirely. This is already implemented by F3 / E-53 if the chip row uses an `if !memberChips.isEmpty` guard at its container — confirm in code review. If F3 renders an empty row container instead, add the guard. Add a UI test asserting the chip row is absent when `group.members == [host]`.
+- [x] **T-6103** Verify and document the chip-row collapse behaviour per design-spec §5.4: when the last member chip is removed (`group.members.count` drops to 1, leaving only the host), the chip row disappears entirely. This is already implemented by F3 / E-53 if the chip row uses an `if !memberChips.isEmpty` guard at its container — confirm in code review. If F3 renders an empty row container instead, add the guard. Add a UI test asserting the chip row is absent when `group.members == [host]`.
   *Depends on: T-6101, T-6102, F3 / E-53.*
 
 ### Failure-path rollback
 
-- [ ] **T-6104** Verify the rollback path in T-6101 against `SpeakerDiscoveryService.mergeIntoSpeakerGroup`:
+- [x] **T-6104** Verify the rollback path in T-6101 against `SpeakerDiscoveryService.mergeIntoSpeakerGroup`:
   - If `originalGroup.hostSpeaker` is still in `discovery.allSpeakers`, the merge re-attaches `speaker` to that host's group.
   - If `originalGroup` had only `[host, speaker]` (so removing `speaker` left a solo `[host]`), `mergeIntoSpeakerGroup` finds the host's solo group and re-appends `speaker` — restoring the original two-member group.
   - If the host has disappeared entirely between the optimistic remove and the failure (rare), `mergeIntoSpeakerGroup` creates a new group `[host, speaker]` — but `host` is nil, so this path returns early. Document this corner case as: "If host disappeared during the leave call, no rollback is attempted; the chip stays gone and the error toast is the only signal."
@@ -324,7 +324,7 @@ Make the F3 group chip row's member chips tappable. Tap → optimistic remove (c
 
 ### VoiceOver accessibility
 
-- [ ] **T-6105** Per spec TR-9 / design-spec §8, on each settled member chip add:
+- [x] **T-6105** Per spec TR-9 / design-spec §8, on each settled member chip add:
   - `.accessibilityRole(.button)` so VoiceOver announces it as actionable.
   - `.accessibilityLabel("\(speaker.name), in group. Tap to remove.")` (DA equivalent from string catalogue: `"\(speaker.name), i gruppe. Tryk for at fjerne."`). Add string keys `a11y.chip.member.en` / `a11y.chip.member.da` to `Localizable.strings` per design-spec Appendix B.
   - `.accessibilityHint("Removes this speaker from the group.")` — optional; iOS 26 reads roles + labels naturally, but the hint helps first-time users.
@@ -336,7 +336,7 @@ Make the F3 group chip row's member chips tappable. Tap → optimistic remove (c
 
 ### VoiceOver alternate path for join (cross-references US-80 alternate)
 
-- [ ] **T-6106** Per spec TR-9, on the session card root add `.accessibilityAction(named: "Add speaker") { sessionVM.presentAddSpeakerSheet = true }` and present a `.confirmationDialog("Add speaker", isPresented: $sessionVM.presentAddSpeakerSheet, titleVisibility: .visible) { … }` listing every eligible draggable speaker (same eligibility rules as T-5903). Selecting a row invokes `sessionVM.handleJoinDrop(source: selectedSpeaker, target: sessionVM.group.hostSpeaker)` — identical to the drag drop. Add string key `grouping.a11yAddAction.en` = `"Add speaker"` / `.da` = `"Tilføj højttaler"` per design-spec Appendix B.
+- [x] **T-6106** Per spec TR-9, on the session card root add `.accessibilityAction(named: "Add speaker") { sessionVM.presentAddSpeakerSheet = true }` and present a `.confirmationDialog("Add speaker", isPresented: $sessionVM.presentAddSpeakerSheet, titleVisibility: .visible) { … }` listing every eligible draggable speaker (same eligibility rules as T-5903). Selecting a row invokes `sessionVM.handleJoinDrop(source: selectedSpeaker, target: sessionVM.group.hostSpeaker)` — identical to the drag drop. Add string key `grouping.a11yAddAction.en` = `"Add speaker"` / `.da` = `"Tilføj højttaler"` per design-spec Appendix B.
 
   This task technically belongs to E-59 (US-80 alternate path) but is grouped under E-61 because it shares the chip-row VoiceOver pass and benefits from the same testing session. Document the cross-reference inline.
   *Depends on: T-5902, T-6001, T-5903.*

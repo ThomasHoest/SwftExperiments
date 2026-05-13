@@ -197,13 +197,75 @@ final class SessionViewModel {
         joinTasks[key] = task
     }
 
-    // MARK: - Remove tap handler (stub — E-61 T-6101 implements)
+    // MARK: - E-61 additions
+
+    /// Controls the VoiceOver alternate-add action sheet (T-6106).
+    /// Set to true by the accessibility action on the session card to present
+    /// a confirmationDialog listing eligible draggable speakers.
+    var presentAddSpeakerSheet: Bool = false
+
+    // MARK: - Remove tap handler (E-61 T-6101)
     //
-    // E-59: stub — logs the call and returns.
-    // E-61 T-6101: full implementation (optimistic remove, leave() API call, rollback on failure).
+    // Optimistic remove: discovery.removeMember(speaker) runs synchronously on
+    // the main actor BEFORE the detached leave Task launches. This immediately
+    // updates the chip row (SpeakerGroup is @Observable, so SwiftUI tracks the
+    // inner members mutation without an array-slot replacement — ADR-E61 CF-3).
+    //
+    // On success:
+    //   • commandRecognised() haptic fires.
+    //   • VoiceOver announcement posted with a11yRemoved string.
+    //
+    // On failure:
+    //   • mergeIntoSpeakerGroup(source:target:) re-inserts the chip.
+    //   • errorOccurred() haptic fires.
+    //   • onError(removeFailed) surfaces the error via the existing injected
+    //     callback — NOT ToastCenter (ADR-E61 CF-1 / ADR-E60 CF-1).
+    //
+    // Host-removal rollback corner case (T-6104 documented inline):
+    //   If the removed speaker was the group host and mergeIntoSpeakerGroup
+    //   cannot find the original host in discovery, the method's fallback
+    //   creates a new group — but since the host id is absent, the speaker
+    //   re-insertion is a no-op. The toast fires as the only signal.
+    //
+    // Task is NOT cancelled on view teardown (parallel to TR-4 step 5).
 
     func handleRemoveTap(_ speaker: Speaker) {
-        Log.info("[SessionVM] handleRemoveTap stub: \(speaker.name)")
+        Log.info("[Remove] handleRemoveTap ENTER speaker=\(speaker.name)")
+        let originalGroup = discovery.groups.first { $0.members.contains { $0.id == speaker.id } }
+        guard let host = originalGroup?.hostSpeaker else {
+            Log.info("[Remove] no containing group found for \(speaker.name) — returning")
+            return
+        }
+        // Optimistic remove — stamps mergeCooldownUntil inside removeMember (ADR-E61 §2).
+        discovery.removeMember(speaker)
+        Log.info("[Remove] optimistic remove applied — calling leave() on \(speaker.name)")
+        Task { [weak self] in
+            do {
+                try await speaker.client.leave()
+                Log.info("[Remove] leave() SUCCESS for \(speaker.name)")
+                await MainActor.run {
+                    HapticEngine.shared.commandRecognised()
+                    let s = GroupingStrings.forLanguage(LanguageService.shared.activeLanguage)
+                    UIAccessibility.post(
+                        notification: .announcement,
+                        argument: String(format: s.a11yRemoved, speaker.name)
+                    )
+                }
+            } catch {
+                Log.error("[Remove] leave() FAILED for \(speaker.name): \(error)")
+                await MainActor.run {
+                    guard let self else { return }
+                    // Rollback: re-insert into the original group.
+                    // Corner case (T-6104): if host disappeared during the leave call,
+                    // mergeIntoSpeakerGroup creates a new group [host, speaker] — but
+                    // host is absent so that path returns early. Toast is the only signal.
+                    self.discovery.mergeIntoSpeakerGroup(source: speaker, target: host)
+                    HapticEngine.shared.errorOccurred()
+                    let s = GroupingStrings.forLanguage(LanguageService.shared.activeLanguage)
+                    self.onError(String(format: s.removeFailed, speaker.name))
+                }
+            }
+        }
     }
 
     // MARK: - Private helpers (E-60)

@@ -166,6 +166,51 @@ struct SpeakerCard: View {
         // T-5607: loosened from .ignore to .contain so transport button is VoiceOver-reachable.
         // Card-level summary moved to headerSection's accessibilityLabel.
         .accessibilityElement(children: .contain)
+        // E-61 T-6106: VoiceOver alternate path for join (cross-references US-80 alternate).
+        // Drag-and-drop is not VoiceOver-accessible; this custom action presents a
+        // confirmationDialog listing every eligible draggable speaker so VoiceOver users
+        // can join speakers without a drag gesture. Eligibility uses the same predicate as
+        // SpeakerSelectorPill.isDraggable (TR-2): not a playing host, not already grouped.
+        .accessibilityAction(named: Text(GroupingStrings.forLanguage(LanguageService.shared.activeLanguage).a11yAddAction)) {
+            sessionVM?.presentAddSpeakerSheet = true
+        }
+        // E-61 T-6106: confirmationDialog driven by sessionVM.presentAddSpeakerSheet.
+        // Lists every eligible speaker (same eligibility as SpeakerSelectorPill.isDraggable).
+        // Selecting a speaker fires handleJoinDrop — identical to the drag-drop path.
+        .confirmationDialog(
+            Text(GroupingStrings.forLanguage(LanguageService.shared.activeLanguage).a11yAddAction),
+            isPresented: Binding(
+                get: { sessionVM?.presentAddSpeakerSheet ?? false },
+                set: { sessionVM?.presentAddSpeakerSheet = $0 }
+            ),
+            titleVisibility: .visible
+        ) {
+            let discovery = sessionVM?.discovery
+            let vm = sessionVM
+            let allGroups = discovery?.groups ?? []
+            // Eligible speakers: same predicate as SpeakerSelectorPill.isDraggable (TR-2):
+            //   (a) Not the playing host of any group
+            //   (b) Not already in a multi-member group
+            //   (c) Not currently in a joinsInFlight set
+            let eligibleSpeakers = allGroups.flatMap(\.members).filter { candidate in
+                let isPlayingHost = allGroups.contains {
+                    $0.hostSpeaker.id == candidate.id && $0.playbackState == .playing
+                }
+                let isInMultiGroup = allGroups.contains {
+                    $0.members.count > 1 && $0.members.contains { $0.id == candidate.id }
+                }
+                let isInFlight = vm?.joinsInFlight.contains(candidate.identifier.id) ?? false
+                return !isPlayingHost && !isInMultiGroup && !isInFlight
+            }
+            ForEach(eligibleSpeakers) { candidate in
+                Button(candidate.name) {
+                    if let vm, let host = vm.group.hostSpeaker as Speaker? {
+                        vm.handleJoinDrop(source: candidate, target: host)
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
         // E-58 T-5801: load favorites once on appear; silent failure (logged at info, no toast).
         .task {
             do {
@@ -195,19 +240,30 @@ struct SpeakerCard: View {
     ///   Mozart speakers whose joinsInFlight key is a JID may miss the JID-first lookup
     ///   and fall back to displaying the raw JID string. Cosmetic degradation; verify T-6005.
     private var chipData: [ChipData] {
+        // E-61 T-6102: capture sessionVM once so the onTap closures can reference it
+        // without capturing `self` (which would extend the view's lifetime unnecessarily).
+        let vm = sessionVM
+
         // Phase 1 — settled member chips with overflow rule.
         var chips: [ChipData]
         if groupMembers.isEmpty {
             chips = []
         } else if groupMembers.count > 3 {
-            let memberChips = groupMembers.prefix(2).map {
-                ChipData(speakerName: $0.name, kind: .member)
+            let memberChips = groupMembers.prefix(2).map { member -> ChipData in
+                let m = member
+                return ChipData(speakerName: m.name, kind: .member,
+                                onTap: { vm?.handleRemoveTap(m) })
             }
             // Overflow chip carries no name — label derived from .overflow(N), not speakerName.
+            // Overflow chips are display-only (no individual tap-to-remove).
             let overflowChip = ChipData(speakerName: "", kind: .overflow(groupMembers.count - 2))
             chips = memberChips + [overflowChip]
         } else {
-            chips = groupMembers.map { ChipData(speakerName: $0.name, kind: .member) }
+            chips = groupMembers.map { member -> ChipData in
+                let m = member
+                return ChipData(speakerName: m.name, kind: .member,
+                                onTap: { vm?.handleRemoveTap(m) })
+            }
         }
 
         // Phase 2 — loading chips for in-flight joins not yet settled (E-60 T-6002).

@@ -385,6 +385,10 @@ class SpeakerDiscoveryService: ObservableObject {
                 group.hostSpeaker = group.members[0]
                 group.id = SpeakerGroup.makeId(forHost: group.hostSpeaker)
             }
+            // E-61 T-6101: stamp cooldown so a lagging refreshGroups() does not
+            // reverse the optimistic removal during Mozart's /beolink/leave
+            // propagation lag (same symmetry as mergeIntoSpeakerGroup — ADR-E61 §2).
+            mergeCooldownUntil = Date().addingTimeInterval(Self.mergeCooldownSeconds)
             return
         }
     }
