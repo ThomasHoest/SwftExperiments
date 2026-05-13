@@ -13,6 +13,7 @@ struct SpeakerSelectorPill: View {
 
     @State private var scrollPosition: Speaker.ID?
 
+
     // SwiftUI's layout proposes an inflated width (~408pt on iPhone 14 Pro instead of 393pt)
     // due to an iOS 26 ZStack geometry issue. Read the true screen width from UIKit directly.
     private var scrollWidth: CGFloat {
@@ -55,6 +56,9 @@ struct SpeakerSelectorPill: View {
                                     dragPreviewCapsule(speaker)
                                 }
                                 // Long-press fires lift haptic before the system drag begins.
+                                // Keep at 0.35 s — shorter durations (tried 0.2 s) preempt
+                                // `.draggable`'s internal long-press recognizer and the
+                                // system drag never starts.
                                 .simultaneousGesture(
                                     LongPressGesture(minimumDuration: 0.35).onEnded { _ in
                                         Log.info("[Drag] lift haptic — \(speaker.name) eligible to drag")
@@ -116,7 +120,11 @@ struct SpeakerSelectorPill: View {
         }
         .padding(.leading, Spacing.s16)
         .padding(.trailing, Spacing.s12)
-        .padding(.vertical, Spacing.s12)
+        // Vertical padding bumped from s12 to s16 — gives ~8 pt extra pill
+        // height (~46-48 pt vs ~38-40 pt) so the pills are easier to catch
+        // for a drag start without enlarging horizontally. Drag preview and
+        // live pill share the same padding so the ghost matches the lifted pill.
+        .padding(.vertical, Spacing.s16)
         .glassEffect(in: Capsule())
         .overlay(
             Capsule()
@@ -208,7 +216,11 @@ struct SpeakerSelectorPill: View {
         }
         .padding(.leading, Spacing.s16)
         .padding(.trailing, Spacing.s12)
-        .padding(.vertical, Spacing.s12)
+        // Vertical padding bumped from s12 to s16 — gives ~8 pt extra pill
+        // height (~46-48 pt vs ~38-40 pt) so the pills are easier to catch
+        // for a drag start without enlarging horizontally. Drag preview and
+        // live pill share the same padding so the ghost matches the lifted pill.
+        .padding(.vertical, Spacing.s16)
         .glassEffect(in: Capsule())
         .overlay(
             Capsule()

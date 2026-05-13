@@ -9,6 +9,10 @@ import SwiftUI
 @main
 struct VoxioApp: App {
     @Environment(\.scenePhase) private var scenePhase
+    @State private var splashVisible = true
+
+    /// How long the splash stays on screen before cross-fading to HomeView.
+    private static let splashDuration: Duration = .milliseconds(1200)
 
     init() {
         Log.addListener(ConsoleLogListener())
@@ -20,8 +24,21 @@ struct VoxioApp: App {
 
     var body: some Scene {
         WindowGroup {
-            HomeView()
-                .preferredColorScheme(.dark)
+            ZStack {
+                HomeView()
+                if splashVisible {
+                    SplashView()
+                        .transition(.opacity)
+                        .zIndex(1)
+                }
+            }
+            .preferredColorScheme(.dark)
+            .task {
+                try? await Task.sleep(for: Self.splashDuration)
+                withAnimation(.easeInOut(duration: 0.35)) {
+                    splashVisible = false
+                }
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {

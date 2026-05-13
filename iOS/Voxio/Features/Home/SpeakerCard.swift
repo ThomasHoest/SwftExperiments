@@ -138,7 +138,10 @@ struct SpeakerCard: View {
         } isTargeted: { isOver in
             guard let vm = sessionVM else { return }
             Log.info("[Drop] isTargeted=\(isOver) for card hosted by \(vm.group.hostSpeaker.name)")
-            withAnimation(BeoAnimation.spring) { vm.dropZoneActive = isOver }
+            // Use a fast easeOut instead of BeoAnimation.spring (0.45 s response)
+            // so the gold border lights up the moment the ghost enters the card,
+            // not after a perceptible delay.
+            withAnimation(.easeOut(duration: 0.12)) { vm.dropZoneActive = isOver }
             if isOver { HapticEngine.shared.dragEnteredDropZone() }
         }
         // Scope the cardExpand spring to the scaleEffect transform only — wrapping it in a
@@ -333,7 +336,7 @@ struct SpeakerCard: View {
                 )
                 .padding(.horizontal, Spacing.s24)
                 .padding(.vertical, Spacing.s12)
-                transportRow
+                // transportRow moved inline into nowPlayingPanel — see inlineTransportButton.
                 // E-58 T-5802: favorites row — absent when favorites is empty
                 favoritesRow
                 // E-53 T-5304: group chip row — shown when host has non-host members or in-flight joins.
@@ -429,8 +432,11 @@ struct SpeakerCard: View {
 
             Spacer()
 
-            // T-5604: pass current playbackState so bars freeze when paused/stopped.
-            PlaybackBars(playbackState: speaker.playbackState)
+            // Inline play/pause button replaces the previous PlaybackBars
+            // motif. Saves ~50 pt of vertical real estate vs the standalone
+            // transportRow that used to live below the volume bar. Size 36 pt
+            // fits the metadata pill without expanding its height noticeably.
+            inlineTransportButton
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
@@ -438,6 +444,30 @@ struct SpeakerCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
+    }
+
+    @ViewBuilder
+    private var inlineTransportButton: some View {
+        switch speaker.playbackState {
+        case .playing, .buffering:
+            DarkGlassIconButton(
+                systemImage: "pause.fill",
+                role: .default,
+                accessibilityLabel: ui.pause,
+                size: 36,
+                action: onPauseTapped
+            )
+        case .paused:
+            DarkGlassIconButton(
+                systemImage: "play.fill",
+                role: .confirm,
+                accessibilityLabel: ui.play,
+                size: 36,
+                action: onPlayTapped
+            )
+        case .stopped:
+            EmptyView()   // nowPlayingPanel does not render in .stopped
+        }
     }
 
     // MARK: - Limit haptic (E-57 T-5703)

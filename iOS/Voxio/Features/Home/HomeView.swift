@@ -331,9 +331,13 @@ struct HomeView: View {
         return .discovering
     }
 
-    // T-5206: Pre-filtered list of playing groups — SpeakerGroups whose host is currently playing.
-    private var playingGroups: [SpeakerGroup] {
-        discovery.groups.filter { $0.hostSpeaker.isPlaying }
+    // Pre-filtered list of groups whose host is in an active session — i.e.
+    // any state EXCEPT .stopped. Includes .playing, .paused, and .buffering
+    // so the session card stays in the strip when the user pauses. Without
+    // this, the cardArea would switch from the SessionStripView branch to
+    // the idle SpeakerCard branch on pause, causing a visible vertical jump.
+    private var sessionGroups: [SpeakerGroup] {
+        discovery.groups.filter { $0.hostSpeaker.playbackState != .stopped }
     }
 
     // E-59 T-5909: True when at least one speaker is eligible to be dragged.
@@ -372,10 +376,10 @@ struct HomeView: View {
 
             case .hasContent:
                 // E-52 T-5206 three-branch body preserved verbatim (ADR-E52 CF-2).
-                if !playingGroups.isEmpty {
+                if !sessionGroups.isEmpty {
                     // One or more sessions playing — show swipeable strip
                     SessionStripView(
-                        groups: playingGroups,
+                        groups: sessionGroups,
                         selectedSpeaker: $selectedSpeaker,
                         roll: motionManager.roll,
                         pitch: motionManager.pitch,
