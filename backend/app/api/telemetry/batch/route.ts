@@ -1,4 +1,4 @@
-import { sql, query } from '@/lib/db'
+import { sql } from '@/lib/db'
 import { requireApiKey } from '@/lib/auth'
 import { logInfo, logWarn, logError } from '@/lib/logger'
 import { batchSchema, eventSchema } from '@/lib/schemas/batch'
@@ -146,7 +146,12 @@ export async function POST(request: Request): Promise<Response> {
       )
     }
 
-    await query(
+    // Note: `sql` from @neondatabase/serverless accepts both tagged-template
+    // and `(text, params)` call forms. The plain-function form is what the
+    // bulk INSERT needs (a variable-length VALUES clause is awkward to
+    // express via tagged template). Both forms are mocked by the same
+    // `vi.fn()` in unit tests, so test compatibility is preserved.
+    await sql(
       `INSERT INTO events (
         device_id, client_timestamp, app_version, model_version, locale,
         transcription_anonymised, intent, slots_anonymised, parser_path, outcome, flags
