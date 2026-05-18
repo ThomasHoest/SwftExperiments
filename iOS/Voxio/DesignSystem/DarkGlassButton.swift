@@ -66,6 +66,7 @@ struct DarkGlassButton: View {
 }
 
 // T-2104 — Icon-only circular variant; 36 × 36 pt visual, 44 × 44 pt hit area
+// E-56 T-5602 — added `size` parameter: pass 52 for transport row (64 pt hit area), default 36 for all other call sites.
 struct DarkGlassIconButton: View {
     enum Role {
         case `default`
@@ -77,6 +78,9 @@ struct DarkGlassIconButton: View {
     let systemImage: String
     var role: Role = .default
     let accessibilityLabel: String
+    /// Visual diameter of the icon image. Default 36 pt (all pre-E-56 call sites).
+    /// Pass 52 for the transport row (64 pt hit area via max(44, size + 12)).
+    var size: CGFloat = DarkGlassButtonTokens.iconOnlySize
     let action: () -> Void
 
     @Environment(\.colorSchemeContrast) private var contrast
@@ -102,11 +106,10 @@ struct DarkGlassIconButton: View {
             Image(systemName: systemImage)
                 .foregroundStyle(iconColor)
                 .symbolRenderingMode(.hierarchical)
-                .frame(width: DarkGlassButtonTokens.iconOnlySize,
-                       height: DarkGlassButtonTokens.iconOnlySize)
+                .frame(width: size, height: size)
         }
         .buttonStyle(DarkGlassPillStyle(borderColor: borderColor, borderWidth: borderWidth))
-        .frame(minWidth: 44, minHeight: 44)
+        .frame(minWidth: max(44, size + 12), minHeight: max(44, size + 12))
         .disabled(role == .disabled)
         .opacity(role == .disabled ? 0.4 : 1.0)
         .accessibilityLabel(accessibilityLabel)

@@ -120,6 +120,69 @@ E-49 (`Specification/Voxio 1.3/epics-and-tasks-agent-api.md`) adds agent routes 
 
 ---
 
+## Specification structure (`Specification/`)
+
+Applies from v1.4 onwards. Strict no-overlap between master spec and per-feature spec.
+
+### Document types
+
+| File | Purpose |
+|---|---|
+| `VoxioSpecification-1.X.md` | Master index — version-level context + feature stubs with links |
+| `spec-<topic>.md` | Full feature spec — all detail for one feature |
+| `design-spec-<topic>.md` | UI/UX spec — screens, components, tokens, strings |
+| `epics-and-tasks-<topic>.md` | Implementation breakdown — epics, tasks, dependency graph |
+| `research-<topic>.md` | Pre-decision investigation — feeds into spec + ADR |
+| `ADR-NNN-<topic>.md` | Architecture decision record — validates a spec |
+
+### Ownership rules
+
+**Master spec** owns: Introduction · Technical Context (cross-feature) · Goals (version-level) · Out of Scope (version-level) · one-paragraph stub per feature with links to its spec/design/epics docs · Open Questions/Resolved Decisions spanning >1 feature.
+
+**Per-feature spec** owns (nothing duplicated in master): Overview · Technical Context · Goals · Out of Scope · User Stories + acceptance criteria · Flows/behaviour · Error States · Non-Functional Requirements · feature-specific Open Questions/Resolved Decisions.
+
+**Edge case:** small feature with no per-feature spec → embed the full per-feature template inline in master under that feature's heading.
+
+### Document flow
+`research` → `spec` → `ADR` → `design-spec` → `epics-and-tasks` → implementation
+
+### Numbering conventions
+
+**Epics** — `E-XX` (two-digit, version-agnostic, monotonically increasing across all releases).
+**Tasks** — `T-XXYY` where `XX` is the parent epic number and `YY` is the task sequence within that epic (01-based). Example: T-5901 = first task of E-59.
+**User stories** — `US-XX` (two-digit, assigned per feature block, continuous across versions).
+
+Current counter state (do not reuse these numbers):
+
+| Counter | Last used | Notes |
+|---|---|---|
+| Epic | E-61 | E-52–E-55 = F3 Home Screen Redesign; E-56–E-58 = F1 Touch Playback Controls; E-59–E-61 = F2 Multiroom Grouping |
+| User story | US-84 | US-60–US-66 = F3; US-70–US-73 = F1; US-80–US-84 = F2 |
+
+### v1.4 document inventory (`Specification/Voxio 1.4/`)
+
+| File | Type | Feature |
+|---|---|---|
+| `VoxioSpecification-1.4.md` | Master spec | All |
+| `spec-home-screen-redesign.md` | Feature spec | F3 |
+| `spec-touch-playback-controls.md` | Feature spec | F1 |
+| `spec-multiroom-grouping.md` | Feature spec | F2 |
+| `design-spec-home-screen-redesign.md` | Design spec | F3 |
+| `design-spec-touch-playback-controls.md` | Design spec | F1 |
+| `design-spec-multiroom-grouping.md` | Design spec | F2 |
+| `epics-and-tasks-home-screen-redesign.md` | Epics/tasks | F3 (E-52–E-55) |
+| `epics-and-tasks-touch-playback-controls.md` | Epics/tasks | F1 (E-56–E-58) |
+| `epics-and-tasks-multiroom-grouping.md` | Epics/tasks | F2 (E-59–E-61) |
+| `ADR-002-voxio-1.4-ios.md` | ADR | All iOS |
+| `mockup-home-screen-redesign.svg` | Mockup | F3 |
+| `mockup-multiroom-grouping.svg` | Mockup | F2 |
+
+### Implementation notes
+
+- `HapticEngine.swift` requires three new methods: `dragLifted()`, `dragEnteredDropZone()`, `dragCancelled()` — tracked as T-5901 (E-59). These are referenced throughout `design-spec-multiroom-grouping.md` and must exist before any F2 drag code compiles.
+
+---
+
 ## B&O Mozart Open API notes
 
 - REST base: `http://<speaker-ip>/api/v1/`

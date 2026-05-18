@@ -23,7 +23,7 @@ extension MozartEvents: SpeakerEventSource {
         case .playbackState(let e):
             let state: SpeakerPlaybackState
             switch e.value {
-            case .playing, .started: state = .playing
+            case .playing:           state = .playing
             case .paused:            state = .paused
             case .stopped, .unknown: state = .stopped
             case .buffering:         state = .buffering
@@ -37,6 +37,8 @@ extension MozartEvents: SpeakerEventSource {
             return .battery(b)
         case .playbackSource(let s):
             return .source(name: s.displayName, id: s.id)
+        case .beolinkChanged:
+            return .groupHint
         case .power, .progress, .unknown:
             return nil
         }

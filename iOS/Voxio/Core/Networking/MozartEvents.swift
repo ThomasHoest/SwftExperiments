@@ -88,7 +88,14 @@ class MozartEvents {
         }
 
         let event = parse(type: type, data: bodyData)
-        Log.verbose("[WS:\(host)] \(type)")
+        // Log unknown event types at INFO so on-device verification can identify
+        // any group-relevant events that firmware emits under names we don't yet
+        // recognise. Known types stay at verbose to avoid log spam.
+        if case .unknown(let t) = event {
+            Log.info("[WS:\(host)] unhandled event type: \(t)")
+        } else {
+            Log.verbose("[WS:\(host)] \(type)")
+        }
         onEvent?(event)
     }
 
@@ -108,6 +115,17 @@ class MozartEvents {
             return decode(PowerState.self, from: data).map(BeoEvent.power) ?? .unknown(type)
         case "WebSocketEventPlaybackProgress":
             return decode(PlaybackProgressEvent.self, from: data).map(BeoEvent.progress) ?? .unknown(type)
+        // Beolink (multiroom) topology changes. The Mozart Open API spec names
+        // these `WebSocketEventBeolinkExperiencesResult` / `…PeersResult`, but
+        // on-device traces show current firmware emits the generic
+        // `WebSocketEventNotification` instead. Treat all three as topology
+        // hints — the discovery service debounces (500 ms) and re-queries
+        // /beolink/listeners, so over-triggering on unrelated notifications is
+        // harmless: at worst we pay one extra listeners sweep per burst.
+        case "WebSocketEventBeolinkExperiencesResult",
+             "WebSocketEventBeolinkPeersResult",
+             "WebSocketEventNotification":
+            return .beolinkChanged
         default:
             return .unknown(type)
         }

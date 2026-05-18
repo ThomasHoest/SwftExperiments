@@ -61,7 +61,11 @@ final class TelemetryUploader {
         self.deviceId = KeychainDeviceID.readOrCreate()
 
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 30
+        // 60 s tolerates Azure Static Web Apps cold-start latency (which can spike
+        // to ~30-60 s after a long idle). Telemetry is non-interactive, so waiting
+        // is preferable to dropping the batch — events stay in the buffer on timeout
+        // anyway, but a successful retry on cold-start saves a round-trip cycle.
+        config.timeoutIntervalForRequest = 60
         self.session = URLSession(configuration: config)
 
         pathMonitor.pathUpdateHandler = { [weak self] path in
@@ -112,7 +116,13 @@ final class TelemetryUploader {
         }
 
         do {
-            let batch = try buffer.pendingBatch(limit: 100)
+            // 25-event batch keeps each request short enough to complete inside
+            // the Azure Functions consumption-tier execution timeout (~30 s),
+            // even when Neon's serverless driver pays a 10-20 s cold-start
+            // penalty on the first SQL round-trip. Previous limit of 100 was
+            // observed timing out → HTTP 500 "Backend call failure" from the
+            // Azure SWA frontend. Multiple smaller batches drain reliably.
+            let batch = try buffer.pendingBatch(limit: 25)
             guard !batch.isEmpty else { return }
 
             let appVersion   = batch[0].appVersion
@@ -145,13 +155,17 @@ final class TelemetryUploader {
             Log.info("[TelemetryUploader] uploading \(batch.count) event(s) to \(url)")
             let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse else { return }
+            let bodyText = String(data: data, encoding: .utf8) ?? ""
             guard (200..<300).contains(http.statusCode) else {
-                Log.error("[TelemetryUploader] upload failed — HTTP \(http.statusCode)")
+                // Log the response body too — for 4xx the backend includes a Zod
+                // detail message that pinpoints which field failed validation.
+                // Without this we have no on-device signal beyond the status code.
+                Log.error("[TelemetryUploader] upload failed — HTTP \(http.statusCode) body=\(bodyText.isEmpty ? "<empty>" : bodyText)")
                 return
             }
             Log.info("[TelemetryUploader] server responded \(http.statusCode)")
-            if let body = String(data: data, encoding: .utf8), !body.isEmpty {
-                Log.info("[TelemetryUploader] response body: \(body)")
+            if !bodyText.isEmpty {
+                Log.info("[TelemetryUploader] response body: \(bodyText)")
             }
 
             let uploadedIds = batch.map(\.id)
@@ -192,11 +206,32 @@ final class TelemetryUploader {
     // MARK: - Private helpers
 
     private func normalisedParserPath(_ raw: String) -> String {
+        // The backend Zod schema enforces a strict enum on parser_path
+        // (PersonalisationAlias / PersonalisationMemory / FoundationModels /
+        // NLModel / KeywordRegex / Unknown). Any other value — including the
+        // lowercase "unknown" that some record sites in HomeView default to
+        // when lastParserPath is nil — causes the entire batch to be
+        // rejected with HTTP 400. Map every recognised legacy alias, then
+        // map anything else to "Unknown" so a rogue value never wedges the
+        // upload pipeline.
+        let validEnum: Set<String> = [
+            "PersonalisationAlias",
+            "PersonalisationMemory",
+            "FoundationModels",
+            "NLModel",
+            "KeywordRegex",
+            "Unknown",
+        ]
+        if validEnum.contains(raw) { return raw }
         switch raw {
-        case "PersonalisationTier": return "PersonalisationAlias"
-        case "Stage1-fast":         return "KeywordRegex"
+        case "PersonalisationTier":          return "PersonalisationAlias"
+        case "Stage1-fast":                  return "KeywordRegex"
         case "TwoStageFallback", "Fallback": return "NLModel"
-        default:                    return raw
+        case "unknown", "":
+            return "Unknown"
+        default:
+            Log.info("[TelemetryUploader] unrecognised parserPath '\(raw)' → 'Unknown'")
+            return "Unknown"
         }
     }
 

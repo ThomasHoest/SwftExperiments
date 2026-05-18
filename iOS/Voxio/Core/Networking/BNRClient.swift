@@ -260,10 +260,21 @@ class BNRClient {
     /// Master-side multi-room join: adds a listener to this device's primary experience.
     /// This device must be the broadcasting source; the listener is identified by their JID.
     /// Maps to the C# `BuildExpandExperienceRequest(listenerJid)` builder.
+    /// Logs at INFO so wire-level activity is visible without raising the global log level.
     func expandExperience(listenerJid: String) async throws {
         struct Body: Encodable { let jid: String }
-        try await postVoid("/BeoZone/Zone/ActiveSources/primaryExperience",
-                           body: try encode(Body(jid: listenerJid)))
+        let path = "/BeoZone/Zone/ActiveSources/primaryExperience"
+        let bodyData = try encode(Body(jid: listenerJid))
+        let bodyStr = String(data: bodyData, encoding: .utf8) ?? "<binary>"
+        Log.info("[BNR:\(host)] → POST \(path) body=\(bodyStr)")
+        do {
+            let resp = try await send(path, method: "POST", body: bodyData)
+            let respStr = String(data: resp, encoding: .utf8) ?? ""
+            Log.info("[BNR:\(host)] ← 2xx POST \(path) body=\(respStr.isEmpty ? "<empty>" : respStr)")
+        } catch {
+            Log.error("[BNR:\(host)] ✗ POST \(path) → \(error)")
+            throw error
+        }
     }
 
     /// Listener-side legacy "Join" button: this device joins whatever the network advertises
@@ -275,7 +286,40 @@ class BNRClient {
     }
 
     func leave() async throws {
-        try await deleteVoid("/BeoZone/Zone/ActiveSources/primaryExperience")
+        let path = "/BeoZone/Zone/ActiveSources/primaryExperience"
+        Log.info("[BNR:\(host)] → DELETE \(path)")
+        do {
+            try await deleteVoid(path)
+            Log.info("[BNR:\(host)] ← 2xx DELETE \(path)")
+        } catch {
+            Log.error("[BNR:\(host)] ✗ DELETE \(path) → \(error)")
+            throw error
+        }
+    }
+
+    // MARK: - ADR-003: follower-side leader detection
+
+    /// Returns the JID of the device currently broadcasting this speaker's
+    /// primary experience, or nil if missing / equal to this device's own JID.
+    /// Sourced from `activeSources.primaryJid` in `/BeoZone/Zone/ActiveSources`.
+    /// Used by `SpeakerDiscoveryService.reconstructGroupsAsync()` for follower-side
+    /// group reconstruction (the leader's expand wrote our JID into its
+    /// primaryExperience listeners; we observe the reverse pointer here).
+    ///
+    /// Note: `cachedJid` is populated during speaker init via `getName()` →
+    /// `/BeoDevice` (which captures the `Device-Jid` response header), so the
+    /// `getJid()` call here is a cheap cache hit by the time reconstruct runs.
+    func getLeaderJid() async throws -> String? {
+        let raw = try await send("/BeoZone/Zone/ActiveSources", method: "GET")
+        let response: BNRActiveSourcesResponse
+        do { response = try decoder.decode(BNRActiveSourcesResponse.self, from: raw) }
+        catch {
+            Log.info("[BNR:\(host)] getLeaderJid decode failed: \(error)")
+            return nil
+        }
+        guard let primaryJid = response.activeSources?.primaryJid else { return nil }
+        let ownJid = try? await getJid()
+        return primaryJid == ownJid ? nil : primaryJid
     }
 }
 

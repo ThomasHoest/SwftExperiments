@@ -20,6 +20,11 @@
     </dict>
     <key>UIRequiresFullScreen</key>
     <true/>
+    <key>UILaunchScreen</key>
+    <dict>
+        <key>UIColorName</key>
+        <string>SplashBackground</string>
+    </dict>
     <key>UIFileSharingEnabled</key>
     <true/>
     <key>TELEMETRY_HOSTNAME</key>
