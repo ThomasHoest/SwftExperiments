@@ -1,4 +1,4 @@
-import { sql } from '@/lib/db'
+import { sql, query } from '@/lib/db'
 import { requireApiKey } from '@/lib/auth'
 import { logInfo, logWarn, logError } from '@/lib/logger'
 import { batchSchema, eventSchema } from '@/lib/schemas/batch'
@@ -110,27 +110,49 @@ export async function POST(request: Request): Promise<Response> {
         locale         = EXCLUDED.locale
     `
 
-    // Step 8: Multi-row INSERT for valid events
+    // Step 8: Single multi-row INSERT for all valid events.
+    //
+    // Previously this was a per-event INSERT in a `for` loop. With the Neon
+    // serverless driver, each `await sql\`...\`` is a separate HTTP round-
+    // trip to the proxy — 100 events ≈ 100 round-trips + the device UPSERT,
+    // which exceeded the Azure Functions consumption-tier execution timeout
+    // (~30 s) once cold-start latency on the first SQL call was added in.
+    // The Azure SWA frontend then returned a generic
+    // "Backend call failure" 500 to the client. One INSERT × N rows scales
+    // far better and stays well inside the timeout for typical batch sizes
+    // (iOS caps batches at 25 events).
+    const cols = 11
+    const placeholders = validEvents
+      .map((_, i) => {
+        const base = i * cols
+        return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}::jsonb, $${base + 9}, $${base + 10}, $${base + 11})`
+      })
+      .join(', ')
+
+    const params: unknown[] = []
     for (const event of validEvents) {
-      await sql`
-        INSERT INTO events (
-          device_id, client_timestamp, app_version, model_version, locale,
-          transcription_anonymised, intent, slots_anonymised, parser_path, outcome, flags
-        ) VALUES (
-          ${deviceId},
-          ${event.timestamp},
-          ${appVersion},
-          ${modelVersion},
-          ${event.locale},
-          ${event.transcriptionAnonymised},
-          ${event.intent},
-          ${JSON.stringify(event.slotsAnonymised)},
-          ${event.parserPath},
-          ${event.outcome},
-          ${event.flags}
-        )
-      `
+      params.push(
+        deviceId,
+        event.timestamp,
+        appVersion,
+        modelVersion,
+        event.locale,
+        event.transcriptionAnonymised,
+        event.intent,
+        JSON.stringify(event.slotsAnonymised),
+        event.parserPath,
+        event.outcome,
+        event.flags
+      )
     }
+
+    await query(
+      `INSERT INTO events (
+        device_id, client_timestamp, app_version, model_version, locale,
+        transcription_anonymised, intent, slots_anonymised, parser_path, outcome, flags
+      ) VALUES ${placeholders}`,
+      params
+    )
 
     const accepted = validEvents.length
     const rejected = errors.length
