@@ -8,6 +8,8 @@ struct HomeView: View {
     @StateObject private var coordinator   = ConfirmationCoordinator()
     @StateObject private var motionManager = MotionManager()
     @ObservedObject private var langService = LanguageService.shared
+    // T-5502: NetworkMonitor — @Observable @MainActor; owned for HomeView lifetime.
+    @State private var network        = NetworkMonitor()
     @State private var voiceToText    = VoiceToText()
     @State private var personalisationStore: PersonalisationStore
     @State private var commandRouter: CommandParserRouter
@@ -43,6 +45,14 @@ struct HomeView: View {
     @State private var showHelp = false
     @State private var showLanguagePicker = false
     @State private var currentToast:  Toast?
+    // E-56 T-5606 — SpeakerCard transport error surface. onChange converts to Toast and resets to nil.
+    @State private var cardErrorMessage: String?
+
+    // E-59 T-5905 — joinsInFlight aggregation for SpeakerSelectorPill opacity gating.
+    // Written by SessionStripView via Binding; read here to forward to SpeakerSelectorPill.
+    // Option B from the ADR: SessionStripView writes, HomeView owns @State, forwards to SelectorPill.
+    // Stays empty in E-59 scope (handleJoinDrop stub). E-60 T-6004 fills it in.
+    @State private var joinsInFlightUnion: Set<String> = []
 
     // Exposed for Settings sheet (E-39 T-3906)
     var onboardingSheetBinding: Binding<Bool> { $showOnboardingSheet }
@@ -68,22 +78,47 @@ struct HomeView: View {
             VStack(spacing: 0) {
                 statusBar
 
-                Spacer(minLength: 24)
+                // Fixed-height gap below statusBar — keeping this rigid means the single
+                // flex Spacer between cardArea and voiceFeedback absorbs 100% of any
+                // cardArea height change, so voiceFeedback stays put.
+                Color.clear.frame(height: 24)
 
                 cardArea
 
                 Spacer(minLength: 28)
 
-                voiceFeedback
+                // T-5512: voice feedback and bottom bar hidden when offline (US-65).
+                // CF-4: voiceFeedback is NOT hidden in .discovering or .noSpeakersFound.
+                // CF-5: explicit isOnWifi gate covers the edge case where groups is non-empty
+                //       when Wi-Fi drops (the >= 1 guard alone would not hide the bar).
+                if network.isOnWifi {
+                    voiceFeedback
 
-                Spacer(minLength: 20)
+                    // Fixed-height gap below voiceFeedback. With this fixed (instead of a
+                    // flex Spacer), only the two Spacers ABOVE voiceFeedback are flexible.
+                    // If cardArea height fluctuates during boot (REST data arriving, favorites
+                    // loading, metadata settling), the two flex Spacers absorb the change
+                    // proportionally and voiceFeedback's y-position stays constant — so the
+                    // "Lytter…" status text doesn't drift up and down with each redraw.
+                    Color.clear.frame(height: 20)
 
-                if discovery.groups.flatMap(\.members).count > 1 {
-                    SpeakerSelectorPill(
-                        speakers: discovery.groups.flatMap(\.members),
-                        selectedSpeaker: $selectedSpeaker
-                    )
-                    .padding(.bottom, 12)
+                    // T-5408: changed from count > 1 to count >= 1 (US-62 acceptance criterion —
+                    // idle speakers are shown in the bar; bar appears as soon as one speaker is discovered).
+                    if discoveredSpeakerCount >= 1 {
+                        SpeakerSelectorPill(
+                            speakers: discovery.groups.flatMap(\.members),
+                            selectedSpeaker: $selectedSpeaker,
+                            groups: discovery.groups,
+                            joinsInFlightUnion: joinsInFlightUnion   // E-59 T-5903
+                        )
+                        // E-59 T-5909 — Coach mark applied to the bottom bar region.
+                        // hasEligiblePill: true when any speaker in any group is draggable.
+                        .modifier(GroupingCoachMark(
+                            hasEligiblePill: hasEligiblePillForCoachMark,
+                            onDismiss: {}
+                        ))
+                        .padding(.bottom, 12)
+                    }
                 }
             }
             .frame(width: (UIApplication.shared.connectedScenes
@@ -147,8 +182,16 @@ struct HomeView: View {
             }
         }
         .onAppear(perform: onAppear)
-        .onAppear { BreadcrumbTracker.shared.push("Home") }
-        .onDisappear { BreadcrumbTracker.shared.pop() }
+        .onAppear {
+            // T-5502: start NetworkMonitor for HomeView lifetime.
+            network.start()
+            BreadcrumbTracker.shared.push("Home")
+        }
+        .onDisappear {
+            // T-5502: stop NetworkMonitor when view leaves the hierarchy.
+            network.stop()
+            BreadcrumbTracker.shared.pop()
+        }
         // ADR §Consequences point 2 — re-fire startListening when hasCompletedOnboarding flips
         .onChange(of: hasCompletedOnboarding) { _, completed in
             if completed { startListeningIfReady() }
@@ -177,6 +220,18 @@ struct HomeView: View {
         }
         .onChange(of: langService.activeLanguage) { _, language in
             voiceToText.setLanguage(language)
+        }
+        // E-56 T-5606 — convert SpeakerCard transport errors to toast; reset binding afterwards.
+        .onChange(of: cardErrorMessage) { _, message in
+            guard let message else { return }
+            showToast(Toast(kind: .error(message: message, list: [])))
+            cardErrorMessage = nil
+        }
+        // T-5513: when Wi-Fi is restored, restart listening if preconditions are met.
+        .onChange(of: network.isOnWifi) { _, isOnWifi in
+            guard isOnWifi else { return }
+            guard hasCompletedOnboarding, langService.hasExplicitlyChosen else { return }
+            startListening()
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
@@ -243,7 +298,12 @@ struct HomeView: View {
             }
 
             Spacer()
-            ConnectionStatusChip(speakerCount: discovery.groups.flatMap(\.members).count)
+            // T-5504: updated to new three-input signature (isOnWifi/didSettle/speakerCount).
+            ConnectionStatusChip(
+                isOnWifi:     network.isOnWifi,
+                didSettle:    discovery.didSettle,
+                speakerCount: discoveredSpeakerCount
+            )
 
             DarkGlassIconButton(
                 systemImage: "gearshape",
@@ -257,20 +317,94 @@ struct HomeView: View {
 
     // ── Card area ─────────────────────────────────────────────────────────────
 
+    // T-5505: Flat count of all discovered speakers (across all groups).
+    private var discoveredSpeakerCount: Int {
+        discovery.groups.flatMap(\.members).count
+    }
+
+    // T-5505: Four-state machine computed from (network.isOnWifi, didSettle, speakerCount).
+    // Priority: !isOnWifi wins first; speakerCount > 0 wins over settle state.
+    private var homeState: HomeState {
+        guard network.isOnWifi else { return .offline }
+        if discoveredSpeakerCount > 0 { return .hasContent }
+        if discovery.didSettle { return .noSpeakersFound }
+        return .discovering
+    }
+
+    // Pre-filtered list of groups whose host is in an active session — i.e.
+    // any state EXCEPT .stopped. Includes .playing, .paused, and .buffering
+    // so the session card stays in the strip when the user pauses. Without
+    // this, the cardArea would switch from the SessionStripView branch to
+    // the idle SpeakerCard branch on pause, causing a visible vertical jump.
+    private var sessionGroups: [SpeakerGroup] {
+        discovery.groups.filter { $0.hostSpeaker.playbackState != .stopped }
+    }
+
+    // E-59 T-5909: True when at least one speaker is eligible to be dragged.
+    // Computes the same eligibility as SpeakerSelectorPill.isDraggable:
+    //   — not a playing host, not already in a multi-speaker group, not in joinsInFlight.
+    private var hasEligiblePillForCoachMark: Bool {
+        let allSpeakers = discovery.groups.flatMap(\.members)
+        return allSpeakers.contains { speaker in
+            let isPlayingHost = discovery.groups.contains {
+                $0.hostSpeaker.id == speaker.id && $0.playbackState == .playing
+            }
+            let isInMulti = discovery.groups.contains {
+                $0.members.count > 1 && $0.members.contains { $0.id == speaker.id }
+            }
+            let inFlight = joinsInFlightUnion.contains(speaker.identifier.id)
+            return !isPlayingHost && !isInMulti && !inFlight
+        }
+    }
+
     @ViewBuilder
     private var cardArea: some View {
-        if let speaker = displayedSpeaker {
-            SpeakerCard(
-                speaker: speaker,
-                isExpanded: isCommandActive,
-                roll: motionManager.roll,
-                pitch: motionManager.pitch
-            )
-            .opacity(hasAppeared ? 1 : 0)
-            .scaleEffect(hasAppeared ? 1 : 0.96)
-        } else {
-            emptyState
+        // T-5505: Four-state routing wrapping the E-52 T-5206 body.
+        // T-5509: .animation drives cross-fades between layout branches.
+        Group {
+            switch homeState {
+            case .offline:
+                DiscoveryStateView(state: .offline, onSearchAgain: {})
+
+            case .discovering:
+                DiscoveryStateView(state: .discovering, onSearchAgain: {})
+
+            case .noSpeakersFound:
+                DiscoveryStateView(state: .noSpeakersFound, onSearchAgain: {
+                    discovery.restart()
+                })
+
+            case .hasContent:
+                // E-52 T-5206 three-branch body preserved verbatim (ADR-E52 CF-2).
+                if !sessionGroups.isEmpty {
+                    // One or more sessions playing — show swipeable strip
+                    SessionStripView(
+                        groups: sessionGroups,
+                        selectedSpeaker: $selectedSpeaker,
+                        roll: motionManager.roll,
+                        pitch: motionManager.pitch,
+                        isCommandActive: isCommandActive,
+                        errorMessage: $cardErrorMessage,   // E-56 T-5606
+                        discovery: discovery,              // E-59 T-5905 — for SessionViewModel creation
+                        joinsInFlightUnionBinding: $joinsInFlightUnion  // E-59 Option B
+                    )
+                } else if let speaker = displayedSpeaker {
+                    // Speakers discovered but none playing (idle state)
+                    SpeakerCard(
+                        speaker: speaker,
+                        isExpanded: isCommandActive,
+                        roll: motionManager.roll,
+                        pitch: motionManager.pitch,
+                        errorMessage: $cardErrorMessage   // E-56 T-5606
+                    )
+                    .opacity(hasAppeared ? 1 : 0)
+                    .scaleEffect(hasAppeared ? 1 : 0.96)
+                } else {
+                    emptyState
+                }
+            }
         }
+        .animation(BeoAnimation.toast, value: homeState.layoutKey)
     }
 
     private var emptyState: some View {
@@ -295,22 +429,29 @@ struct HomeView: View {
             WaveformView(audioLevel: audioLevel, isListening: isListening)
                 .frame(height: 44)
 
-            if !transcriptController.text.isEmpty {
-                Text(transcriptController.text)
-                    .font(BeoType.confirmation)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
-                    .transition(.opacity)
-                    .animation(.easeIn(duration: 0.15), value: transcriptController.text)
-                    .onTapGesture { transcriptController.clearNow() }
-            }
+            // Fixed-height transcript slot (60 pt = ~2 lines of BeoType.confirmation @ 17pt + 16pt
+            // top padding). Use a Color.clear placeholder with the Text as an overlay so the
+            // slot's frame is locked regardless of transcript content, length, or presence —
+            // this prevents the status row below ("Lytter…") from bouncing when the speech
+            // recognizer fires partial transcripts (which happens continuously when a speaker
+            // is playing music in the room).
+            Color.clear
+                .frame(height: 60)
+                .overlay(alignment: .top) {
+                    Text(transcriptController.text)
+                        .font(BeoType.confirmation)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+                        .animation(.easeIn(duration: 0.15), value: transcriptController.text)
+                        .onTapGesture { transcriptController.clearNow() }
+                }
 
             Text(micStatus)
                 .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.white.opacity(0.75))
                 .padding(.top, 12)
             // HintCardView removed per E-38; replaced by OnboardingView fullScreenCover
         }
@@ -362,6 +503,13 @@ struct HomeView: View {
     }
 
     private func startListening() {
+        // T-5513: gate the voice/discovery pipeline on Wi-Fi availability.
+        // NetworkMonitor defaults to isOnWifi=true (ADR D2), so this guard does not block
+        // startup — it only prevents re-entry when the app wakes while still offline.
+        guard network.isOnWifi else {
+            Log.info("[HomeView] startListening skipped — no Wi-Fi")
+            return
+        }
         voiceToText.setLanguage(langService.activeLanguage)
         discovery.start()
         motionManager.start()
@@ -465,7 +613,7 @@ struct HomeView: View {
                             speakerId: "",
                             intent: CommandIntent.unknown.rawValue,
                             slots: [:],
-                            parserPath: commandRouter.lastParserPath ?? "unknown",
+                            parserPath: commandRouter.lastParserPath ?? "Unknown",
                             outcome: .unknown,
                             locale: Locale.current.identifier
                         )
@@ -663,7 +811,7 @@ struct HomeView: View {
                     speakerId: speaker.stableId,
                     intent: command.toCommandIntent().rawValue,
                     slots: [:],
-                    parserPath: commandRouter.lastParserPath ?? "unknown",
+                    parserPath: commandRouter.lastParserPath ?? "Unknown",
                     outcome: isUnknown ? .unknown : .confirmed,
                     locale: Locale.current.identifier
                 )
@@ -683,7 +831,7 @@ struct HomeView: View {
 
         Log.info("[HomeView][clear] path=countdown command=\(command) → clearAfterCommand deferred to action")
 
-        let capturedParserPath = commandRouter.lastParserPath ?? "unknown"
+        let capturedParserPath = commandRouter.lastParserPath ?? "Unknown"
 
         coordinator.startCountdown(
             action: {

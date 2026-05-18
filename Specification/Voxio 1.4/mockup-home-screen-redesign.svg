@@ -1,0 +1,222 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 720" font-family="'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <!-- Hand-drawn / sketchy filter -->
+    <filter id="sketch" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" seed="2" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+
+    <!-- Slightly rougher filter for outlines -->
+    <filter id="sketchHeavy" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="3" seed="5" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.8" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+
+  <!-- Paper background -->
+  <rect width="860" height="720" fill="#FAFAF8"/>
+
+  <!-- ─────────────────── TITLE ─────────────────── -->
+  <text x="430" y="38" text-anchor="middle" font-size="15" font-weight="600" fill="#222" letter-spacing="0.5">Home Screen Redesign — v1.4 Sketch</text>
+  <line x1="60" y1="50" x2="800" y2="50" stroke="#999" stroke-width="0.8" stroke-dasharray="4,3" filter="url(#sketch)"/>
+
+  <!-- ═══════════════════════════════════════════
+       LEFT PANEL — CURRENT
+       ═══════════════════════════════════════════ -->
+
+  <text x="175" y="78" text-anchor="middle" font-size="12" fill="#888" font-style="italic">Current</text>
+
+  <!-- Phone shell -->
+  <rect x="90" y="88" width="170" height="570" rx="24" fill="#1A1D26" stroke="#444" stroke-width="1.5" filter="url(#sketchHeavy)"/>
+  <!-- Notch / dynamic island -->
+  <rect x="150" y="97" width="50" height="12" rx="6" fill="#111" filter="url(#sketch)"/>
+
+  <!-- Status bar -->
+  <text x="104" y="125" font-size="7" fill="#aaa">08.34</text>
+  <text x="228" y="125" text-anchor="end" font-size="7" fill="#aaa">5G ▪ ▪ ▪</text>
+
+  <!-- Top bar: ?, wifi count, gear -->
+  <circle cx="108" cy="148" r="8" fill="none" stroke="#888" stroke-width="1" filter="url(#sketch)"/>
+  <text x="108" y="151" text-anchor="middle" font-size="7" fill="#aaa">?</text>
+  <text x="175" y="151" text-anchor="middle" font-size="7" fill="#aaa">≈ 3</text>
+  <circle cx="242" cy="148" r="8" fill="none" stroke="#888" stroke-width="1" filter="url(#sketch)"/>
+  <text x="242" y="151" text-anchor="middle" font-size="7" fill="#aaa">⚙</text>
+
+  <!-- Orb background blob -->
+  <ellipse cx="175" cy="250" rx="68" ry="68" fill="#1E3A5F" opacity="0.6" filter="url(#sketch)"/>
+  <ellipse cx="155" cy="240" rx="40" ry="40" fill="#2B5F8A" opacity="0.4" filter="url(#sketch)"/>
+
+  <!-- Speaker card -->
+  <rect x="104" y="190" width="142" height="115" rx="14" fill="#1E2235" stroke="#555" stroke-width="0.8" opacity="0.92" filter="url(#sketchHeavy)"/>
+  <text x="116" y="211" font-size="10" font-weight="700" fill="#F0EDE8">Badeværelse</text>
+  <text x="212" y="209" text-anchor="end" font-size="6" fill="#aaa" letter-spacing="0.3">beolink</text>
+  <text x="116" y="224" font-size="7" fill="#aaa">Playing</text>
+
+  <!-- Now-playing panel -->
+  <rect x="112" y="231" width="126" height="30" rx="6" fill="#FFFFFF" fill-opacity="0.07" filter="url(#sketch)"/>
+  <text x="120" y="243" font-size="7" fill="#EEE">DR P1</text>
+  <text x="120" y="253" font-size="6" fill="#aaa">dr.dk/p1</text>
+  <!-- Playback bars -->
+  <rect x="224" y="244" width="3" height="8" rx="1.5" fill="#C8A97E" filter="url(#sketch)"/>
+  <rect x="229" y="240" width="3" height="12" rx="1.5" fill="#C8A97E" filter="url(#sketch)"/>
+  <rect x="234" y="242" width="3" height="10" rx="1.5" fill="#C8A97E" filter="url(#sketch)"/>
+
+  <!-- Volume bar -->
+  <rect x="114" y="267" width="118" height="3" rx="1.5" fill="#FFFFFF" fill-opacity="0.12" filter="url(#sketch)"/>
+  <rect x="114" y="267" width="42" height="3" rx="1.5" fill="#C8A97E" filter="url(#sketch)"/>
+  <text x="238" y="271" text-anchor="end" font-size="6" fill="#aaa">20</text>
+
+  <!-- Waveform area -->
+  <text x="175" y="345" text-anchor="middle" font-size="6" fill="#888">〜〜〜〜〜</text>
+  <text x="175" y="358" text-anchor="middle" font-size="6" fill="#777" font-style="italic">Lytter…</text>
+
+  <!-- Speaker pills (current) — plain text only -->
+  <rect x="98" y="595" width="64" height="26" rx="13" fill="#1E2235" stroke="#555" stroke-width="0.7" filter="url(#sketch)"/>
+  <text x="130" y="612" text-anchor="middle" font-size="7" fill="#aaa">Pejsestuen</text>
+
+  <rect x="168" y="595" width="52" height="26" rx="13" fill="#1E2235" stroke="#C8A97E" stroke-width="0.9" filter="url(#sketch)"/>
+  <text x="194" y="612" text-anchor="middle" font-size="7" fill="#C8A97E">Badeværelse</text>
+
+  <rect x="225" y="595" width="30" height="26" rx="13" fill="#1E2235" stroke="#555" stroke-width="0.7" filter="url(#sketch)"/>
+  <text x="240" y="612" text-anchor="middle" font-size="7" fill="#aaa">Stue</text>
+
+  <!-- ─── "no state visible" annotation ─── -->
+  <text x="96" y="636" font-size="6.5" fill="#999" font-style="italic">No playback state on pills</text>
+  <text x="96" y="647" font-size="6.5" fill="#999" font-style="italic">No group indicator</text>
+  <text x="96" y="658" font-size="6.5" fill="#999" font-style="italic">Single card only</text>
+  <text x="96" y="669" font-size="6.5" fill="#999" font-style="italic">State text unstyled</text>
+
+
+  <!-- ═══════════════════════════════════════════
+       CENTRE — DIVIDER + ARROW
+       ═══════════════════════════════════════════ -->
+
+  <line x1="280" y1="88" x2="280" y2="658" stroke="#DDD" stroke-width="1" stroke-dasharray="5,4" filter="url(#sketch)"/>
+
+  <!-- Arrow -->
+  <line x1="300" y1="370" x2="350" y2="370" stroke="#666" stroke-width="1.5" filter="url(#sketch)"/>
+  <polygon points="350,366 358,370 350,374" fill="#666" filter="url(#sketch)"/>
+
+  <!-- ═══════════════════════════════════════════
+       RIGHT PANEL — PROPOSED v1.4
+       ═══════════════════════════════════════════ -->
+
+  <text x="590" y="78" text-anchor="middle" font-size="12" fill="#333" font-weight="600" font-style="italic">Proposed v1.4</text>
+
+  <!-- Phone shell -->
+  <rect x="380" y="88" width="220" height="570" rx="28" fill="#1A1D26" stroke="#333" stroke-width="2" filter="url(#sketchHeavy)"/>
+  <!-- Dynamic island -->
+  <rect x="460" y="99" width="60" height="14" rx="7" fill="#111" filter="url(#sketch)"/>
+
+  <!-- Status bar -->
+  <text x="396" y="128" font-size="7.5" fill="#aaa">08.34</text>
+  <text x="592" y="128" text-anchor="end" font-size="7.5" fill="#aaa">5G ▪ ▪ ▪</text>
+
+  <!-- Top bar -->
+  <circle cx="400" cy="152" r="9" fill="none" stroke="#777" stroke-width="1" filter="url(#sketch)"/>
+  <text x="400" y="156" text-anchor="middle" font-size="8" fill="#aaa">?</text>
+  <text x="490" y="156" text-anchor="middle" font-size="7.5" fill="#aaa">≈ 3</text>
+  <circle cx="580" cy="152" r="9" fill="none" stroke="#777" stroke-width="1" filter="url(#sketch)"/>
+  <text x="580" y="156" text-anchor="middle" font-size="8" fill="#aaa">⚙</text>
+
+  <!-- Orb blob -->
+  <ellipse cx="490" cy="295" rx="90" ry="90" fill="#1E3A5F" opacity="0.55" filter="url(#sketch)"/>
+  <ellipse cx="465" cy="278" rx="52" ry="52" fill="#2B5F8A" opacity="0.4" filter="url(#sketch)"/>
+
+  <!-- ── SESSION CARD 1 (main / foreground) ── -->
+  <rect x="394" y="175" width="180" height="180" rx="18" fill="#1E2235" stroke="#666" stroke-width="1" opacity="0.95" filter="url(#sketchHeavy)"/>
+
+  <!-- Card header -->
+  <text x="410" y="201" font-size="12" font-weight="700" fill="#F0EDE8">Badeværelse</text>
+  <text x="568" y="199" text-anchor="end" font-size="7" fill="#aaa" letter-spacing="0.3">beolink</text>
+
+  <!-- State label — accent colour for playing -->
+  <text x="410" y="216" font-size="8" fill="#C8A97E">● Playing</text>
+
+  <!-- Now-playing panel -->
+  <rect x="402" y="224" width="162" height="36" rx="8" fill="#FFFFFF" fill-opacity="0.07" filter="url(#sketch)"/>
+  <text x="412" y="237" font-size="8" fill="#EEE">DR P1</text>
+  <text x="412" y="250" font-size="7" fill="#aaa">dr.dk/p1</text>
+  <!-- Bars -->
+  <rect x="548" y="239" width="3.5" height="9" rx="1.5" fill="#C8A97E" filter="url(#sketch)"/>
+  <rect x="554" y="234" width="3.5" height="14" rx="1.5" fill="#C8A97E" filter="url(#sketch)"/>
+  <rect x="560" y="236" width="3.5" height="12" rx="1.5" fill="#C8A97E" filter="url(#sketch)"/>
+
+  <!-- Volume bar -->
+  <rect x="406" y="266" width="152" height="4" rx="2" fill="#FFFFFF" fill-opacity="0.12" filter="url(#sketch)"/>
+  <rect x="406" y="266" width="55" height="4" rx="2" fill="#C8A97E" filter="url(#sketch)"/>
+  <text x="563" y="271" text-anchor="end" font-size="7" fill="#aaa">20</text>
+
+  <!-- Group member chips (NEW) -->
+  <rect x="407" y="280" width="54" height="18" rx="9" fill="#FFFFFF" fill-opacity="0.07" filter="url(#sketch)"/>
+  <text x="434" y="293" text-anchor="middle" font-size="7" fill="#aaa">+ Stue</text>
+  <rect x="467" y="280" width="60" height="18" rx="9" fill="#FFFFFF" fill-opacity="0.07" filter="url(#sketch)"/>
+  <text x="497" y="293" text-anchor="middle" font-size="7" fill="#aaa">+ Kitchen</text>
+
+  <!-- Card bottom padding -->
+  <!-- Peek of second card on trailing edge -->
+  <rect x="576" y="195" width="14" height="160" rx="6" fill="#252940" stroke="#555" stroke-width="0.7" opacity="0.7" filter="url(#sketch)"/>
+
+  <!-- Page dots -->
+  <circle cx="477" cy="368" r="4" fill="#C8A97E" filter="url(#sketch)"/>
+  <circle cx="491" cy="368" r="3" fill="#888" opacity="0.5" filter="url(#sketch)"/>
+  <circle cx="503" cy="368" r="3" fill="#888" opacity="0.5" filter="url(#sketch)"/>
+
+  <!-- Waveform -->
+  <text x="490" y="410" text-anchor="middle" font-size="7" fill="#888">〜〜〜〜〜〜</text>
+  <text x="490" y="425" text-anchor="middle" font-size="7" fill="#777" font-style="italic">Lytter…</text>
+
+  <!-- ── REDESIGNED BOTTOM BAR ── -->
+
+  <!-- Pill 1: Badeværelse — playing + active + group member -->
+  <rect x="387" y="455" width="96" height="30" rx="15" fill="#1E2235" stroke="#C8A97E" stroke-width="1" filter="url(#sketchHeavy)"/>
+  <text x="405" y="474" font-size="7.5" fill="#C8A97E">Badeværelse</text>
+  <!-- Bars in pill -->
+  <rect x="472" y="467" width="2.5" height="7" rx="1" fill="#C8A97E" filter="url(#sketch)"/>
+  <rect x="476" y="464" width="2.5" height="10" rx="1" fill="#C8A97E" filter="url(#sketch)"/>
+
+  <!-- Connector line between grouped pills -->
+  <line x1="483" y1="470" x2="491" y2="470" stroke="#888" stroke-width="0.8" opacity="0.5" filter="url(#sketch)"/>
+
+  <!-- Pill 2: Stue — playing (group member) -->
+  <rect x="491" y="455" width="48" height="30" rx="15" fill="#1E2235" stroke="#C8A97E" stroke-width="0.8" filter="url(#sketchHeavy)"/>
+  <text x="509" y="474" font-size="7.5" fill="#C8A97E">Stue</text>
+  <rect x="527" y="467" width="2.5" height="7" rx="1" fill="#C8A97E" filter="url(#sketch)"/>
+
+  <!-- Pill 3: Pejsestuen — idle -->
+  <rect x="546" y="455" width="42" height="30" rx="15" fill="#1E2235" stroke="#444" stroke-width="0.7" filter="url(#sketch)"/>
+  <text x="567" y="474" text-anchor="middle" font-size="7" fill="#888">Pejsestuen</text>
+
+  <!-- ═══════════════════════════════════════════
+       ANNOTATIONS — RIGHT SIDE
+       ═══════════════════════════════════════════ -->
+
+  <line x1="620" y1="212" x2="680" y2="212" stroke="#888" stroke-width="0.8" stroke-dasharray="3,2" filter="url(#sketch)"/>
+  <text x="684" y="216" font-size="8.5" fill="#444" font-style="italic">Accent state label</text>
+
+  <line x1="570" y1="288" x2="640" y2="310" stroke="#888" stroke-width="0.8" stroke-dasharray="3,2" filter="url(#sketch)"/>
+  <text x="644" y="314" font-size="8.5" fill="#444" font-style="italic">Group member chips (new)</text>
+
+  <line x1="591" y1="250" x2="648" y2="270" stroke="#888" stroke-width="0.8" stroke-dasharray="3,2" filter="url(#sketch)"/>
+  <text x="644" y="274" font-size="8.5" fill="#444" font-style="italic">Now-playing (unchanged)</text>
+
+  <line x1="503" y1="363" x2="640" y2="340" stroke="#888" stroke-width="0.8" stroke-dasharray="3,2" filter="url(#sketch)"/>
+  <text x="644" y="344" font-size="8.5" fill="#444" font-style="italic">Page dots</text>
+
+  <line x1="590" y1="250" x2="640" y2="228" stroke="#888" stroke-width="0.8" stroke-dasharray="3,2" filter="url(#sketch)"/>
+
+  <line x1="579" y1="260" x2="644" y2="248" stroke="#888" stroke-width="0.8" stroke-dasharray="3,2" filter="url(#sketch)"/>
+  <text x="644" y="252" font-size="8.5" fill="#444" font-style="italic">Peek of next card</text>
+
+  <!-- Bottom bar annotations -->
+  <line x1="481" y1="469" x2="480" y2="508" stroke="#888" stroke-width="0.8" stroke-dasharray="3,2" filter="url(#sketch)"/>
+  <text x="396" y="524" font-size="8.5" fill="#444" font-style="italic">Group connector</text>
+
+  <line x1="476" y1="455" x2="445" y2="440" stroke="#888" stroke-width="0.8" stroke-dasharray="3,2" filter="url(#sketch)"/>
+  <text x="390" y="438" font-size="8.5" fill="#444" font-style="italic">Playback bars in pill</text>
+
+  <!-- ─── Bottom note ─── -->
+  <line x1="60" y1="668" x2="800" y2="668" stroke="#ccc" stroke-width="0.8" stroke-dasharray="4,3" filter="url(#sketch)"/>
+  <text x="430" y="688" text-anchor="middle" font-size="9" fill="#aaa" font-style="italic">Rough sketch — proportions approximate · touch controls (F1) and group join UI (F2) shown in separate mockups</text>
+
+</svg>

@@ -19,23 +19,23 @@ class Speaker: Identifiable {
     /// Stable cross-session identifier. Uses the hardware JID when resolved; falls back to host IP.
     var stableId: String { identifier.jid ?? identifier.host }
 
-    var isPlaying: Bool { state == .playing || state == .started }
+    var isPlaying: Bool { state == .playing }
 
     var playbackState: SpeakerPlaybackState {
         switch state {
-        case .playing, .started: return .playing
-        case .paused:            return .paused
-        case .buffering:         return .buffering
-        default:                 return .stopped
+        case .playing:   return .playing
+        case .paused:    return .paused
+        case .buffering: return .buffering
+        default:         return .stopped
         }
     }
 
     var stateDisplay: String {
         switch state {
-        case .playing, .started: return "Playing"
-        case .paused:            return "Paused"
-        case .buffering:         return "Buffering"
-        default:                 return "Idle"
+        case .playing:   return "Playing"
+        case .paused:    return "Paused"
+        case .buffering: return "Buffering"
+        default:         return "Idle"
         }
     }
 
@@ -63,6 +63,12 @@ class Speaker: Identifiable {
     let client: any SpeakerClient
     private let eventSource: any SpeakerEventSource
     private var eventTask: Task<Void, Never>?
+
+    /// Invoked when a beolink (multiroom) topology event arrives over the WS.
+    /// `SpeakerDiscoveryService` wires this to a debounced `refreshGroups()` so
+    /// listener-list changes triggered by other apps (B&O app, physical buttons,
+    /// drag/drop on another device) are reflected without a polling round-trip.
+    var onGroupHint: (() -> Void)?
 
     init(host: String, client: any SpeakerClient, eventSource: any SpeakerEventSource, platform: SpeakerPlatform) {
         self.host        = host
@@ -185,6 +191,10 @@ class Speaker: Identifiable {
             if id != sourceID { metadata = nil }
             if let n = sourceName { source = n }
             sourceID = id
+        case .groupHint:
+            Log.info("[\(name)] beolink topology event → notifying discovery")
+            onGroupHint?()
+            return  // No state change on the speaker; skip the widget write.
         }
         WidgetStateWriter.write(speaker: self)
     }

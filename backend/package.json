@@ -2,7 +2,9 @@
   "name": "voxio-telemetry",
   "version": "0.1.0",
   "private": true,
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -15,16 +17,18 @@
     "migrate:up": "tsx ./node_modules/node-pg-migrate/bin/node-pg-migrate.js --migrations-dir migrations up",
     "migrate:down": "tsx ./node_modules/node-pg-migrate/bin/node-pg-migrate.js --migrations-dir migrations down",
     "migrate:create": "tsx ./node_modules/node-pg-migrate/bin/node-pg-migrate.js --migrations-dir migrations create",
-    "db:seed": "tsx scripts/seed-dev.ts"
+    "db:seed": "tsx scripts/seed-dev.ts",
+    "agent:open-incident-pr": "tsx agent/scripts/open-incident-pr.ts"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
     "next": "15.3.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "@neondatabase/serverless": "^0.10.4",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.95.1",
     "@playwright/test": "^1.52.0",
     "@types/node": "^22.15.3",
     "@types/react": "^19.1.2",

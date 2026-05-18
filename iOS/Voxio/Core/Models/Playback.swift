@@ -2,7 +2,6 @@ import Foundation
 
 enum PlaybackValue: String, Decodable {
     case playing   = "playing"
-    case started   = "started"   // real devices emit this; treated as playing
     case paused    = "paused"
     case stopped   = "stopped"
     case buffering = "buffering"
@@ -10,6 +9,8 @@ enum PlaybackValue: String, Decodable {
 
     init(from decoder: Decoder) throws {
         let raw = try decoder.singleValueContainer().decode(String.self)
+        // Mozart devices emit "started" for the active playing state; collapse to .playing.
+        if raw == "started" { self = .playing; return }
         self = PlaybackValue(rawValue: raw) ?? .unknown
     }
 }

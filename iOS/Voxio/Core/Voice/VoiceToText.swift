@@ -5,6 +5,12 @@ import UIKit
 class VoiceToText {
     private let recorder = AVService(locale: LanguageService.shared.activeLanguage.locale)
     private var currentLanguage: Language = LanguageService.shared.activeLanguage
+    /// Tracks whether the background/foreground observers in `start(_:)` have
+    /// already been registered. Without this, each call to `start` (locale
+    /// change, Wi-Fi restore, re-onboarding) would re-register the observers
+    /// and a single background→foreground cycle would call `recorder.startRecording()`
+    /// N times — triggering the "nullptr == Tap()" AVFoundation crash.
+    private var lifecycleObserversRegistered = false
 
     /// Called with every partial transcription string (for live display).
     var onTranscript: ((String) -> Void)?
@@ -72,7 +78,14 @@ class VoiceToText {
                 onStatus(ui.micUnavailable)
             }
 
-            // T-0312 — stop when app moves to background
+            // T-0312 — stop when app moves to background.
+            // Observers are registered exactly once; otherwise repeated start() calls
+            // (locale change, Wi-Fi restore, re-onboarding) would queue duplicate
+            // observers and a single foreground transition would call startRecording
+            // N times, racing the audioQueue and triggering the AVFoundation tap crash.
+            guard !self.lifecycleObserversRegistered else { return }
+            self.lifecycleObserversRegistered = true
+
             NotificationCenter.default.addObserver(
                 forName: UIApplication.didEnterBackgroundNotification,
                 object: nil,

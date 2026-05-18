@@ -14,6 +14,10 @@ enum PowerValue: String, Decodable {
     }
 }
 
+/// Maps the Mozart `PowerStateEnum` schema (`{ "value": "on" | "standby" | ... }`).
+/// Both `GET /state/power` and the `WebSocketEventPowerState.eventData` envelope
+/// use this shape — the field is `value`, NOT `state` (the latter was a misnomer
+/// in earlier code and caused WS decode failures on every speaker boot).
 struct PowerState: Decodable {
-    let state: PowerValue
+    let value: PowerValue
 }

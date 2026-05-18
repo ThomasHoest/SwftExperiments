@@ -27,6 +27,13 @@ struct UIStrings {
     // ── Home screen ───────────────────────────────────────────────────────────
     var lookingForSpeakers: String
 
+    // ── Transport controls (E-56 T-5607) ─────────────────────────────────────
+    var play:  String   // accessibility label for the play button
+    var pause: String   // accessibility label for the pause button
+
+    // ── Favorites row (E-58 T-5803) ──────────────────────────────────────────
+    var couldNotStartFavorite: String   // error toast when playFavorite throws
+
     static let english = UIStrings(
         confirmationAboutTo:   "About to:",
         confirmationVoiceHint: "or say Yes / No",
@@ -39,7 +46,10 @@ struct UIStrings {
         micUnavailable:        "Microphone unavailable",
         micAccessDenied:       "Microphone access denied",
         backgroundPaused:      "Paused",
-        lookingForSpeakers:    "Looking for speakers…"
+        lookingForSpeakers:    "Looking for speakers…",
+        play:                  "Play",
+        pause:                 "Pause",
+        couldNotStartFavorite: "Could not start favorite"
     )
 
     static let danish = UIStrings(
@@ -54,7 +64,10 @@ struct UIStrings {
         micUnavailable:        "Mikrofon utilgængelig",
         micAccessDenied:       "Mikrofonadgang nægtet",
         backgroundPaused:      "Sat på pause",
-        lookingForSpeakers:    "Leder efter højttalere…"
+        lookingForSpeakers:    "Leder efter højttalere…",
+        play:                  "Afspil",
+        pause:                 "Pause",
+        couldNotStartFavorite: "Kunne ikke starte favorit"
     )
 
     static func forLanguage(_ language: Language) -> UIStrings {
